@@ -38,6 +38,26 @@ Le premier `make up` télécharge les images Supabase : compter quelques minutes
 
 Une nouvelle migration se crée avec `npx supabase migration new <nom>`.
 
+## Types et contrats
+
+| Où | Quoi |
+| --- | --- |
+| `supabase/migrations/20261019120000_schema_initial.sql` | Schéma du MVP : 10 tables, énumérations (valeurs hors MVP comprises), contraintes, RLS en lecture pour les conseillers |
+| `types/database.ts` | Types des tables, **générés** : `npx supabase gen types typescript --local > types/database.ts` (jamais écrits à la main) |
+| `types/enums.ts` | Énumérations et limites partagées ; identiques à la migration (vérifié par les tests) |
+| `types/ia.ts` | Schémas Zod des réponses du LLM (fiche, brouillon, conclusion de l'agent) et outil `verifier_disponibilite` |
+| `types/llm.ts` | `DemandePourLLM` : seule forme de demande acceptée par le LLM (minimisation) |
+| `types/simulateur.ts` | Réponses du simulateur du formateur, lues par l'adaptateur seulement |
+| `types/historique.ts` | Détail de chaque type d'événement du journal |
+
+`npm test` lance les tests des types (Vitest). Les règles portées par la base se vérifient sur la base locale :
+
+```sh
+docker exec -i supabase_db_off-the-map psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/scripts/test_contraintes.sql
+```
+
+Le script travaille dans une transaction annulée à la fin : il ne laisse aucune donnée. Il se termine par « TOUS LES TESTS SONT PASSÉS ».
+
 ## Variables d'environnement
 
 `.env.example` liste toutes les variables, sans valeur sensible. Toute nouvelle variable y est ajoutée dans la même PR.
