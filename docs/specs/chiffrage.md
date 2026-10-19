@@ -1,6 +1,6 @@
 # Règles de chiffrage (E4.1)
 
-**Version 2 · 19 octobre 2026 · à relire par le développeur du chiffrage (P1).** Contrat associé : `types/chiffrage.ts`. Exemples chiffrés, à reprendre tels quels dans les tests d'E4.2 : `docs/specs/chiffrage-exemples.json`. Les choix faits sans le client sont listés en section 5 et inscrits au registre des décisions.
+** Contrat associé : `types/chiffrage.ts`. Exemples chiffrés, à reprendre tels quels dans les tests d'E4.2 : `docs/specs/chiffrage-exemples.json`. Les choix faits sans le client sont listés en section 5 et inscrits au registre des décisions.
 
 ## 1. Principes
 
