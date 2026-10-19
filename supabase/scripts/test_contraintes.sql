@@ -3,7 +3,8 @@
 \set ON_ERROR_STOP on
 begin;
 grant usage on schema public to anon, authenticated;
-grant select on all tables in schema public to anon, authenticated;
+-- comme Supabase : anon et authenticated ont tous les droits SQL, seule la RLS les limite
+grant all on all tables in schema public to anon, authenticated;
 
 insert into auth.users (id) values ('00000000-0000-0000-0000-00000000000a');
 insert into profils values ('00000000-0000-0000-0000-00000000000a', 'Conseillère Alice');
@@ -77,13 +78,31 @@ select doit_echouer($$insert into historique_dossier (dossier_id, type, nouveau_
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');
+-- tables de l'agent (E0.5) : un visiteur ne lit ni n'écrit rien
+select doit_valoir($$select count(*) from verifications$$, 0, 'un visiteur ne lit pas les vérifications');
+select doit_valoir($$select count(*) from options$$, 0, 'un visiteur ne lit pas les options');
+select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, modele, nb_tours, arret)
+  values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un visiteur');
 reset role;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000ff', false);
 select doit_valoir($$select count(*) from demandes$$, 0, 'un compte sans profil ne lit rien');
+select doit_valoir($$select count(*) from verifications$$, 0, 'un compte sans profil ne lit pas les vérifications');
+select doit_valoir($$select count(*) from options$$, 0, 'un compte sans profil ne lit pas les options');
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
 select doit_valoir($$select count(*) from demandes$$, 1, 'un conseiller lit tout');
+select doit_valoir($$select count(*) from verifications$$, 1, 'un conseiller lit les vérifications');
+select doit_valoir($$select count(*) from options$$, 1, 'un conseiller lit les options');
 select doit_echouer($$insert into dossiers default values$$, 'écriture directe par un conseiller');
+-- tables de l'agent (E0.5) : seul le serveur écrit ; un conseiller connecté ne crée, ne modifie ni ne supprime rien
+select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, modele, nb_tours, arret)
+  values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un conseiller');
+select doit_echouer($$insert into options (ligne_id, verification_id, accord_par, prix_accorde_cents)
+  values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000a', 8000)$$, 'accord écrit par un conseiller');
+-- sans politique d'écriture, update et delete ne touchent aucune ligne (pas d'erreur, 0 ligne)
+select doit_valoir($$with m as (update verifications set statut = 'indisponible' returning 1) select count(*) from m$$, 0, 'aucune vérification modifiée par un conseiller');
+select doit_valoir($$with m as (update options set statut = 'annulee', annulee_le = now() returning 1) select count(*) from m$$, 0, 'aucune option annulée par un conseiller');
+select doit_valoir($$with m as (delete from options returning 1) select count(*) from m$$, 0, 'aucune option supprimée par un conseiller');
 reset role;
 rollback;
 \echo TOUS LES TESTS SONT PASSÉS
