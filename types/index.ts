@@ -2,6 +2,7 @@ export * from './enums';
 export * from './historique';
 export * from './ia';
 export * from './llm';
+export * from './permissions';
 export * from './chiffrage';
 export * from './simulateur';
 export * from './transitions';
