@@ -1,6 +1,6 @@
 # Sprint Goal
 
-Un conseiller obtient une proposition chiffrée dont les prix sont vérifiés par l’agent, puis réserve une prestation : option de 2 jours ouvrés seulement après son accord, confirmation seulement après une seconde validation.
+Un conseiller obtient une proposition chiffrée dont les prix sont vérifiés par l’agent, puis réserve une prestation : option de 72 h seulement après son accord, confirmation seulement après une seconde validation.
 
 ## Ce que cela veut dire
 
@@ -19,4 +19,4 @@ Le cas de Nantes (deux voyageurs, week-end créatif sans voiture) se déroule de
 - Date : …
 - Équipe présente : …
 - Estimations revues par les développeurs : oui / non
-- Durée de l’option : le simulateur du cours pose 30 minutes ; les 2 jours ouvrés sont à confirmer avec le formateur.
+- Durée de l’option : 72 h (règle métier de l’agence). Le simulateur du cours pose 30 minutes : en démonstration, l’option expire au bout de 30 minutes et la confirmation se fait dans la foulée. Écart annoncé dans les limites.
