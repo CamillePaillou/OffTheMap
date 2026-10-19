@@ -1,0 +1,93 @@
+{
+  "items": [
+    {
+      "dossier_id": "5a1e0000-0000-4000-8000-000000000001",
+      "statut": "en_proposition",
+      "cree_le": "2026-10-19T09:12:00Z",
+      "client": { "nom": "Sophie Martin" },
+      "demande": {
+        "version": 1,
+        "destination": "Nantes",
+        "date_debut": "2026-11-07",
+        "date_fin": "2026-11-08",
+        "voyageurs": 2,
+        "budget_annonce": { "montant_cents": 40000, "ferme": false }
+      },
+      "fiche": { "etat": "validee" },
+      "proposition": {
+        "id": "5a1e0000-0000-4000-8000-0000000000a1",
+        "version": 1,
+        "statut": "a_verifier",
+        "total_cents": 36800,
+        "lignes_a_verifier": 2
+      }
+    },
+    {
+      "dossier_id": "5a1e0000-0000-4000-8000-000000000002",
+      "statut": "fiche_prete",
+      "cree_le": "2026-10-19T11:40:00Z",
+      "client": { "nom": "Karim Benali" },
+      "demande": {
+        "version": 1,
+        "destination": "Lyon",
+        "date_debut": "2026-12-05",
+        "date_fin": "2026-12-06",
+        "voyageurs": 4,
+        "budget_annonce": null
+      },
+      "fiche": { "etat": "prete" },
+      "proposition": null
+    },
+    {
+      "dossier_id": "5a1e0000-0000-4000-8000-000000000003",
+      "statut": "erreur",
+      "cree_le": "2026-10-19T13:05:00Z",
+      "client": { "nom": "Léa Dubois" },
+      "demande": {
+        "version": 1,
+        "destination": null,
+        "date_debut": "2027-03-13",
+        "date_fin": "2027-03-15",
+        "voyageurs": 3,
+        "budget_annonce": { "montant_cents": 90000, "ferme": true }
+      },
+      "fiche": { "etat": "erreur" },
+      "proposition": null
+    },
+    {
+      "dossier_id": "5a1e0000-0000-4000-8000-000000000004",
+      "statut": "fiche_en_cours",
+      "cree_le": "2026-10-19T15:30:00Z",
+      "client": { "nom": "Marc Lefèvre" },
+      "demande": {
+        "version": 1,
+        "destination": "Bordeaux",
+        "date_debut": "2026-11-21",
+        "date_fin": "2026-11-22",
+        "voyageurs": 1,
+        "budget_annonce": { "montant_cents": 25000, "ferme": false }
+      },
+      "fiche": { "etat": "en_cours" },
+      "proposition": null
+    },
+    {
+      "dossier_id": "5a1e0000-0000-4000-8000-000000000005",
+      "statut": "refusee",
+      "cree_le": "2026-10-18T08:20:00Z",
+      "client": { "nom": "Julie Moreau" },
+      "demande": {
+        "version": 1,
+        "destination": "Marseille",
+        "date_debut": "2026-10-24",
+        "date_fin": "2026-10-31",
+        "voyageurs": 12,
+        "budget_annonce": { "montant_cents": 30000, "ferme": true }
+      },
+      "fiche": { "etat": "prete" },
+      "proposition": null
+    }
+  ],
+  "total": 5,
+  "limit": 50,
+  "offset": 0
+}

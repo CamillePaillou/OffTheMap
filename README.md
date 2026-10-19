@@ -49,6 +49,7 @@ Une nouvelle migration se crée avec `npx supabase migration new <nom>`.
 | `types/llm.ts` | `DemandePourLLM` : seule forme de demande acceptée par le LLM (minimisation) |
 | `types/simulateur.ts` | Réponses du simulateur du formateur, lues par l'adaptateur seulement |
 | `types/historique.ts` | Détail de chaque type d'événement du journal |
+| `types/dashboard.ts` · `fixtures/dashboard/` | Payloads du back-office (liste, détail, proposition) et fixtures validées, pour afficher les écrans sans la base (`docs/specs/dashboard.md`) |
 
 `npm test` lance les tests des types (Vitest). Les règles portées par la base se vérifient sur la base locale :
 
