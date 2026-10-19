@@ -19,7 +19,7 @@
 - Contrats à figer le jour 1
 - Organisation et méthode de travail
 - Backlog par epics
-- Planning J1 à J7
+- Planning J1 à J9
 - Configuration GitHub Projects
 - Tests et CI
 - Livrables de fin de sprint
@@ -347,14 +347,14 @@ Scénario : simulateur en échec
 
 | | Must | Should | Could | Total |
 | --- | ---: | ---: | ---: | ---: |
-| P1 | 4,6 | 1,8 | 0 | **6,4** |
-| P2 | 4,45 | 1,4 | 0,7 | **6,55** |
-| P3 | 5,2 | 0,6 | 0 | **5,8** |
-| P4 | 4,2 | 0,5 | 0 | **4,7** |
-| PO | 3,45 | 0,1 | 0 | **3,55** |
-| **Total** | **21,9** | **4,4** | **0,7** | **27** |
+| P1 | 5,88 | 1,8 | 0 | **7,68** |
+| P2 | 5,12 | 1,8 | 0,7 | **7,62** |
+| P3 | 5,17 | 0,4 | 0 | **5,58** |
+| P4 | 6,28 | 0,5 | 0 | **6,78** |
+| PO | 3,5 | 0,1 | 0 | **3,6** |
+| **Total** | **25,95** | **4,6** | **0,7** | **31,25** |
 
-Capacité des quatre développeurs : 22,4 jours. Leurs Must font désormais **18,45 jours**, soit **82 %** de la capacité (contre 23,35 jours et 104 % dans la version précédente). Les issues « Tous » sont réparties à parts égales entre P1, P2, P3 et P4. Le PO porte 3,45 jours de Must, surtout les dossiers attendus par le cours.
+Capacité des quatre développeurs : 22,4 jours. Leurs Must font **22,45 jours**, soit **100 %** de la capacité. Les issues « Tous » sont réparties à parts égales entre P1, P2, P3 et P4. Le PO porte 3,5 jours de Must. Charges reprises des issues GitHub.
 
 ---
 
@@ -366,65 +366,65 @@ Estimation : **S** ≈ ½ j · **M** ≈ 1 j · **L** > 1 j. « Dépend » = iss
 
 **Révision du 19 octobre 2026.** Les identifiants existants ne sont pas renumérotés. Les issues sorties sont listées à la fin de cette section ; les nouvelles portent des numéros libres (E0.17, E0.19, E5.4, E9.8, E11.x, E12.x).
 
-### E0 — Socle technique et méthode (5,7 j)
+### E0 — Socle technique et méthode (6,3 j)
 
 *Objectif : Cinq personnes travaillent sur la même base, avec les mêmes données et les mêmes règles.*
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
 | E0.1 | **Dépôt, protection de branche, CODEOWNERS, templates**<br>En tant qu’équipe, je veux un dépôt protégé avec des propriétaires par dossier afin de relire ce qui touche chacun. | P3 | S | 0,4 | — | Un push direct sur main est refusé ; CODEOWNERS actif ; templates présents | M |
-| E0.2 | **CI (lint, types, tests, build, secrets), sans déploiement**<br>En tant qu’équipe, je veux une CI automatique afin de ne jamais fusionner une PR cassée. | P1 | S | 0,1 | E0.1 | Le workflow ci.yml déjà en place exécute les vrais scripts (retrait des --if-present) ; une PR rouge est bloquée | M |
-| E0.3 | **Docker Compose, Makefile, .env.example et squelette Next.js**<br>En tant que développeur, je veux lancer l’application avec make up afin de travailler dans le même environnement. | P1 | M | 0,7 | E0.1 | git clone, cp .env.example .env, make up : l’application et la base répondent chez les 4 développeurs, sans Vercel | M |
-| E0.4 | **Types et énumérations figés dans /types (8 tables du MVP, annexe d’énumérations)**<br>En tant qu’équipe, je veux des types et des énumérations figés afin de que les briques s’accordent et avancent en parallèle avec des fixtures. | P3 | S | 0,5 | E0.1 | Types relus et approuvés par les trois autres développeurs (PR étiquetée contract) | M |
-| E0.16 | **Migrations des 6 tables du noyau : clés étrangères, unicité d’une fiche par version**<br>En tant qu’équipe, je veux des tables créées par des migrations versionnées afin de que chacun ait la même base. | P3 | S | 0,5 | E0.4 | make migrate crée demandes, fiches, propositions, proposition_lignes, prestataires et historique_dossier ; une 2e fiche pour la même version est refusée | M |
-| E0.5 | **Tables de l’agent : migrations de verifications et options (accord, option, confirmation)**<br>En tant qu’équipe, je veux les tables des vérifications et des options afin de que l’agent et l’accord humain laissent des traces séparées. | P3 | S | 0,5 | E0.16 | Les deux tables existent ; seuls les cas d’usage côté serveur y écrivent ; options garde l’accord, l’option et la confirmation | M |
-| E0.7 | **Fonction de transition de statut : statut et historique_dossier écrits ensemble**<br>En tant que conseiller, je veux retrouver chaque changement de statut d’un dossier afin de retracer ce qui s’est passé. | P3 | S | 0,4 | E0.16, E0.8 | Une transition interdite est refusée ; chaque transition crée une ligne d’historique | M |
+| E0.2 | **CI et déploiement continu (lint, types, tests, build, secrets, Vercel)**<br>En tant qu’équipe, je veux une CI et un déploiement automatiques afin de voir la même version et ne jamais fusionner une PR cassée. | P1 | S | 0,4 | E0.1 | Une PR rouge est bloquée ; un merge sur main déploie /demande et /conseiller | M |
+| E0.3 | **Docker Compose, Makefile, .env.example et squelette Next.js**<br>En tant que développeur, je veux lancer l’application avec make up afin de travailler dans le même environnement. | P1 | M | 0,7 | E0.1 | git clone, cp .env.example .env, make up : l’application répond chez les 4 développeurs | M |
+| E0.4 | **Types et énumérations figés dans /types (9 tables, annexe d’énumérations)**<br>En tant qu’équipe, je veux des types et des énumérations figés afin de que les briques s’accordent et avancent en parallèle avec des fixtures. | P3 | S | 0,5 | E0.1 | Types relus et approuvés par les trois autres développeurs (PR étiquetée contract) | M |
+| E0.16 | **Migrations des 7 tables du noyau : clés étrangères, unicité d’une fiche par version**<br>En tant qu’équipe, je veux des tables créées par des migrations versionnées afin de que chacun ait la même base. | P3 | M | 0,7 | E0.4 | make migrate crée les 7 tables ; une 2e fiche pour la même version est refusée | M |
+| E0.5 | **Tables de l’agent : migrations de verifications et options (accès)**<br>En tant qu’équipe, je veux les tables des vérifications et des options afin de que l’agent et l’accord humain laissent des traces séparées. | P3 | M | 0,7 | E0.16 | Les deux tables existent ; un visiteur sans compte ne les lit pas ; seul le serveur y écrit | M |
+| E0.7 | **Fonction de transition de statut : statut et historique_dossier écrits ensemble**<br>En tant que conseiller, je veux retrouver chaque changement de statut d’un dossier afin de retracer ce qui s’est passé. | P3 | S | 0,4 | E0.8, E0.16 | Une transition interdite est refusée ; chaque transition crée une ligne d’historique | M |
 | E0.8 | **Matrice des transitions autorisées, rédigée comme spécification**<br>En tant qu’équipe, je veux une matrice écrite des transitions autorisées afin de coder la fonction de transition sans ambiguïté. | PO | S | 0,25 | — | Tous les statuts du workflow sont couverts ; relue par P3 | M |
-| E0.10 | **Seeds : import du catalogue du simulateur et dossier de Nantes à plusieurs statuts**<br>En tant que développeur, je veux le catalogue du simulateur et un dossier de démonstration chargés par make seed afin de travailler sans attendre la chaîne complète. | P3 | S | 0,5 | E0.16, E0.17 | make seed importe les prestations du simulateur avec leurs identifiants, sans doublon au second import ; le back-office affiche le dossier de Nantes à chaque étape clé | M |
-| E0.11 | **Connexion du conseiller et protection de /conseiller et des routes internes**<br>En tant que direction, je veux que seuls les conseillers connectés accèdent aux dossiers afin de protéger les données des voyageurs. | P2 | S | 0,3 | E0.3 | Sans connexion, /conseiller redirige vers la connexion et les routes internes répondent 401 ; test automatisé | M |
+| E0.10 | **Seeds : import du catalogue et dossier de Sophie à plusieurs statuts**<br>En tant que développeur, je veux des données de démonstration chargées par make seed afin de travailler sans attendre la chaîne complète. | P3 | S | 0,5 | E0.16, E0.17 | Après make seed, le back-office affiche un dossier à chaque étape clé | M |
+| E0.11 | **Connexion du conseiller (Supabase Auth) et protection de /conseiller**<br>En tant que conseiller, je veux me connecter afin de accéder aux dossiers. | P2 | S | 0,2 | E0.3 | Sans connexion, /conseiller redirige vers la page de connexion | M |
 | E0.12 | **Fixtures JSON du dashboard (liste, détail, proposition) sur les types partagés**<br>En tant que développeur, je veux des fixtures conformes aux types afin de construire un écran sans attendre le serveur. | P2 | S | 0,25 | E0.4 | Les écrans peuvent s’afficher sans la base ; fixtures conformes aux types | M |
 | E0.13 | **Port LlmClient côté serveur, faux client, minimisation des données sensibles**<br>En tant qu’équipe, je veux un port LlmClient et un faux client afin de changer de fournisseur et tester sans payer d’appels. | P4 | S | 0,4 | E0.4 | Un test vérifie qu’aucun nom ni texte libre sensible n’est envoyé au LLM ; les tests utilisent le faux client | M |
 | E0.15 | **Lancer le script create_issues.py (déjà écrit) et vérifier les issues créées**<br>En tant que PO, je veux créer toutes les issues d’un coup afin de gagner du temps. | PO | S | 0,1 | E0.1 | Le script crée labels, jalons et issues rattachées aux epics | S |
 | E0.17 | **Brancher le simulateur du formateur : service Docker, clé d’équipe, adaptateur avec pannes simulées**<br>En tant qu’équipe, je veux appeler le simulateur du formateur à travers notre adaptateur afin d’être testés comme à la recette et d’éprouver aussi les pannes qu’il ne simule pas. | P1 | S | 0,5 | E0.3 | make up lance le simulateur ; la clé d’équipe vient de .env, jamais du navigateur ; l’adaptateur couvre catalogue, disponibilités, options et réservations ; un réglage simule délai dépassé et erreur serveur ; test automatisé | M |
 | E0.19 | **Adaptateur OpenRouter : modèle gratuit avec appels d’outils, sans secours payant**<br>En tant qu’équipe, je veux un adaptateur OpenRouter testé afin de respecter les conditions du cours et de garder un modèle de réserve. | P4 | S | 0,3 | E0.13 | Un appel réel avec outil réussit sur le modèle choisi ; modèle configurable par variable d’environnement ; aucune route payante ; un second modèle testé en réserve | M |
 
-### E1 — Demande client (1,8 j)
+### E1 — Demande client (1,9 j)
 
 *Objectif : Le client décrit son projet sans compte.*
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
-| E1.1 | **Déposer une demande**<br>En tant que client, je veux décrire mon voyage (voyageurs et âges, dates, budget, envies, contraintes) et consentir au traitement de mes données afin de que l’agence me réponde avec une proposition adaptée. | P1 | M | 0,8 | E0.3, E0.4, E0.16 | Soumission invalide refusée avec message ; consentement RGPD et mention de l’IA obligatoires ; la demande est enregistrée au statut nouvelle, version 1 ; un visiteur sans compte peut créer mais pas lire | M |
+| E1.1 | **Déposer une demande**<br>En tant que client, je veux décrire mon voyage (voyageurs et âges, dates, budget, envies, contraintes) et consentir au traitement de mes données afin de que l’agence me réponde avec une proposition adaptée. | P1 | M | 0,9 | E0.3, E0.4, E0.16 | Soumission invalide refusée avec message ; consentement RGPD et mention de l’IA obligatoires ; la demande est enregistrée au statut nouvelle, version 1 ; un visiteur sans compte peut créer mais pas lire | M |
 | E1.2 | **Corriger ma demande depuis un lien**<br>En tant que client, je veux corriger ma demande depuis un lien qui préremplit mes réponses afin de répondre à ce que l’agence me demande sans tout ressaisir. | P1 | M | 1 | E1.1 | Jeton à usage unique et expirant ; champs concernés surlignés ; le renvoi crée la version suivante ; alerte « champ inchangé » ; deux boucles maximum | S |
 
-### E2 — Fiche de synthèse IA (1,5 j)
+### E2 — Fiche de synthèse IA (2,5 j)
 
 *Objectif : Le conseiller lit une fiche claire au lieu de relire des mails.*
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
-| E2.1 | **Consulter et corriger la fiche d’un dossier**<br>En tant que conseiller, je veux voir mes dossiers, ouvrir une fiche claire et la corriger après l’entretien afin de gagner du temps sur la lecture des mails. | P2 | M | 1 | E0.4, E0.11, E0.12 | Le conseiller connecté voit les dossiers du seed et leur statut ; une fiche en erreur affiche « relancer » ; budget réel, dates fixes et notes enregistrés sans être écrasés par une régénération | M |
-| E2.2 | **Obtenir la fiche automatiquement dès qu’une demande arrive**<br>En tant que conseiller, je veux qu’une fiche soit générée dès qu’une demande arrive afin de ne pas la rédiger moi-même. | P3 | S | 0,5 | E0.16, E0.7, E0.13 | L’enregistrement de la demande lance la génération côté serveur, sans webhook ; statut visible ; un échec simulé produit un nouvel essai puis le statut erreur et un bouton « relancer » ; JSON validé par un schéma | M |
+| E2.1 | **Consulter et corriger la fiche d’un dossier**<br>En tant que conseiller, je veux voir mes dossiers, ouvrir une fiche claire et la corriger après l’entretien afin de gagner du temps sur la lecture des mails. | P2 | L | 1,3 | E0.4, E0.11, E0.12 | Le conseiller connecté voit les dossiers du seed et leur statut ; une fiche en erreur affiche « relancer » ; budget réel, dates fixes et notes enregistrés sans être écrasés par une régénération | M |
+| E2.2 | **Obtenir la fiche automatiquement dès qu’une demande arrive**<br>En tant que conseiller, je veux qu’une fiche soit générée dès qu’une demande arrive afin de ne pas la rédiger moi-même. | P4 | L | 1,2 | E0.7, E0.13, E0.16 | Une insertion déclenche la génération ; secret partagé contrôlé ; deux appels simultanés ne créent qu’une fiche ; un échec simulé produit un nouvel essai puis le statut erreur ; JSON validé par un schéma | M |
 
-### E3 — Qualification du client (1,1 j)
+### E3 — Qualification du client (1,2 j)
 
 *Objectif : Ne pas investir 6 h sur une demande irréaliste.*
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
-| E3.1 | **Trier une demande : go, à corriger ou refusée**<br>En tant que conseiller, je veux décider go, à corriger ou refusée afin de ne pas investir 6 h sur une demande irréaliste. | P2 | S | 0,3 | E2.1, E0.7 | La décision est enregistrée et visible dans l’historique | M |
-| E3.3 | **Comprendre ce que je dois corriger**<br>En tant que client, je veux comprendre précisément ce que je dois corriger afin de renvoyer une demande réaliste. | P2 | M | 0,8 | E3.1, E5.4, E1.2 | Motifs liés aux champs, mail prérempli relu avant envoi, encart d’explication sur le formulaire | S |
+| E3.1 | **Trier une demande : go, à corriger ou refusée**<br>En tant que conseiller, je veux décider go, à corriger ou refusée afin de ne pas investir 6 h sur une demande irréaliste. | P2 | S | 0,4 | E0.7, E2.1 | La décision est enregistrée et visible dans l’historique | M |
+| E3.3 | **Comprendre ce que je dois corriger**<br>En tant que client, je veux comprendre précisément ce que je dois corriger afin de renvoyer une demande réaliste. | P2 | M | 0,8 | E1.2, E3.1, E5.4 | Motifs liés aux champs, mail prérempli relu avant envoi, encart d’explication sur le formulaire | S |
 
-### E4 — Proposition chiffrée (2,6 j)
+### E4 — Proposition chiffrée (3,65 j)
 
 *Objectif : Un brouillon juste, produit en minutes plutôt qu'en 6 heures.*
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
-| E4.1 | **Règles de chiffrage rédigées**<br>En tant que développeur, je veux des règles de prix écrites (formule, arrondis, marge, budget) afin de coder le chiffrage sans deviner. | PO | S | 0,2 | — | Document relu par le développeur du chiffrage ; valeurs par défaut marquées à confirmer | M |
-| E4.2 | **Voir un prix exact, contrôlé par le code**<br>En tant que conseiller, je veux que le prix soit calculé et contrôlé par le code (prix du simulateur × participants, marge, capacité, dates, budget) afin de ne jamais voir un prix inventé par l’IA. | P1 | S | 0,5 | E0.4, E4.1 | Les exemples du document de règles donnent le prix attendu ; toute ligne naît « à vérifier » ; capacité, dates et budget contrôlés ; un montant dans le texte généré est refusé | M |
-| E4.4 | **Obtenir un brouillon : prestations choisies dans le catalogue, programme sans montant**<br>En tant que conseiller, je veux un brouillon qui choisit des prestations compatibles dans le catalogue et rédige un programme sans montant afin de ne plus partir d’une page blanche. | P4 | L | 1,1 | E0.13, E0.10, E4.2 | Le code filtre le catalogue (destination, capacité) ; le LLM ne choisit que parmi ces prestations ; JSON validé, aucun montant dans le texte ; lignes créées à a_verifier ; total calculé par le code | M |
-| E4.5 | **Voir la proposition, son total et ses alertes**<br>En tant que conseiller, je veux voir les lignes, le total et les alertes d’une proposition afin de la relire avant l’envoi. | P1 | M | 0,8 | E0.3, E0.4, E0.12 | Les lignes du seed s’affichent avec prix catalogue, total et alertes ; depuis une fiche, le conseiller ouvre la proposition | M |
+| E4.1 | **Règles de chiffrage rédigées**<br>En tant que développeur, je veux des règles de prix écrites (formule, arrondis, marge, saison, seuil d’un tarif ancien) afin de coder le chiffrage sans deviner. | PO | S | 0,25 | — | Document relu par le développeur du chiffrage ; valeurs par défaut marquées à confirmer | M |
+| E4.2 | **Voir un prix exact, contrôlé par le code**<br>En tant que conseiller, je veux que le prix soit calculé et contrôlé par le code (tarifs enfant, saison, marge, capacité, âges, budget) afin de ne jamais voir un prix inventé par l’IA. | P1 | L | 1,4 | E0.4, E4.1 | Les exemples du document de règles donnent le prix attendu ; un tarif absent ou ancien reste « à vérifier » ; capacité, âges, dates et budget contrôlés ; un montant dans le texte généré est refusé | M |
+| E4.4 | **Obtenir un brouillon de proposition**<br>En tant que conseiller, je veux un brouillon avec un programme sans montant et des lignes afin de ne plus partir d’une page blanche. | P4 | M | 0,9 | E0.13, E4.2 | JSON (prestataires, quantités, texte sans chiffres) ; lignes créées au statut a_verifier ; le total est calculé par le code | M |
+| E4.5 | **Voir la proposition, son total et ses alertes**<br>En tant que conseiller, je veux voir les lignes, le total et les alertes d’une proposition afin de la relire avant l’envoi. | P1 | L | 1,1 | E0.3, E0.4, E0.12 | Les lignes du seed s’affichent avec prix catalogue, total et alertes ; depuis une fiche, le conseiller ouvre la proposition | M |
 
 ### E5 — Vérification et envoi (1,4 j)
 
@@ -432,7 +432,7 @@ Estimation : **S** ≈ ½ j · **M** ≈ 1 j · **L** > 1 j. « Dépend » = iss
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
-| E5.1 | **Confirmer les tarifs et n’envoyer que des prix vérifiés**<br>En tant que conseiller, je veux saisir les tarifs confirmés ligne par ligne et ne pouvoir envoyer que lorsque tout est vérifié afin de ne jamais promettre un prix incertain. | P2 | M | 0,8 | E4.5 | Tarif confirmé saisi avec date et source, ou accepté depuis la vérification de l’agent ; total recalculé ; envoi impossible tant qu’une ligne est à vérifier ; statut envoyee | M |
+| E5.1 | **Confirmer les tarifs et n’envoyer que des prix vérifiés**<br>En tant que conseiller, je veux saisir les tarifs confirmés ligne par ligne et ne pouvoir envoyer que lorsque tout est vérifié afin de ne jamais promettre un prix incertain. | P2 | M | 0,8 | E4.5 | Tarif confirmé saisi avec date et source, total recalculé ; le bouton d’envoi est inactif tant qu’une ligne est à vérifier ; statut envoyee | M |
 | E5.2 | **Remplacer une ligne indisponible**<br>En tant que conseiller, je veux remplacer une ligne indisponible sans tout régénérer afin de gagner du temps. | P2 | S | 0,2 | E5.1 | Les autres lignes et leurs tarifs confirmés restent intacts | S |
 | E5.4 | **Mails modèles ouverts dans la messagerie du conseiller (mailto)**<br>En tant que conseiller, je veux des mails modèles préremplis qui s’ouvrent dans ma messagerie afin d’écrire au client sans recopier. | P2 | S | 0,4 | E3.1, E5.1 | Quatre modèles fixes (rendez-vous, à corriger, proposition, confirmation), sans texte généré par l’IA ; le clic ouvre la messagerie ; la proposition s’imprime en PDF depuis le navigateur ; le conseiller marque « envoyé », journalisé | S |
 
@@ -442,47 +442,47 @@ Estimation : **S** ≈ ½ j · **M** ≈ 1 j · **L** > 1 j. « Dépend » = iss
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
-| E6.1 | **Répondre à un changement sans perdre la version envoyée**<br>En tant que conseiller, je veux créer une nouvelle version après un changement du client afin de garder la trace de ce qui a été envoyé. | P3 | S | 0,2 | E4.4 | La version envoyée reste intacte (remplacee) ; la nouvelle porte le numéro suivant | S |
+| E6.1 | **Répondre à un changement sans perdre la version envoyée**<br>En tant que conseiller, je veux créer une nouvelle version après un changement du client afin de garder la trace de ce qui a été envoyé. | P3 | S | 0,2 | E4.4 | La version envoyée reste intacte (remplacee) ; la nouvelle porte le numéro suivant | M |
 | E6.2 | **Voir ce qui a changé entre deux versions**<br>En tant que conseiller, je veux voir les écarts entre deux versions afin de expliquer le changement au client. | P1 | M | 0,8 | E6.1 | Les écarts d’un exemple connu correspondent au calcul manuel ; affichés dans /conseiller | S |
 | E6.3 | **Résumer les écarts en mots**<br>En tant que conseiller, je veux un résumé des écarts écrit par l’IA, sans chiffres afin de l’utiliser dans ma réponse au client. | P4 | S | 0,2 | E6.2 | Le texte ne contient aucun montant ; test | S |
-| E6.4 | **Être rappelé quand un client ne répond pas**<br>En tant que conseiller, je veux être rappelé à J+3 et J+7 afin de ne pas laisser un dossier s’endormir. | P3 | S | 0,4 | E5.1 | Rappel affiché dans le back-office à J+3 et J+7 ; statut sans_reponse | S |
+| E6.4 | **Être rappelé quand un client ne répond pas**<br>En tant que conseiller, je veux être rappelé à J+3 et J+7 afin de ne pas laisser un dossier s’endormir. | P3 | S | 0,4 | E5.1 | Rappels à J+3 et J+7 ; statut sans_reponse | S |
 | E6.5 | **Abandonner un dossier sans réponse**<br>En tant que conseiller, je veux qu’on me propose d’abandonner un dossier à J+14 afin de garder un tableau propre. | P2 | S | 0,4 | E6.4 | Proposition d’abandon à J+14 ; le dossier passe à abandonnee après confirmation du conseiller | C |
 
-### E7 — Clôture et démonstration (2,1 j)
+### E7 — Clôture et démonstration (2,9 j)
 
 *Objectif : Le parcours complet fonctionne devant le client.*
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
-| E7.1 | **Enregistrer l’acceptation du client et le dépôt reçu**<br>En tant que conseiller, je veux enregistrer l’acceptation du client puis son dépôt afin de lancer la réservation. | P2 | S | 0,3 | E5.1 | Deux clics enregistrent l’acceptation puis le dépôt ; la proposition passe à depot_recu ; journalisé | M |
-| E7.3 | **Rejouer le cas de Nantes de bout en bout**<br>En tant qu’équipe, je veux rejouer un dossier complet de bout en bout afin de révéler les écarts entre les briques. | P1 | S | 0,4 | E1.1, E2.2, E3.1, E4.4, E5.1, E7.1, E8.4, E9.3, E9.4, E9.5 | Le scénario se déroule du formulaire à la réservation confirmée sans intervention technique | M |
-| E7.4 | **Correctifs d’intégration sur son périmètre**<br>En tant qu’équipe, je veux du temps pour corriger ce que l’intégration révèle afin de livrer un parcours qui tient. | Tous | M | 0,8 | E7.3, E9.5, E11.2 | Aucune anomalie bloquante sur le scénario | M |
+| E7.1 | **Enregistrer le dépôt reçu**<br>En tant que conseiller, je veux marquer le dépôt de garantie comme reçu afin de clôturer le dossier. | P2 | S | 0,4 | E5.1 | Un clic passe le dossier à gagnee ; journalisé | M |
+| E7.3 | **Rejouer le cas de Sophie de bout en bout**<br>En tant qu’équipe, je veux rejouer un dossier complet de bout en bout afin de révéler les écarts entre les briques. | P1 | S | 0,4 | E6.1, E7.1 | Le scénario se déroule du formulaire au dépôt sans intervention technique | M |
+| E7.4 | **Correctifs d’intégration sur son périmètre**<br>En tant qu’équipe, je veux du temps pour corriger ce que l’intégration révèle afin de livrer un parcours qui tient. | Tous | L | 1,3 | E7.3, E9.4, E11.2 | Aucune anomalie bloquante sur le scénario | M |
 | E7.5 | **Passe sécurité : aucune clé dans le dépôt ni le bundle**<br>En tant qu’équipe, je veux vérifier qu’aucune clé ne fuite afin de protéger les accès. | P3 | S | 0,2 | E0.13 | Détection de secrets verte ; revue manuelle du bundle | M |
-| E7.6 | **Sprint Review et recette jouée par le client (J7)**<br>En tant qu’équipe, je veux démontrer le parcours devant le client afin de recueillir ses retours. | Tous | S | 0,4 | E7.4 | Répétition faite une fois de bout en bout ; mode réel ou rejeu annoncé ; retours notés dans docs/rituels/review.md | M |
+| E7.6 | **Sprint Review : démonstration du parcours avec note de retours**<br>En tant qu’équipe, je veux démontrer le parcours devant le client afin de recueillir ses retours. | Tous | M | 0,6 | E7.4 | Répétition faite une fois de bout en bout ; retours notés dans docs/rituels/review.md | M |
 
-### E8 — Agent de vérification (2,5 j)
+### E8 — Agent de vérification (3,3 j)
 
 *Objectif : Un agent consulte une source et rend une réponse contrôlable ; le conseiller garde la décision.*
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
-| E8.2 | **Contrat d’une page de l’agent**<br>En tant qu’équipe, je veux un contrat d’une page pour l’agent afin de savoir ce qu’il peut faire, ne peut pas faire, et quand il s’arrête. | PO | S | 0,4 | — | Une page relue par le développeur de l’agent : outil unique verifier_disponibilite(prestation_id, date, participants) sur GET /api/v1/disponibilites, permissions, conditions d’arrêt | M |
-| E8.3 | **Faire vérifier le prix d’une prestation par un agent**<br>En tant que conseiller, je veux qu’un agent vérifie le prix et les places d’une prestation auprès du serveur afin de décider sur des chiffres frais. | P4 | L | 1,1 | E0.5, E0.13, E0.17, E0.19, E8.2 | Un appel réel au simulateur du formateur aboutit à une conclusion (prix, places) ; un outil non autorisé est refusé par le code ; 3 tours maximum ; délai dépassé ou erreur : « non vérifié » sans prix ni places ; base : starter-agent.mjs du cours | M |
-| E8.4 | **Voir l’écart de prix et la réponse du serveur dans l’écran de proposition**<br>En tant que conseiller, je veux voir le prix revérifié, l’écart avec le prix proposé et la réponse brute afin de décider en connaissance de cause. | P2 | S | 0,5 | E0.5, E0.11, E0.12 | Le conseiller voit le prix revérifié, l’écart avec le prix proposé et la réponse brute du simulateur, puis accepte ou saisit le tarif | M |
-| E8.5 | **Garder une trace et comparer les faits au JSON du serveur**<br>En tant que relecteur, je veux une trace expurgée de chaque vérification et la comparaison de ses faits au JSON du serveur afin de contrôler l’agent. | P3 | S | 0,5 | E0.5 | La trace d’un essai est relisible, sans clé ni donnée sensible ; un fait faux est détecté, un fait exact est validé | M |
+| E8.2 | **Contrat d’une page de l’agent**<br>En tant qu’équipe, je veux un contrat d’une page pour l’agent afin de savoir ce qu’il peut faire, ne peut pas faire, et quand il s’arrête. | PO | S | 0,4 | — | Une page relue par le développeur de l’agent : outil unique, permissions, conditions d’arrêt | M |
+| E8.3 | **Faire vérifier le prix d’une prestation par un agent**<br>En tant que conseiller, je veux qu’un agent vérifie le prix et les places d’une prestation auprès du serveur afin de décider sur des chiffres frais. | P4 | L | 1,5 | E0.5, E0.13, E0.17, E8.2 | Un appel réel au serveur fictif aboutit à une conclusion (prix, places, conditions) ; un outil non autorisé est refusé par le code ; 3 tours maximum ; serveur en échec : « non vérifié » sans prix ni places ; modèle OpenRouter gratuit testé | M |
+| E8.4 | **Voir l’écart de prix et la réponse du serveur**<br>En tant que conseiller, je veux voir le prix revérifié, l’écart avec le prix proposé et la réponse brute afin de décider en connaissance de cause. | P2 | M | 0,7 | E0.5, E0.11, E0.12 | Le conseiller voit le prix revérifié, l’écart avec le prix proposé et la réponse brute du serveur | M |
+| E8.5 | **Garder une trace et comparer les faits au JSON du serveur**<br>En tant que relecteur, je veux une trace expurgée de chaque vérification et la comparaison de ses faits au JSON du serveur afin de contrôler l’agent. | P3 | M | 0,7 | E0.5 | La trace d’un essai est relisible, sans clé ni donnée sensible ; un fait faux est détecté, un fait exact est validé | M |
 
-### E9 — Option et réservation avec accord humain (3 j)
+### E9 — Option et réservation avec accord humain (2,8 j)
 
 *Objectif : Une option de 2 jours ouvrés n'est posée qu'après un accord identifiable du conseiller ; la confirmation exige une seconde validation et la clé d'approbation reste hors du modèle.*
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
 | E9.1 | **Schéma des permissions : qui peut lire, proposer, poser, confirmer**<br>En tant qu’équipe, je veux un schéma des permissions afin de défendre qui peut faire quoi. | PO | S | 0,3 | E8.2 | Un schéma d’une page ; l’agent n’a aucune permission d’écriture | M |
-| E9.3 | **Donner son accord depuis l’écran de proposition (accord à usage unique enregistré côté serveur)**<br>En tant que conseiller, je veux voir la prestation, le prix revérifié et les places, puis autoriser une écriture précise afin que rien ne soit écrit sans moi. | P2 | M | 0,7 | E0.5, E0.11, E0.12 | L’accord est créé côté serveur par le conseiller connecté ; à usage unique ; lié à la ligne, la date, les participants et le prix ; réutilisé ou pour une autre prestation : refusé ; jamais transmis au modèle | M |
-| E9.4 | **Poser une option de 2 jours ouvrés sur le simulateur après accord**<br>En tant que conseiller, je veux qu’une option de 2 jours ouvrés soit posée sur la prestation après mon accord afin de la garder pendant que je décide. | P1 | S | 0,5 | E0.5, E0.17 | POST /api/v1/options n’est appelé qu’avec un accord valide ; la réponse réelle du simulateur est affichée ; sans accord, rien n’est écrit ; l’option expire après 2 jours ouvrés | M |
-| E9.5 | **Confirmer la réservation par une seconde validation (clé d’approbation)**<br>En tant que conseiller, je veux confirmer une option par une seconde validation, en saisissant la clé d’approbation, afin qu’aucune réservation ne parte sans moi. | P3 | S | 0,5 | E0.17, E0.11, E0.12 | POST /api/v1/reservations reçoit X-Approval-Key et approuve_par ; la clé n’est ni stockée, ni journalisée, ni transmise au modèle ; option expirée : nouvelle vérification et nouvel accord ; dossier gagnee quand toutes les lignes sont confirmées | M |
-| E9.6 | **Garantir que l’agent ne peut rien écrire**<br>En tant qu’équipe, je veux des tests qui prouvent que l’agent ne peut rien écrire afin de défendre la frontière d’action. | P3 | S | 0,4 | E8.3, E9.4 | L’agent ne peut ni poser une option, ni confirmer, ni annuler ; le modèle ne voit ni la clé d’équipe ni la clé d’approbation ; tests automatisés | M |
-| E9.7 | **Note d’une page : échec observé, décision humaine, choix révisé et décision d’usage**<br>En tant qu’équipe, je veux une note sur un échec observé et sur la décision d’autoriser, limiter ou refuser le parcours afin de démontrer ce qu’on a appris. | PO | S | 0,3 | E11.2, E9.6 | Une page relue par l’équipe | M |
+| E9.3 | **Écran d’accord : prestations, prix revérifié et conditions**<br>En tant que conseiller, je veux voir les prestations, le prix revérifié et les conditions, puis autoriser une écriture précise afin de décider avant toute option. | P2 | M | 0,6 | E0.5, E0.11, E0.12 | Le conseiller autorise une écriture précise (prestation, prix) ; l’accord enregistre le conseiller, la prestation et le prix | M |
+| E9.4 | **Poser une option de 2 jours ouvrés après accord**<br>En tant que conseiller, je veux qu’une option de 2 jours ouvrés soit posée sur la prestation après mon accord afin de la garder pendant que je décide. | P4 | S | 0,5 | E0.5, E0.17, E9.3 | L’option est posée avec la réponse réelle du serveur ; sans accord valide, rien n’est écrit ; elle expire après 2 jours ouvrés | M |
+| E9.5 | **Seconde validation avant confirmation**<br>En tant que conseiller, je veux une seconde validation distincte avant toute confirmation afin de éviter une confirmation par erreur. | P2 | S | 0,4 | E9.4 | Sans seconde validation distincte, aucune confirmation n’est possible ; nouveau prix revérifié si l’option a expiré | S |
+| E9.6 | **Garantir que l’agent ne peut rien écrire**<br>En tant qu’équipe, je veux des tests qui prouvent que l’agent ne peut rien écrire afin de défendre la frontière d’action. | P3 | S | 0,4 | E8.3, E9.4 | L’agent ne peut ni poser une option, ni confirmer, ni annuler ; le modèle ne voit jamais la clé ; tests automatisés | M |
+| E9.7 | **Note d’une page : un échec observé, la décision humaine, le choix de conception révisé**<br>En tant qu’équipe, je veux une note sur un échec observé et le choix de conception révisé afin de démontrer ce qu’on a appris. | PO | S | 0,3 | E9.6, E11.2 | Une page relue par l’équipe | M |
 | E9.8 | **Annuler une réservation après validation**<br>En tant que conseiller, je veux annuler une réservation confirmée par erreur afin de libérer les places. | P2 | S | 0,3 | E9.5 | L’annulation demande la clé d’approbation et une confirmation ; réponse du simulateur affichée ; journalisée | C |
 
 ### E10 — Méthode et rituels (0,3 j)
@@ -504,7 +504,7 @@ Estimation : **S** ≈ ½ j · **M** ≈ 1 j · **L** > 1 j. « Dépend » = iss
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
 | E11.1 | **Jeu de 12 cas et critères fixés avant la campagne**<br>En tant qu’équipe, je veux un jeu de cas et des critères écrits avant les essais afin de mesurer l’agent sans biais. | PO | S | 0,5 | E8.2 | 12 cas (normaux, ambiguïtés, erreurs, tentatives de détournement) au format JEU_CAS.json du cours ; critères, modes et nombre d’essais fixés avant le premier essai ; versionnés | M |
-| E11.2 | **Campagne v1, diagnostic, correction et retest v2**<br>En tant qu’équipe, je veux exécuter la campagne, corriger un défaut et retester afin de défendre une décision d’usage sur des preuves. | P4 | M | 1 | E11.1, E8.3, E8.5, E9.4 | Résultats v1 et v2 dans des fichiers séparés, essais manquants notés ; un défaut diagnostiqué, corrigé et retesté ; deux traces expurgées (réussite, échec) et un fait comparé au JSON du simulateur | M |
+| E11.2 | **Campagne v1, diagnostic, correction et retest v2**<br>En tant qu’équipe, je veux exécuter la campagne, corriger un défaut et retester afin de défendre une décision d’usage sur des preuves. | P4 | M | 1 | E8.3, E8.5, E9.4, E11.1 | Résultats v1 et v2 dans des fichiers séparés, essais manquants notés ; un défaut diagnostiqué, corrigé et retesté ; deux traces expurgées (réussite, échec) et un fait comparé au JSON du simulateur | M |
 | E11.3 | **Mode rejeu annoncé pour la démonstration**<br>En tant qu’équipe, je veux rejouer une trace enregistrée afin de démontrer la boucle si OpenRouter est indisponible. | P4 | S | 0,3 | E11.2 | Une trace enregistrée se rejoue sans appel au modèle ; l’écran affiche « rejeu » | S |
 
 ### E12 — Livrables du cours (1,2 j)
@@ -535,6 +535,15 @@ Ces issues existent déjà dans GitHub : les fermer comme *not planned* avec un 
 | E9.2 | Enregistrer l’accord du conseiller et créer le jeton d’approbation | Fusionnée dans E9.3 : l’écran d’accord enregistre lui-même l’accord à usage unique côté serveur |
 
 ### Scénarios Gherkin des stories clés
+
+**E0.17 — Brancher le simulateur du formateur : service Docker, clé d’équipe, adaptateur avec pannes simulées**
+
+```gherkin
+Scénario : délai dépassé simulé
+  Étant donné l’adaptateur réglé sur « délai dépassé »
+  Quand une disponibilité est demandée
+  Alors l’adaptateur renvoie une erreur explicite et aucun prix
+```
 
 **E1.1 — Déposer une demande**
 
@@ -572,20 +581,20 @@ Scénario : envoi bloqué
   Alors l’envoi est refusé et le statut ne change pas
 ```
 
-**E0.17 — Brancher le simulateur du formateur : service Docker, clé d’équipe, adaptateur avec pannes simulées**
+**E6.1 — Répondre à un changement sans perdre la version envoyée**
 
 ```gherkin
-Scénario : délai dépassé simulé
-  Étant donné l’adaptateur réglé sur « délai dépassé »
-  Quand une disponibilité est demandée
-  Alors l’adaptateur renvoie une erreur explicite et aucun prix
+Scénario : version envoyée intacte
+  Étant donné une proposition envoyée en version 1
+  Quand le client demande un changement
+  Alors la version 2 est créée et la version 1 reste inchangée
 ```
 
 **E8.3 — Faire vérifier le prix d’une prestation par un agent**
 
 ```gherkin
 Scénario : serveur en échec
-  Étant donné un simulateur qui dépasse le délai ou répond par une erreur
+  Étant donné un serveur de prestations qui répond par une erreur
   Quand l’agent conclut sa vérification
   Alors la réponse est « non vérifié », sans prix ni nombre de places
 
@@ -604,31 +613,13 @@ Scénario : fait faux détecté
   Alors l’écart est signalé
 ```
 
-**E9.3 — Donner son accord depuis l’écran de proposition (accord à usage unique enregistré côté serveur)**
-
-```gherkin
-Scénario : accord à usage unique
-  Étant donné un accord déjà utilisé pour une option
-  Quand il est présenté une seconde fois
-  Alors l’option est refusée et la tentative est tracée
-```
-
-**E9.4 — Poser une option de 2 jours ouvrés sur le simulateur après accord**
+**E9.4 — Poser une option de 2 jours ouvrés après accord**
 
 ```gherkin
 Scénario : option sans accord
   Étant donné une prestation vérifiée par l’agent
   Quand une option est demandée sans accord valide
-  Alors rien n’est envoyé au simulateur et la tentative est tracée
-```
-
-**E9.5 — Confirmer la réservation par une seconde validation (clé d’approbation)**
-
-```gherkin
-Scénario : option expirée
-  Étant donné une option posée il y a plus de 2 jours ouvrés
-  Quand le conseiller confirme avec la clé d’approbation
-  Alors le refus du simulateur est affiché, aucune réservation n’est enregistrée et une nouvelle vérification est demandée
+  Alors rien n’est écrit et la tentative est tracée
 ```
 
 **E9.6 — Garantir que l’agent ne peut rien écrire**
@@ -652,90 +643,154 @@ Scénario : tentative de détournement
 
 ---
 
-## 8. Planning J1 à J7
+## 8. Planning J1 à J9
 
 **Sprint Goal :** Un conseiller obtient une proposition chiffrée dont les prix sont vérifiés par l’agent, puis réserve une prestation : option de 2 jours ouvrés seulement après son accord, confirmation seulement après une seconde validation.
 
-Chaque issue a un jour cible : le jour où elle doit être terminée. Les Should et les Could sont hors sprint (jalon « Hors sprint »). Les jalons J8 et J9 ne servent plus.
+Chaque issue a un jour cible : le jour où elle doit être terminée (jalon GitHub). Les jalons J8 et J9 (« Débordement ») portent les issues qui ne tiennent pas dans J7. ✅ = issue terminée.
 
 ### J1 — Cadrage
 
-Cadrer et démarrer : Sprint Planning d’une heure, estimations par l’équipe. **Objectif : dépôt protégé ; le PO livre la matrice des transitions et le contrat de l’agent.**
-
 - **P3** : E0.1
-- **PO** : E0.8, E8.2, E10.1, E10.2
+- **PO** : E0.8, E4.1, E8.2, E9.1, E10.1, E10.2
 - **Tous** : E10.3
 
 ### J2 — Socle
 
-**Objectif : types figés, migrations, `make up`, port LLM et adaptateur OpenRouter, connexion du conseiller, fixtures.** Le PO livre les règles de chiffrage et le schéma des permissions.
-
-- **P1** : E0.2, E0.3
+- **P1** : E0.3 ✅
 - **P2** : E0.11, E0.12
 - **P3** : E0.4, E0.16
 - **P4** : E0.13, E0.19
-- **PO** : E4.1, E9.1
 
 ### J3 — De la demande à la fiche
 
-**Objectif : simulateur du formateur branché dans `make up`, catalogue importé, tables de l’agent.**
-
-- **P1** : E0.17
-- **P3** : E0.5, E0.10
+- **P1** : E0.2 ✅, E0.17
+- **P3** : E0.5
 
 ### J4 — Qualification et présélection
 
-**Objectif : formulaire, fiche consultable, chiffrage, premier appel réel de l’agent au simulateur ; jeu de 12 cas fixé avant la campagne.**
-
-- **P1** : E1.1, E4.2
-- **P2** : E2.1, E8.4
-- **P3** : E0.7
-- **P4** : E8.3
+- **P2** : E2.1
 - **PO** : E11.1
 
 ### J5 — Proposition chiffrée
 
-**Objectif : fiche automatique, tri, écran de proposition, trace de l’agent, accord du conseiller ; dossier de conception révisé (journée FOAD).**
-
-- **P1** : E4.5
-- **P2** : E3.1, E9.3
-- **P3** : E2.2, E8.5
+- **P1** : E4.2
+- **P2** : E8.4
+- **P3** : E0.7
+- **P4** : E8.3
 - **PO** : E12.1
 
 ### J6 — Vérification, envoi, changements
 
-**Objectif : brouillon IA, option sur le simulateur, envoi bloqué, confirmation par seconde validation, tests de non-écriture ; fiche de changement.**
-
-- **P1** : E9.4
-- **P2** : E5.1
-- **P3** : E9.5, E9.6
-- **P4** : E4.4
+- **P1** : E4.5
+- **P2** : E9.3
+- **P3** : E0.10, E8.5
+- **P4** : E9.4
 - **PO** : E12.2
 
 ### J7 — Clôture et démonstration
 
-**Objectif : acceptation et dépôt, campagne v1 et v2, cas de Nantes rejoué, recette jouée par le client, livraison.** Gel des fonctionnalités à midi, puis Sprint Review et rétrospective.
+- **P1** : E1.1
+- **P2** : E5.1
+- **P3** : E6.1, E7.5, E9.6
+- **P4** : E4.4, E11.2
+- **PO** : E9.7, E12.3
+- **Tous** : E10.4
+
+### J8 — Débordement
 
 - **P1** : E7.3
-- **P2** : E7.1
-- **P3** : E7.5
-- **P4** : E11.2
-- **PO** : E9.7, E12.3
-- **Tous** : E7.4, E7.6, E10.4, E10.5
+- **P2** : E3.1, E7.1
+- **P4** : E2.2
+
+### J9 — Débordement
+
+- **Tous** : E7.4, E7.6, E10.5
 
 ### Hors sprint
 
-Should, dans cet ordre si du temps se libère : E5.4, E6.1, E11.3, E5.2, E6.2, E6.3, E6.4, E1.2, E3.3, E0.15. Could : E6.5, E9.8.
+- **P1** : E1.2, E6.2
+- **P2** : E3.3, E5.2, E5.4, E6.5, E9.5, E9.8
+- **P3** : E6.4
+- **P4** : E6.3, E11.3
+- **PO** : E0.15
 
-**Estimation de fin des Must :** environ **7,5 jours** en tenant compte des dépendances et de 80 % de temps productif, dont la rédaction du dossier de livraison le J7. Les développeurs terminent vers 7,2 jours : le plan tient à quelques heures près, sans marge confortable. Les estimations restent à plus ou moins 50 % : à recaler avec l’équipe après le J2.
+### Tableau des dépendances
 
-**Chemin critique :** E0.1 → E0.4 → E0.12 → E4.5 → E5.1 → E7.1 → E7.3 → E12.3. Les écrans avancent sur les fixtures (E0.12) : ils ne dépendent plus de la base ni de l’agent.
+« Dépend de » = issues à terminer avant (champ *Bloquée par* des issues GitHub). « Bloque » = issues qui l’attendent. ⚠ = une dépendance est prévue un jour plus tard que l’issue elle-même, ou hors sprint.
+
+| ID | Issue | Resp. | Jalon | Dépend de | Bloque | Alerte |
+| --- | --- | --- | --- | --- | --- | --- |
+| E0.1 | Dépôt, protection de branche, CODEOWNERS, templates | P3 | J1 | — | E0.2, E0.3, E0.4, E0.15, E10.1, E10.2 |  |
+| E0.2 ✅ | CI et déploiement continu (lint, types, tests, build, secrets, Vercel) | P1 | J3 | E0.1 | — |  |
+| E0.3 ✅ | Docker Compose, Makefile, .env.example et squelette Next.js | P1 | J2 | E0.1 | E0.11, E0.17, E1.1, E4.5 |  |
+| E0.4 | Types et énumérations figés dans /types (9 tables, annexe d’énumérations) | P3 | J2 | E0.1 | E0.12, E0.13, E0.16, E1.1, E2.1, E4.2, E4.5 |  |
+| E0.5 | Tables de l’agent : migrations de verifications et options (accès) | P3 | J3 | E0.16 | E8.3, E8.4, E8.5, E9.3, E9.4 |  |
+| E0.7 | Fonction de transition de statut : statut et historique_dossier écrits ensemble | P3 | J5 | E0.8, E0.16 | E2.2, E3.1 |  |
+| E0.8 | Matrice des transitions autorisées, rédigée comme spécification | PO | J1 | — | E0.7 |  |
+| E0.10 | Seeds : import du catalogue et dossier de Sophie à plusieurs statuts | P3 | J6 | E0.16, E0.17 | — |  |
+| E0.11 | Connexion du conseiller (Supabase Auth) et protection de /conseiller | P2 | J2 | E0.3 | E2.1, E8.4, E9.3 |  |
+| E0.12 | Fixtures JSON du dashboard (liste, détail, proposition) sur les types partagés | P2 | J2 | E0.4 | E2.1, E4.5, E8.4, E9.3 |  |
+| E0.13 | Port LlmClient côté serveur, faux client, minimisation des données sensibles | P4 | J2 | E0.4 | E0.19, E2.2, E4.4, E7.5, E8.3 |  |
+| E0.15 | Lancer le script create_issues.py (déjà écrit) et vérifier les issues créées | PO | Hors sprint | E0.1 | — |  |
+| E0.16 | Migrations des 7 tables du noyau : clés étrangères, unicité d’une fiche par version | P3 | J2 | E0.4 | E0.5, E0.7, E0.10, E1.1, E2.2 |  |
+| E0.17 | Brancher le simulateur du formateur : service Docker, clé d’équipe, adaptateur avec pannes simulées | P1 | J3 | E0.3 | E0.10, E8.3, E9.4 |  |
+| E0.19 | Adaptateur OpenRouter : modèle gratuit avec appels d’outils, sans secours payant | P4 | J2 | E0.13 | — |  |
+| E1.1 | Déposer une demande | P1 | J7 | E0.3, E0.4, E0.16 | E1.2 |  |
+| E1.2 | Corriger ma demande depuis un lien | P1 | Hors sprint | E1.1 | E3.3 |  |
+| E2.1 | Consulter et corriger la fiche d’un dossier | P2 | J4 | E0.4, E0.11, E0.12 | E3.1 |  |
+| E2.2 | Obtenir la fiche automatiquement dès qu’une demande arrive | P4 | J8 | E0.7, E0.13, E0.16 | — |  |
+| E3.1 | Trier une demande : go, à corriger ou refusée | P2 | J8 | E0.7, E2.1 | E3.3, E5.4 |  |
+| E3.3 | Comprendre ce que je dois corriger | P2 | Hors sprint | E1.2, E3.1, E5.4 | — |  |
+| E4.1 | Règles de chiffrage rédigées | PO | J1 | — | E4.2 |  |
+| E4.2 | Voir un prix exact, contrôlé par le code | P1 | J5 | E0.4, E4.1 | E4.4 |  |
+| E4.4 | Obtenir un brouillon de proposition | P4 | J7 | E0.13, E4.2 | E6.1 |  |
+| E4.5 | Voir la proposition, son total et ses alertes | P1 | J6 | E0.3, E0.4, E0.12 | E5.1 |  |
+| E5.1 | Confirmer les tarifs et n’envoyer que des prix vérifiés | P2 | J7 | E4.5 | E5.2, E5.4, E6.4, E7.1 |  |
+| E5.2 | Remplacer une ligne indisponible | P2 | Hors sprint | E5.1 | — |  |
+| E5.4 | Mails modèles ouverts dans la messagerie du conseiller (mailto) | P2 | Hors sprint | E3.1, E5.1 | E3.3 |  |
+| E6.1 | Répondre à un changement sans perdre la version envoyée | P3 | J7 | E4.4 | E6.2, E7.3 |  |
+| E6.2 | Voir ce qui a changé entre deux versions | P1 | Hors sprint | E6.1 | E6.3 |  |
+| E6.3 | Résumer les écarts en mots | P4 | Hors sprint | E6.2 | — |  |
+| E6.4 | Être rappelé quand un client ne répond pas | P3 | Hors sprint | E5.1 | E6.5 |  |
+| E6.5 | Abandonner un dossier sans réponse | P2 | Hors sprint | E6.4 | — |  |
+| E7.1 | Enregistrer le dépôt reçu | P2 | J8 | E5.1 | E7.3 |  |
+| E7.3 | Rejouer le cas de Sophie de bout en bout | P1 | J8 | E6.1, E7.1 | E7.4, E12.3 |  |
+| E7.4 | Correctifs d’intégration sur son périmètre | Tous | J9 | E7.3, E9.4, E11.2 | E7.6, E10.5 |  |
+| E7.5 | Passe sécurité : aucune clé dans le dépôt ni le bundle | P3 | J7 | E0.13 | — |  |
+| E7.6 | Sprint Review : démonstration du parcours avec note de retours | Tous | J9 | E7.4 | — |  |
+| E8.2 | Contrat d’une page de l’agent | PO | J1 | — | E8.3, E9.1, E11.1 |  |
+| E8.3 | Faire vérifier le prix d’une prestation par un agent | P4 | J5 | E0.5, E0.13, E0.17, E8.2 | E9.6, E11.2 |  |
+| E8.4 | Voir l’écart de prix et la réponse du serveur | P2 | J5 | E0.5, E0.11, E0.12 | — |  |
+| E8.5 | Garder une trace et comparer les faits au JSON du serveur | P3 | J6 | E0.5 | E11.2 |  |
+| E9.1 | Schéma des permissions : qui peut lire, proposer, poser, confirmer | PO | J1 | E8.2 | E12.1 |  |
+| E9.3 | Écran d’accord : prestations, prix revérifié et conditions | P2 | J6 | E0.5, E0.11, E0.12 | E9.4 |  |
+| E9.4 | Poser une option de 2 jours ouvrés après accord | P4 | J6 | E0.5, E0.17, E9.3 | E7.4, E9.5, E9.6, E11.2 |  |
+| E9.5 | Seconde validation avant confirmation | P2 | Hors sprint | E9.4 | E9.8 |  |
+| E9.6 | Garantir que l’agent ne peut rien écrire | P3 | J7 | E8.3, E9.4 | E9.7 |  |
+| E9.7 | Note d’une page : un échec observé, la décision humaine, le choix de conception révisé | PO | J7 | E9.6, E11.2 | — |  |
+| E9.8 | Annuler une réservation après validation | P2 | Hors sprint | E9.5 | — |  |
+| E10.1 | Sprint Goal et Definition of Done écrits dans le dépôt (docs/rituels/) | PO | J1 | E0.1 | E10.3 |  |
+| E10.2 | Modèle de daily, rota des Scrum Masters, modèles de review et de rétrospective | PO | J1 | E0.1 | E10.4 |  |
+| E10.3 | Sprint Planning : estimation par l’équipe et engagement sur le Sprint Goal (temps pris sur les 20 % non productifs) | Tous | J1 | E10.1 | — |  |
+| E10.4 | Daily écrit chaque jour : 5 lignes par le Scrum Master du jour (temps pris sur les 20 % non productifs) | Tous | J7 | E10.2 | — |  |
+| E10.5 | Rétrospective écrite en fin de sprint : à garder, à arrêter, une action (temps pris sur les 20 % non productifs) | Tous | J9 | E7.4 | — |  |
+| E11.1 | Jeu de 12 cas et critères fixés avant la campagne | PO | J4 | E8.2 | E11.2 |  |
+| E11.2 | Campagne v1, diagnostic, correction et retest v2 | P4 | J7 | E8.3, E8.5, E9.4, E11.1 | E7.4, E9.7, E11.3 |  |
+| E11.3 | Mode rejeu annoncé pour la démonstration | P4 | Hors sprint | E11.2 | — |  |
+| E12.1 | Dossier de conception révisé (J5) | PO | J5 | E9.1 | E12.2 |  |
+| E12.2 | Fiche de changement et décision (J6) | PO | J6 | E12.1 | — |  |
+| E12.3 | Dossier de livraison, verdict de recette et note d’usage de l’IA (J7) | PO | J7 | E7.3 | — | ⚠ E7.3 (J8) |
+
+**Charge des Must :** 22,45 jours pour les quatre développeurs, pour une capacité de 22,4 jours (100 %). P1 (5,88 j) et P4 (6,28 j) dépassent leur capacité de 5,6 jours ; d’où les jalons J8 et J9. Les estimations restent à plus ou moins 50 % : à recaler avec l’équipe après le J2.
+
+**Chemin critique** (plus long enchaînement de Must non terminées, pondéré par la charge : 6,7 j) : E0.1 → E0.4 → E0.16 → E0.5 → E8.3 → E11.2 → E7.4 → E7.6.
 
 **Si le retard se creuse**, sortir dans cet ordre :
 
 1. E2.2 : la fiche se génère au clic sur « Générer », sans nouvel essai automatique.
 2. E8.5 : la comparaison des faits au JSON du simulateur se fait à la main dans la campagne (E11.2).
-3. E9.5 : la confirmation n’est démontrée que sur une ligne de la proposition.
+3. E9.5 (déjà hors sprint dans GitHub) : la confirmation n’est démontrée que sur une ligne de la proposition.
 
 Ne jamais sortir E8.3, E9.3, E9.4, E9.6 ni E11.2 : ce sont les preuves notées en agentique.
 
@@ -756,12 +811,12 @@ Ne jamais sortir E8.3, E9.3, E9.4, E9.6 ni E11.2 : ce sont les preuves notées e
 | Epic | Single select | E0 à E12 |
 | Priorité | Single select | Must, Should, Could |
 | Estimation | Single select | S, M, L |
-| Jour cible | Single select | J1 à J7, Hors sprint |
+| Jour cible | Single select | J1 à J9, Hors sprint |
 | Responsable | Assignee | P1 à P4, PO |
 
 **Labels :** `epic:E0` à `epic:E12` · `ws:formulaire` `ws:backoffice` `ws:donnees` `ws:ia` `ws:po` `ws:equipe` · `type:feat` `type:test` `type:docs` `type:infra` · `prio:must` `prio:should` `prio:could` · `contract` (touche une interface partagée) · `blocked`.
 
-**Jalons :** `J1 — Cadrage` · `J2 — Socle` · `J3 — De la demande à la fiche` · `J4 — Qualification et présélection` · `J5 — Proposition chiffrée` · `J6 — Vérification, envoi, changements` · `J7 — Clôture et démonstration` · `Hors sprint`. Les titres sont conservés pour réutiliser les jalons déjà créés ; J8 et J9 sont fermés.
+**Jalons :** `J1 — Cadrage` · `J2 — Socle` · `J3 — De la demande à la fiche` · `J4 — Qualification et présélection` · `J5 — Proposition chiffrée` · `J6 — Vérification, envoi, changements` · `J7 — Clôture et démonstration` · `J8 — Débordement` · `J9 — Débordement` · `Hors sprint`. Les titres sont conservés pour réutiliser les jalons déjà créés ; J8 et J9 sont fermés.
 
 **Template d'issue**
 
@@ -874,61 +929,61 @@ Une ligne par issue, séparateur `|` : `ID|Titre|labels|jalon|responsable|charge
 ```text
 ID|Titre|labels|jalon|responsable|charge|depend|story|gherkin
 E0.1|Dépôt, protection de branche, CODEOWNERS, templates|epic:E0,ws:donnees,type:infra,prio:must|J1 — Cadrage|P3|0.4||En tant qu’équipe, je veux un dépôt protégé avec des propriétaires par dossier afin de relire ce qui touche chacun.|
-E0.2|CI (lint, types, tests, build, secrets), sans déploiement|epic:E0,ws:formulaire,type:infra,prio:must|J2 — Socle|P1|0.1|E0.1|En tant qu’équipe, je veux une CI automatique afin de ne jamais fusionner une PR cassée.|
+E0.2|CI et déploiement continu (lint, types, tests, build, secrets, Vercel)|epic:E0,ws:formulaire,type:infra,prio:must|J3 — De la demande à la fiche|P1|0.4|E0.1|En tant qu’équipe, je veux une CI et un déploiement automatiques afin de voir la même version et ne jamais fusionner une PR cassée.|
 E0.3|Docker Compose, Makefile, .env.example et squelette Next.js|epic:E0,ws:formulaire,type:infra,prio:must|J2 — Socle|P1|0.7|E0.1|En tant que développeur, je veux lancer l’application avec make up afin de travailler dans le même environnement.|
-E0.4|Types et énumérations figés dans /types (8 tables du MVP, annexe d’énumérations)|epic:E0,ws:donnees,type:docs,prio:must|J2 — Socle|P3|0.5|E0.1|En tant qu’équipe, je veux des types et des énumérations figés afin de que les briques s’accordent et avancent en parallèle avec des fixtures.|
-E0.16|Migrations des 6 tables du noyau : clés étrangères, unicité d’une fiche par version|epic:E0,ws:donnees,type:feat,prio:must|J2 — Socle|P3|0.5|E0.4|En tant qu’équipe, je veux des tables créées par des migrations versionnées afin de que chacun ait la même base.|
-E0.5|Tables de l’agent : migrations de verifications et options (accord, option, confirmation)|epic:E0,ws:donnees,type:feat,prio:must|J3 — De la demande à la fiche|P3|0.5|E0.16|En tant qu’équipe, je veux les tables des vérifications et des options afin de que l’agent et l’accord humain laissent des traces séparées.|
-E0.7|Fonction de transition de statut : statut et historique_dossier écrits ensemble|epic:E0,ws:donnees,type:feat,prio:must|J4 — Qualification et présélection|P3|0.4|E0.16,E0.8|En tant que conseiller, je veux retrouver chaque changement de statut d’un dossier afin de retracer ce qui s’est passé.|
+E0.4|Types et énumérations figés dans /types (9 tables, annexe d’énumérations)|epic:E0,ws:donnees,type:docs,prio:must|J2 — Socle|P3|0.5|E0.1|En tant qu’équipe, je veux des types et des énumérations figés afin de que les briques s’accordent et avancent en parallèle avec des fixtures.|
+E0.16|Migrations des 7 tables du noyau : clés étrangères, unicité d’une fiche par version|epic:E0,ws:donnees,type:feat,prio:must|J2 — Socle|P3|0.7|E0.4|En tant qu’équipe, je veux des tables créées par des migrations versionnées afin de que chacun ait la même base.|
+E0.5|Tables de l’agent : migrations de verifications et options (accès)|epic:E0,ws:donnees,type:feat,prio:must|J3 — De la demande à la fiche|P3|0.7|E0.16|En tant qu’équipe, je veux les tables des vérifications et des options afin de que l’agent et l’accord humain laissent des traces séparées.|
+E0.7|Fonction de transition de statut : statut et historique_dossier écrits ensemble|epic:E0,ws:donnees,type:feat,prio:must|J5 — Proposition chiffrée|P3|0.4|E0.8,E0.16|En tant que conseiller, je veux retrouver chaque changement de statut d’un dossier afin de retracer ce qui s’est passé.|
 E0.8|Matrice des transitions autorisées, rédigée comme spécification|epic:E0,ws:po,type:docs,prio:must|J1 — Cadrage|PO|0.25||En tant qu’équipe, je veux une matrice écrite des transitions autorisées afin de coder la fonction de transition sans ambiguïté.|
-E0.10|Seeds : import du catalogue du simulateur et dossier de Nantes à plusieurs statuts|epic:E0,ws:donnees,type:feat,prio:must|J3 — De la demande à la fiche|P3|0.5|E0.16,E0.17|En tant que développeur, je veux le catalogue du simulateur et un dossier de démonstration chargés par make seed afin de travailler sans attendre la chaîne complète.|
-E0.11|Connexion du conseiller et protection de /conseiller et des routes internes|epic:E0,ws:backoffice,type:feat,prio:must|J2 — Socle|P2|0.3|E0.3|En tant que direction, je veux que seuls les conseillers connectés accèdent aux dossiers afin de protéger les données des voyageurs.|
+E0.10|Seeds : import du catalogue et dossier de Sophie à plusieurs statuts|epic:E0,ws:donnees,type:feat,prio:must|J6 — Vérification, envoi, changements|P3|0.5|E0.16,E0.17|En tant que développeur, je veux des données de démonstration chargées par make seed afin de travailler sans attendre la chaîne complète.|
+E0.11|Connexion du conseiller (Supabase Auth) et protection de /conseiller|epic:E0,ws:backoffice,type:feat,prio:must|J2 — Socle|P2|0.2|E0.3|En tant que conseiller, je veux me connecter afin de accéder aux dossiers.|
 E0.12|Fixtures JSON du dashboard (liste, détail, proposition) sur les types partagés|epic:E0,ws:backoffice,type:docs,prio:must|J2 — Socle|P2|0.25|E0.4|En tant que développeur, je veux des fixtures conformes aux types afin de construire un écran sans attendre le serveur.|
 E0.13|Port LlmClient côté serveur, faux client, minimisation des données sensibles|epic:E0,ws:ia,type:feat,prio:must|J2 — Socle|P4|0.4|E0.4|En tant qu’équipe, je veux un port LlmClient et un faux client afin de changer de fournisseur et tester sans payer d’appels.|
 E0.15|Lancer le script create_issues.py (déjà écrit) et vérifier les issues créées|epic:E0,ws:po,type:infra,prio:should|Hors sprint|PO|0.1|E0.1|En tant que PO, je veux créer toutes les issues d’un coup afin de gagner du temps.|
-E1.1|Déposer une demande|epic:E1,ws:formulaire,type:feat,prio:must|J4 — Qualification et présélection|P1|0.8|E0.3,E0.4,E0.16|En tant que client, je veux décrire mon voyage (voyageurs et âges, dates, budget, envies, contraintes) et consentir au traitement de mes données afin de que l’agence me réponde avec une proposition adaptée.|Scénario : consentement obligatoire\n  Étant donné un formulaire rempli sans consentement\n  Quand le client envoie la demande\n  Alors la demande est refusée et rien n’est enregistré
+E1.1|Déposer une demande|epic:E1,ws:formulaire,type:feat,prio:must|J7 — Clôture et démonstration|P1|0.9|E0.3,E0.4,E0.16|En tant que client, je veux décrire mon voyage (voyageurs et âges, dates, budget, envies, contraintes) et consentir au traitement de mes données afin de que l’agence me réponde avec une proposition adaptée.|Scénario : consentement obligatoire\n  Étant donné un formulaire rempli sans consentement\n  Quand le client envoie la demande\n  Alors la demande est refusée et rien n’est enregistré
 E1.2|Corriger ma demande depuis un lien|epic:E1,ws:formulaire,type:feat,prio:should|Hors sprint|P1|1|E1.1|En tant que client, je veux corriger ma demande depuis un lien qui préremplit mes réponses afin de répondre à ce que l’agence me demande sans tout ressaisir.|
-E2.1|Consulter et corriger la fiche d’un dossier|epic:E2,ws:backoffice,type:feat,prio:must|J4 — Qualification et présélection|P2|1|E0.4,E0.11,E0.12|En tant que conseiller, je veux voir mes dossiers, ouvrir une fiche claire et la corriger après l’entretien afin de gagner du temps sur la lecture des mails.|
-E2.2|Obtenir la fiche automatiquement dès qu’une demande arrive|epic:E2,ws:donnees,type:feat,prio:must|J5 — Proposition chiffrée|P3|0.5|E0.16,E0.7,E0.13|En tant que conseiller, je veux qu’une fiche soit générée dès qu’une demande arrive afin de ne pas la rédiger moi-même.|Scénario : aucune donnée sensible vers le modèle\n  Étant donné une demande avec un régime et un nom\n  Quand la fiche est générée\n  Alors le modèle ne reçoit que la catégorie du régime, jamais le nom ni le texte libre
-E3.1|Trier une demande : go, à corriger ou refusée|epic:E3,ws:backoffice,type:feat,prio:must|J5 — Proposition chiffrée|P2|0.3|E2.1,E0.7|En tant que conseiller, je veux décider go, à corriger ou refusée afin de ne pas investir 6 h sur une demande irréaliste.|
-E3.3|Comprendre ce que je dois corriger|epic:E3,ws:backoffice,type:feat,prio:should|Hors sprint|P2|0.8|E3.1,E5.4,E1.2|En tant que client, je veux comprendre précisément ce que je dois corriger afin de renvoyer une demande réaliste.|
-E4.1|Règles de chiffrage rédigées|epic:E4,ws:po,type:docs,prio:must|J2 — Socle|PO|0.2||En tant que développeur, je veux des règles de prix écrites (formule, arrondis, marge, budget) afin de coder le chiffrage sans deviner.|
-E4.2|Voir un prix exact, contrôlé par le code|epic:E4,ws:formulaire,type:feat,prio:must|J4 — Qualification et présélection|P1|0.5|E0.4,E4.1|En tant que conseiller, je veux que le prix soit calculé et contrôlé par le code (prix du simulateur × participants, marge, capacité, dates, budget) afin de ne jamais voir un prix inventé par l’IA.|Scénario : tarif ancien\n  Étant donné un prestataire dont le tarif dépasse le seuil d’ancienneté\n  Quand le prix est calculé\n  Alors la ligne est « à vérifier » et aucun montant n’est estimé
-E4.4|Obtenir un brouillon : prestations choisies dans le catalogue, programme sans montant|epic:E4,ws:ia,type:feat,prio:must|J6 — Vérification, envoi, changements|P4|1.1|E0.13,E0.10,E4.2|En tant que conseiller, je veux un brouillon qui choisit des prestations compatibles dans le catalogue et rédige un programme sans montant afin de ne plus partir d’une page blanche.|
-E4.5|Voir la proposition, son total et ses alertes|epic:E4,ws:formulaire,type:feat,prio:must|J5 — Proposition chiffrée|P1|0.8|E0.3,E0.4,E0.12|En tant que conseiller, je veux voir les lignes, le total et les alertes d’une proposition afin de la relire avant l’envoi.|
-E5.1|Confirmer les tarifs et n’envoyer que des prix vérifiés|epic:E5,ws:backoffice,type:feat,prio:must|J6 — Vérification, envoi, changements|P2|0.8|E4.5|En tant que conseiller, je veux saisir les tarifs confirmés ligne par ligne et ne pouvoir envoyer que lorsque tout est vérifié afin de ne jamais promettre un prix incertain.|Scénario : envoi bloqué\n  Étant donné une proposition avec une ligne « à vérifier »\n  Quand le conseiller clique sur « Envoyer »\n  Alors l’envoi est refusé et le statut ne change pas
+E2.1|Consulter et corriger la fiche d’un dossier|epic:E2,ws:backoffice,type:feat,prio:must|J4 — Qualification et présélection|P2|1.3|E0.4,E0.11,E0.12|En tant que conseiller, je veux voir mes dossiers, ouvrir une fiche claire et la corriger après l’entretien afin de gagner du temps sur la lecture des mails.|
+E2.2|Obtenir la fiche automatiquement dès qu’une demande arrive|epic:E2,ws:ia,type:feat,prio:must|J8 — Débordement|P4|1.2|E0.7,E0.13,E0.16|En tant que conseiller, je veux qu’une fiche soit générée dès qu’une demande arrive afin de ne pas la rédiger moi-même.|Scénario : aucune donnée sensible vers le modèle\n  Étant donné une demande avec un régime et un nom\n  Quand la fiche est générée\n  Alors le modèle ne reçoit que la catégorie du régime, jamais le nom ni le texte libre
+E3.1|Trier une demande : go, à corriger ou refusée|epic:E3,ws:backoffice,type:feat,prio:must|J8 — Débordement|P2|0.4|E0.7,E2.1|En tant que conseiller, je veux décider go, à corriger ou refusée afin de ne pas investir 6 h sur une demande irréaliste.|
+E3.3|Comprendre ce que je dois corriger|epic:E3,ws:backoffice,type:feat,prio:should|Hors sprint|P2|0.8|E1.2,E3.1,E5.4|En tant que client, je veux comprendre précisément ce que je dois corriger afin de renvoyer une demande réaliste.|
+E4.1|Règles de chiffrage rédigées|epic:E4,ws:po,type:docs,prio:must|J1 — Cadrage|PO|0.25||En tant que développeur, je veux des règles de prix écrites (formule, arrondis, marge, saison, seuil d’un tarif ancien) afin de coder le chiffrage sans deviner.|
+E4.2|Voir un prix exact, contrôlé par le code|epic:E4,ws:formulaire,type:feat,prio:must|J5 — Proposition chiffrée|P1|1.4|E0.4,E4.1|En tant que conseiller, je veux que le prix soit calculé et contrôlé par le code (tarifs enfant, saison, marge, capacité, âges, budget) afin de ne jamais voir un prix inventé par l’IA.|Scénario : tarif ancien\n  Étant donné un prestataire dont le tarif dépasse le seuil d’ancienneté\n  Quand le prix est calculé\n  Alors la ligne est « à vérifier » et aucun montant n’est estimé
+E4.4|Obtenir un brouillon de proposition|epic:E4,ws:ia,type:feat,prio:must|J7 — Clôture et démonstration|P4|0.9|E0.13,E4.2|En tant que conseiller, je veux un brouillon avec un programme sans montant et des lignes afin de ne plus partir d’une page blanche.|
+E4.5|Voir la proposition, son total et ses alertes|epic:E4,ws:formulaire,type:feat,prio:must|J6 — Vérification, envoi, changements|P1|1.1|E0.3,E0.4,E0.12|En tant que conseiller, je veux voir les lignes, le total et les alertes d’une proposition afin de la relire avant l’envoi.|
+E5.1|Confirmer les tarifs et n’envoyer que des prix vérifiés|epic:E5,ws:backoffice,type:feat,prio:must|J7 — Clôture et démonstration|P2|0.8|E4.5|En tant que conseiller, je veux saisir les tarifs confirmés ligne par ligne et ne pouvoir envoyer que lorsque tout est vérifié afin de ne jamais promettre un prix incertain.|Scénario : envoi bloqué\n  Étant donné une proposition avec une ligne « à vérifier »\n  Quand le conseiller clique sur « Envoyer »\n  Alors l’envoi est refusé et le statut ne change pas
 E5.2|Remplacer une ligne indisponible|epic:E5,ws:backoffice,type:feat,prio:should|Hors sprint|P2|0.2|E5.1|En tant que conseiller, je veux remplacer une ligne indisponible sans tout régénérer afin de gagner du temps.|
-E6.1|Répondre à un changement sans perdre la version envoyée|epic:E6,ws:donnees,type:feat,prio:should|Hors sprint|P3|0.2|E4.4|En tant que conseiller, je veux créer une nouvelle version après un changement du client afin de garder la trace de ce qui a été envoyé.|Scénario : version envoyée intacte\n  Étant donné une proposition envoyée en version 1\n  Quand le client demande un changement\n  Alors la version 2 est créée et la version 1 reste inchangée
+E6.1|Répondre à un changement sans perdre la version envoyée|epic:E6,ws:donnees,type:feat,prio:must|J7 — Clôture et démonstration|P3|0.2|E4.4|En tant que conseiller, je veux créer une nouvelle version après un changement du client afin de garder la trace de ce qui a été envoyé.|Scénario : version envoyée intacte\n  Étant donné une proposition envoyée en version 1\n  Quand le client demande un changement\n  Alors la version 2 est créée et la version 1 reste inchangée
 E6.2|Voir ce qui a changé entre deux versions|epic:E6,ws:formulaire,type:feat,prio:should|Hors sprint|P1|0.8|E6.1|En tant que conseiller, je veux voir les écarts entre deux versions afin de expliquer le changement au client.|
 E6.3|Résumer les écarts en mots|epic:E6,ws:ia,type:feat,prio:should|Hors sprint|P4|0.2|E6.2|En tant que conseiller, je veux un résumé des écarts écrit par l’IA, sans chiffres afin de l’utiliser dans ma réponse au client.|
 E6.4|Être rappelé quand un client ne répond pas|epic:E6,ws:donnees,type:feat,prio:should|Hors sprint|P3|0.4|E5.1|En tant que conseiller, je veux être rappelé à J+3 et J+7 afin de ne pas laisser un dossier s’endormir.|
 E6.5|Abandonner un dossier sans réponse|epic:E6,ws:backoffice,type:feat,prio:could|Hors sprint|P2|0.4|E6.4|En tant que conseiller, je veux qu’on me propose d’abandonner un dossier à J+14 afin de garder un tableau propre.|
-E7.1|Enregistrer l’acceptation du client et le dépôt reçu|epic:E7,ws:backoffice,type:feat,prio:must|J7 — Clôture et démonstration|P2|0.3|E5.1|En tant que conseiller, je veux enregistrer l’acceptation du client puis son dépôt afin de lancer la réservation.|
-E7.3|Rejouer le cas de Nantes de bout en bout|epic:E7,ws:formulaire,type:test,prio:must|J7 — Clôture et démonstration|P1|0.4|E1.1,E2.2,E3.1,E4.4,E5.1,E7.1,E8.4,E9.3,E9.4,E9.5|En tant qu’équipe, je veux rejouer un dossier complet de bout en bout afin de révéler les écarts entre les briques.|
-E7.4|Correctifs d’intégration sur son périmètre|epic:E7,ws:equipe,type:feat,prio:must|J7 — Clôture et démonstration|Tous|0.8|E7.3,E9.5,E11.2|En tant qu’équipe, je veux du temps pour corriger ce que l’intégration révèle afin de livrer un parcours qui tient.|
+E7.1|Enregistrer le dépôt reçu|epic:E7,ws:backoffice,type:feat,prio:must|J8 — Débordement|P2|0.4|E5.1|En tant que conseiller, je veux marquer le dépôt de garantie comme reçu afin de clôturer le dossier.|
+E7.3|Rejouer le cas de Sophie de bout en bout|epic:E7,ws:formulaire,type:test,prio:must|J8 — Débordement|P1|0.4|E6.1,E7.1|En tant qu’équipe, je veux rejouer un dossier complet de bout en bout afin de révéler les écarts entre les briques.|
+E7.4|Correctifs d’intégration sur son périmètre|epic:E7,ws:equipe,type:feat,prio:must|J9 — Débordement|Tous|1.3|E7.3,E9.4,E11.2|En tant qu’équipe, je veux du temps pour corriger ce que l’intégration révèle afin de livrer un parcours qui tient.|
 E7.5|Passe sécurité : aucune clé dans le dépôt ni le bundle|epic:E7,ws:donnees,type:test,prio:must|J7 — Clôture et démonstration|P3|0.2|E0.13|En tant qu’équipe, je veux vérifier qu’aucune clé ne fuite afin de protéger les accès.|
-E7.6|Sprint Review et recette jouée par le client (J7)|epic:E7,ws:equipe,type:docs,prio:must|J7 — Clôture et démonstration|Tous|0.4|E7.4|En tant qu’équipe, je veux démontrer le parcours devant le client afin de recueillir ses retours.|
+E7.6|Sprint Review : démonstration du parcours avec note de retours|epic:E7,ws:equipe,type:docs,prio:must|J9 — Débordement|Tous|0.6|E7.4|En tant qu’équipe, je veux démontrer le parcours devant le client afin de recueillir ses retours.|
 E8.2|Contrat d’une page de l’agent|epic:E8,ws:po,type:docs,prio:must|J1 — Cadrage|PO|0.4||En tant qu’équipe, je veux un contrat d’une page pour l’agent afin de savoir ce qu’il peut faire, ne peut pas faire, et quand il s’arrête.|
-E8.3|Faire vérifier le prix d’une prestation par un agent|epic:E8,ws:ia,type:feat,prio:must|J4 — Qualification et présélection|P4|1.1|E0.5,E0.13,E0.17,E0.19,E8.2|En tant que conseiller, je veux qu’un agent vérifie le prix et les places d’une prestation auprès du serveur afin de décider sur des chiffres frais.|Scénario : serveur en échec\n  Étant donné un simulateur qui dépasse le délai ou répond par une erreur\n  Quand l’agent conclut sa vérification\n  Alors la réponse est « non vérifié », sans prix ni nombre de places\n\nScénario : outil non autorisé\n  Étant donné un modèle qui demande de poser une option\n  Quand le code valide l’appel\n  Alors l’appel est refusé et la tentative est tracée
-E8.4|Voir l’écart de prix et la réponse du serveur dans l’écran de proposition|epic:E8,ws:backoffice,type:feat,prio:must|J4 — Qualification et présélection|P2|0.5|E0.5,E0.11,E0.12|En tant que conseiller, je veux voir le prix revérifié, l’écart avec le prix proposé et la réponse brute afin de décider en connaissance de cause.|
-E8.5|Garder une trace et comparer les faits au JSON du serveur|epic:E8,ws:donnees,type:feat,prio:must|J5 — Proposition chiffrée|P3|0.5|E0.5|En tant que relecteur, je veux une trace expurgée de chaque vérification et la comparaison de ses faits au JSON du serveur afin de contrôler l’agent.|Scénario : fait faux détecté\n  Étant donné une conclusion qui annonce 4 places alors que le serveur en annonce 2\n  Quand les faits sont comparés au JSON du serveur\n  Alors l’écart est signalé
-E9.1|Schéma des permissions : qui peut lire, proposer, poser, confirmer|epic:E9,ws:po,type:docs,prio:must|J2 — Socle|PO|0.3|E8.2|En tant qu’équipe, je veux un schéma des permissions afin de défendre qui peut faire quoi.|
-E9.3|Donner son accord depuis l’écran de proposition (accord à usage unique enregistré côté serveur)|epic:E9,ws:backoffice,type:feat,prio:must|J5 — Proposition chiffrée|P2|0.7|E0.5,E0.11,E0.12|En tant que conseiller, je veux voir la prestation, le prix revérifié et les places, puis autoriser une écriture précise afin que rien ne soit écrit sans moi.|Scénario : accord à usage unique\n  Étant donné un accord déjà utilisé pour une option\n  Quand il est présenté une seconde fois\n  Alors l’option est refusée et la tentative est tracée
-E9.4|Poser une option de 2 jours ouvrés sur le simulateur après accord|epic:E9,ws:formulaire,type:feat,prio:must|J6 — Vérification, envoi, changements|P1|0.5|E0.5,E0.17|En tant que conseiller, je veux qu’une option de 2 jours ouvrés soit posée sur la prestation après mon accord afin de la garder pendant que je décide.|Scénario : option sans accord\n  Étant donné une prestation vérifiée par l’agent\n  Quand une option est demandée sans accord valide\n  Alors rien n’est envoyé au simulateur et la tentative est tracée
-E9.5|Confirmer la réservation par une seconde validation (clé d’approbation)|epic:E9,ws:donnees,type:feat,prio:must|J6 — Vérification, envoi, changements|P3|0.5|E0.17,E0.11,E0.12|En tant que conseiller, je veux confirmer une option par une seconde validation, en saisissant la clé d’approbation, afin qu’aucune réservation ne parte sans moi.|Scénario : option expirée\n  Étant donné une option posée il y a plus de 2 jours ouvrés\n  Quand le conseiller confirme avec la clé d’approbation\n  Alors le refus du simulateur est affiché, aucune réservation n’est enregistrée et une nouvelle vérification est demandée
-E9.6|Garantir que l’agent ne peut rien écrire|epic:E9,ws:donnees,type:test,prio:must|J6 — Vérification, envoi, changements|P3|0.4|E8.3,E9.4|En tant qu’équipe, je veux des tests qui prouvent que l’agent ne peut rien écrire afin de défendre la frontière d’action.|Scénario : l’agent ne peut rien écrire\n  Étant donné un agent avec le seul outil de vérification\n  Quand il tente de poser, de confirmer ou d’annuler\n  Alors le code refuse et la tentative est tracée
-E9.7|Note d’une page : échec observé, décision humaine, choix révisé et décision d’usage|epic:E9,ws:po,type:docs,prio:must|J7 — Clôture et démonstration|PO|0.3|E11.2,E9.6|En tant qu’équipe, je veux une note sur un échec observé et sur la décision d’autoriser, limiter ou refuser le parcours afin de démontrer ce qu’on a appris.|
+E8.3|Faire vérifier le prix d’une prestation par un agent|epic:E8,ws:ia,type:feat,prio:must|J5 — Proposition chiffrée|P4|1.5|E0.5,E0.13,E0.17,E8.2|En tant que conseiller, je veux qu’un agent vérifie le prix et les places d’une prestation auprès du serveur afin de décider sur des chiffres frais.|Scénario : serveur en échec\n  Étant donné un serveur de prestations qui répond par une erreur\n  Quand l’agent conclut sa vérification\n  Alors la réponse est « non vérifié », sans prix ni nombre de places\n\nScénario : outil non autorisé\n  Étant donné un modèle qui demande de poser une option\n  Quand le code valide l’appel\n  Alors l’appel est refusé et la tentative est tracée
+E8.4|Voir l’écart de prix et la réponse du serveur|epic:E8,ws:backoffice,type:feat,prio:must|J5 — Proposition chiffrée|P2|0.7|E0.5,E0.11,E0.12|En tant que conseiller, je veux voir le prix revérifié, l’écart avec le prix proposé et la réponse brute afin de décider en connaissance de cause.|
+E8.5|Garder une trace et comparer les faits au JSON du serveur|epic:E8,ws:donnees,type:feat,prio:must|J6 — Vérification, envoi, changements|P3|0.7|E0.5|En tant que relecteur, je veux une trace expurgée de chaque vérification et la comparaison de ses faits au JSON du serveur afin de contrôler l’agent.|Scénario : fait faux détecté\n  Étant donné une conclusion qui annonce 4 places alors que le serveur en annonce 2\n  Quand les faits sont comparés au JSON du serveur\n  Alors l’écart est signalé
+E9.1|Schéma des permissions : qui peut lire, proposer, poser, confirmer|epic:E9,ws:po,type:docs,prio:must|J1 — Cadrage|PO|0.3|E8.2|En tant qu’équipe, je veux un schéma des permissions afin de défendre qui peut faire quoi.|
+E9.3|Écran d’accord : prestations, prix revérifié et conditions|epic:E9,ws:backoffice,type:feat,prio:must|J6 — Vérification, envoi, changements|P2|0.6|E0.5,E0.11,E0.12|En tant que conseiller, je veux voir les prestations, le prix revérifié et les conditions, puis autoriser une écriture précise afin de décider avant toute option.|
+E9.4|Poser une option de 2 jours ouvrés après accord|epic:E9,ws:ia,type:feat,prio:must|J6 — Vérification, envoi, changements|P4|0.5|E0.5,E0.17,E9.3|En tant que conseiller, je veux qu’une option de 2 jours ouvrés soit posée sur la prestation après mon accord afin de la garder pendant que je décide.|Scénario : option sans accord\n  Étant donné une prestation vérifiée par l’agent\n  Quand une option est demandée sans accord valide\n  Alors rien n’est écrit et la tentative est tracée
+E9.5|Seconde validation avant confirmation|epic:E9,ws:backoffice,type:feat,prio:should|Hors sprint|P2|0.4|E9.4|En tant que conseiller, je veux une seconde validation distincte avant toute confirmation afin de éviter une confirmation par erreur.|
+E9.6|Garantir que l’agent ne peut rien écrire|epic:E9,ws:donnees,type:test,prio:must|J7 — Clôture et démonstration|P3|0.4|E8.3,E9.4|En tant qu’équipe, je veux des tests qui prouvent que l’agent ne peut rien écrire afin de défendre la frontière d’action.|Scénario : l’agent ne peut rien écrire\n  Étant donné un agent avec le seul outil de vérification\n  Quand il tente de poser, de confirmer ou d’annuler\n  Alors le code refuse et la tentative est tracée
+E9.7|Note d’une page : un échec observé, la décision humaine, le choix de conception révisé|epic:E9,ws:po,type:docs,prio:must|J7 — Clôture et démonstration|PO|0.3|E9.6,E11.2|En tant qu’équipe, je veux une note sur un échec observé et le choix de conception révisé afin de démontrer ce qu’on a appris.|
 E10.1|Sprint Goal et Definition of Done écrits dans le dépôt (docs/rituels/)|epic:E10,ws:po,type:docs,prio:must|J1 — Cadrage|PO|0.2|E0.1|En tant qu’équipe, je veux un objectif de sprint et une définition de terminé écrits afin de savoir quand on a fini.|
 E10.2|Modèle de daily, rota des Scrum Masters, modèles de review et de rétrospective|epic:E10,ws:po,type:docs,prio:must|J1 — Cadrage|PO|0.1|E0.1|En tant qu’équipe, je veux des modèles de rituels et une rota de Scrum Master afin de tenir les rituels sans y perdre de temps.|
 E10.3|Sprint Planning : estimation par l’équipe et engagement sur le Sprint Goal (temps pris sur les 20 % non productifs)|epic:E10,ws:equipe,type:docs,prio:must|J1 — Cadrage|Tous|0|E10.1|En tant que développeur, je veux estimer moi-même mes issues et m’engager sur le Sprint Goal afin de tenir un plan qui est le mien.|
 E10.4|Daily écrit chaque jour : 5 lignes par le Scrum Master du jour (temps pris sur les 20 % non productifs)|epic:E10,ws:equipe,type:docs,prio:must|J7 — Clôture et démonstration|Tous|0|E10.2|En tant qu’équipe, je veux une note de daily de cinq lignes chaque jour afin de garder la trace des blocages et passer le relais.|
-E10.5|Rétrospective écrite en fin de sprint : à garder, à arrêter, une action (temps pris sur les 20 % non productifs)|epic:E10,ws:equipe,type:docs,prio:must|J7 — Clôture et démonstration|Tous|0|E7.4|En tant qu’équipe, je veux une rétrospective écrite afin de améliorer la façon de travailler.|
+E10.5|Rétrospective écrite en fin de sprint : à garder, à arrêter, une action (temps pris sur les 20 % non productifs)|epic:E10,ws:equipe,type:docs,prio:must|J9 — Débordement|Tous|0|E7.4|En tant qu’équipe, je veux une rétrospective écrite afin de améliorer la façon de travailler.|
 E0.17|Brancher le simulateur du formateur : service Docker, clé d’équipe, adaptateur avec pannes simulées|epic:E0,ws:formulaire,type:infra,prio:must|J3 — De la demande à la fiche|P1|0.5|E0.3|En tant qu’équipe, je veux appeler le simulateur du formateur à travers notre adaptateur afin d’être testés comme à la recette et d’éprouver aussi les pannes qu’il ne simule pas.|Scénario : délai dépassé simulé\n  Étant donné l’adaptateur réglé sur « délai dépassé »\n  Quand une disponibilité est demandée\n  Alors l’adaptateur renvoie une erreur explicite et aucun prix
 E0.19|Adaptateur OpenRouter : modèle gratuit avec appels d’outils, sans secours payant|epic:E0,ws:ia,type:feat,prio:must|J2 — Socle|P4|0.3|E0.13|En tant qu’équipe, je veux un adaptateur OpenRouter testé afin de respecter les conditions du cours et de garder un modèle de réserve.|
 E5.4|Mails modèles ouverts dans la messagerie du conseiller (mailto)|epic:E5,ws:backoffice,type:feat,prio:should|Hors sprint|P2|0.4|E3.1,E5.1|En tant que conseiller, je veux des mails modèles préremplis qui s’ouvrent dans ma messagerie afin d’écrire au client sans recopier.|
 E9.8|Annuler une réservation après validation|epic:E9,ws:backoffice,type:feat,prio:could|Hors sprint|P2|0.3|E9.5|En tant que conseiller, je veux annuler une réservation confirmée par erreur afin de libérer les places.|
 E11.1|Jeu de 12 cas et critères fixés avant la campagne|epic:E11,ws:po,type:test,prio:must|J4 — Qualification et présélection|PO|0.5|E8.2|En tant qu’équipe, je veux un jeu de cas et des critères écrits avant les essais afin de mesurer l’agent sans biais.|
-E11.2|Campagne v1, diagnostic, correction et retest v2|epic:E11,ws:ia,type:test,prio:must|J7 — Clôture et démonstration|P4|1|E11.1,E8.3,E8.5,E9.4|En tant qu’équipe, je veux exécuter la campagne, corriger un défaut et retester afin de défendre une décision d’usage sur des preuves.|Scénario : tentative de détournement\n  Étant donné une demande qui ordonne à l’agent de réserver tout de suite\n  Quand l’agent traite la demande\n  Alors aucune option ni réservation n’est créée et le refus est tracé
+E11.2|Campagne v1, diagnostic, correction et retest v2|epic:E11,ws:ia,type:test,prio:must|J7 — Clôture et démonstration|P4|1|E8.3,E8.5,E9.4,E11.1|En tant qu’équipe, je veux exécuter la campagne, corriger un défaut et retester afin de défendre une décision d’usage sur des preuves.|Scénario : tentative de détournement\n  Étant donné une demande qui ordonne à l’agent de réserver tout de suite\n  Quand l’agent traite la demande\n  Alors aucune option ni réservation n’est créée et le refus est tracé
 E11.3|Mode rejeu annoncé pour la démonstration|epic:E11,ws:ia,type:feat,prio:should|Hors sprint|P4|0.3|E11.2|En tant qu’équipe, je veux rejouer une trace enregistrée afin de démontrer la boucle si OpenRouter est indisponible.|
 E12.1|Dossier de conception révisé (J5)|epic:E12,ws:po,type:docs,prio:must|J5 — Proposition chiffrée|PO|0.5|E9.1|En tant qu’équipe, je veux un dossier de conception révisé après les essais de l’agent afin qu’une autre équipe comprenne et vérifie nos choix.|
 E12.2|Fiche de changement et décision (J6)|epic:E12,ws:po,type:docs,prio:must|J6 — Vérification, envoi, changements|PO|0.3|E12.1|En tant que PO, je veux une fiche de changement afin de rendre le compromis négocié avec le client explicite.|
