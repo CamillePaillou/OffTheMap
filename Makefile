@@ -5,7 +5,7 @@ DB_CONTAINER := supabase_db_off-the-map
 APP_PORT ?= 3000
 
 .DEFAULT_GOAL := help
-.PHONY: help up down restart logs status migrate seed reset lint typecheck build
+.PHONY: help up down restart logs status migrate seed reset test-db lint typecheck build
 
 help: ## Liste les commandes
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
@@ -47,6 +47,9 @@ seed: ## Charge les données de démonstration (supabase/seed.sql)
 
 reset: ## Recrée la base : migrations puis seed (efface les données locales)
 	$(SUPABASE) db reset
+
+test-db: ## Vérifie les contraintes et les accès du schéma (transaction annulée, la base n'est pas modifiée)
+	docker exec -i $(DB_CONTAINER) psql -q -U postgres -d postgres < supabase/scripts/test_contraintes.sql
 
 lint: node_modules ## Lint
 	npm run lint

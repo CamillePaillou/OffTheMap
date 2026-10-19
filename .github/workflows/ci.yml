@@ -67,3 +67,30 @@ jobs:
         uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Applique les migrations sur un PostgreSQL nu (auth et rôles Supabase remplacés par un stub),
+  # puis vérifie les contraintes et les accès du schéma.
+  db:
+    name: db
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v7
+      - name: Stub Supabase (schéma auth, rôles)
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/stub_supabase.sql
+      - name: Migrations
+        run: for f in supabase/migrations/*.sql; do echo "$f"; psql -v ON_ERROR_STOP=1 -q -f "$f"; done
+      - name: Tests du schéma
+        run: psql -q -f supabase/scripts/test_contraintes.sql
