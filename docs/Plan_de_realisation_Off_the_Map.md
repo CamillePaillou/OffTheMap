@@ -9,31 +9,6 @@
 
 ---
 
-## Révision du 19 octobre 2026
-
-**Pourquoi.** Le cours fournit un simulateur de prestataires, impose OpenRouter avec des modèles gratuits et évalue l’agent sur une campagne de 12 cas. L’équipe ne déploie plus sur Vercel : tout tourne dans Docker. Les mails passent par la messagerie du conseiller (liens `mailto`, comme le site existant de l’agence). Les Must dépassaient la capacité (104 %, fin estimée à 8,6 jours).
-
-**Ce qui change dans le périmètre.**
-
-- Le serveur fictif maison est remplacé par le simulateur du formateur, appelé à travers notre adaptateur, qui ajoute les pannes que le simulateur ne sait pas produire (délai dépassé, erreur serveur).
-- Le catalogue est celui du simulateur (Nantes, Lyon, Lille). Le cas de démonstration devient un week-end créatif à Nantes, sans voiture, pour deux voyageurs.
-- L’option et la confirmation se font **après l’acceptation du client et le dépôt**, au moment de réserver : une option de 30 minutes ne peut pas couvrir le délai de réponse du client.
-- La confirmation (seconde validation avec la clé d’approbation) devient un Must : le brief « option » la demande.
-- Sorties ou fusionnées : présélection IA séparée, serveur fictif, catalogue CSV, règles d’accès par ligne, jeton d’approbation séparé, mails automatiques et Cal.com, comparaison de deux essais (absorbée par la campagne).
-- Passées en Should : nouvelle version de proposition (E6.1) et mails modèles en `mailto` (E5.4).
-- Ajoutées : simulateur branché, adaptateur OpenRouter, campagne de 12 cas, dossiers du cours (J5, J6, J7), mails modèles en `mailto`, annulation (Could), mode rejeu (Should).
-
-**Résultat.** Must des développeurs : 18,45 jours pour 22,4 jours de capacité (82 %), fin estimée vers 7,5 jours.
-
-**Actions à faire dans GitHub** (le script ne modifie pas les issues existantes) :
-
-1. Fermer comme *not planned* les 10 issues sorties : E0.6, E0.9, E0.14, E3.2, E4.3, E5.3, E7.2, E8.1, E8.6, E9.2 (liste et remplaçantes en fin de section 7).
-2. Mettre à jour à la main titre, corps, priorité, responsable ou jalon des 32 issues modifiées : E0.2, E0.3, E0.4, E0.16, E0.5, E0.10, E0.11, E1.1, E2.1, E2.2, E3.1, E3.3, E4.1, E4.2, E4.4, E4.5, E5.1, E6.1, E6.4, E7.1, E7.3, E7.4, E7.6, E8.2, E8.3, E8.4, E8.5, E9.3, E9.4, E9.5, E9.6, E9.7.
-3. Créer les 10 nouvelles issues : `python scripts/create_issues.py --plan docs/Plan_de_realisation_Off_the_Map.md --check`, puis la même commande avec `--repo CamillePaillou/OffTheMap --apply`.
-4. Fermer les jalons J8 et J9, ajouter les valeurs E11 et E12 au champ Epic du tableau.
-
----
-
 
 ## Sommaire
 
