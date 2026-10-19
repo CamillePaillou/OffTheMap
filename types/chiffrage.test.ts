@@ -6,6 +6,7 @@ import { ALERTES_BLOQUANTES, CODES_ALERTE, REGLES_CHIFFRAGE, type CodeAlerte } f
 interface Ligne {
   prestation_id: string; type: 'transport' | 'hebergement' | 'activite'; capacite: number; actif: boolean;
   date: string; participants: number; prix_unitaire_catalogue_cents: number; prix_confirme_cents: number | null;
+  statut: 'a_verifier' | 'confirme' | 'indisponible' | 'remplacee' | 'reservee';
 }
 interface Cas {
   id: string; titre: string;
@@ -16,18 +17,20 @@ const exemples = JSON.parse(readFileSync(join(__dirname, '../docs/specs/chiffrag
 
 /** Lecture littérale des règles de docs/specs/chiffrage.md, pour vérifier que les exemples les respectent. */
 function regles(e: Cas['entree']) {
+  const horsTotal: readonly string[] = REGLES_CHIFFRAGE.statutsHorsTotal;
   const totaux = e.lignes.map((l) => (l.prix_confirme_cents ?? l.prix_unitaire_catalogue_cents) * l.participants);
-  const total = totaux.reduce((a, b) => a + b, 0) + REGLES_CHIFFRAGE.margeCents;
+  const total = totaux.reduce((a, b, i) => (horsTotal.includes(e.lignes[i]!.statut) ? a : a + b), 0) + REGLES_CHIFFRAGE.margeCents;
   const alertes = new Set<CodeAlerte>();
   const veilleDepart = new Date(Date.parse(e.date_fin) - 86_400_000).toISOString().slice(0, 10);
-  for (const l of e.lignes) {
+  const controlees = e.lignes.filter((l) => l.statut !== 'remplacee');
+  for (const l of controlees) {
     if (l.participants > l.capacite) alertes.add('capacite_depassee');
     if (l.participants > e.voyageurs) alertes.add('participants_superieurs_voyageurs');
     if (!l.actif) alertes.add('prestation_inactive');
     const fin = l.type === 'hebergement' ? veilleDepart : e.date_fin;
     if (l.date < e.date_debut || l.date > fin) alertes.add('date_hors_sejour');
   }
-  const nuits = new Set(e.lignes.filter((l) => l.type === 'hebergement').map((l) => l.date)).size;
+  const nuits = new Set(controlees.filter((l) => l.type === 'hebergement').map((l) => l.date)).size;
   if (nuits !== e.nb_nuits) alertes.add('nuits_incoherentes');
   if (e.budget_reference_cents !== null) {
     if (total > e.budget_reference_cents) alertes.add('budget_depasse');
@@ -53,6 +56,10 @@ describe('exemples de chiffrage', () => {
       for (const l of c.entree.lignes) expect(Number.isInteger(l.prix_unitaire_catalogue_cents)).toBe(true);
       expect(Number.isInteger(c.attendu.total_cents)).toBe(true);
     }
+  });
+  it('affiche les montants en français, avec une espace insécable avant €', () => {
+    const f = new Intl.NumberFormat(REGLES_CHIFFRAGE.locale, { style: 'currency', currency: REGLES_CHIFFRAGE.devise });
+    expect(f.format(35800 / 100)).toBe('358,00\u00a0€');
   });
   it('classe les alertes de séjour et de capacité comme bloquantes, le budget non', () => {
     expect(ALERTES_BLOQUANTES).toContain('capacite_depassee');
