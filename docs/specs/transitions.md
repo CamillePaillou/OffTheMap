@@ -1,6 +1,6 @@
 # Matrice des transitions autorisées (E0.8)
 
-**Version 1 · 19 octobre 2026 · à relire par P3.** Source de vérité : `types/transitions.ts`, utilisée par la fonction de transition (E0.7). Un test vérifie que ce document et le fichier disent la même chose : modifier les deux dans la même PR.
+Source de vérité : `types/transitions.ts`, utilisée par la fonction de transition (E0.7). Un test vérifie que ce document et le fichier disent la même chose : modifier les deux dans la même PR.
 
 **Règles communes**
 
