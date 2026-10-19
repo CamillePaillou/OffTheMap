@@ -1,0 +1,58 @@
+SUPABASE := npx supabase
+DB_CONTAINER := supabase_db_off-the-map
+
+-include .env
+APP_PORT ?= 3000
+
+.DEFAULT_GOAL := help
+.PHONY: help up down restart logs status migrate seed reset lint typecheck build
+
+help: ## Liste les commandes
+	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
+
+node_modules: package-lock.json
+	npm ci
+	@touch node_modules
+
+.env:
+	@echo "Fichier .env absent : lancer d'abord  cp .env.example .env" && exit 1
+
+up: .env node_modules ## Lance Supabase puis l'application
+	$(SUPABASE) start
+	@$(SUPABASE) status -o env \
+		--override-name auth.anon_key=NEXT_PUBLIC_SUPABASE_ANON_KEY \
+		--override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY \
+		| grep -E '^(NEXT_PUBLIC_SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY)=' > .env.supabase
+	docker compose up -d --build --renew-anon-volumes
+	@echo "Application : http://localhost:$(APP_PORT)"
+	@echo "Studio Supabase : http://localhost:54323  ·  Mails de test : http://localhost:54324"
+
+down: ## Arrête l'application et Supabase (les données sont conservées)
+	docker compose down
+	$(SUPABASE) stop
+
+restart: down up ## Relance tout
+
+logs: ## Suit les logs de l'application
+	docker compose logs -f app
+
+status: ## Affiche les URL et l'état de Supabase
+	$(SUPABASE) status
+
+migrate: ## Applique les migrations en attente
+	$(SUPABASE) migration up
+
+seed: ## Charge les données de démonstration (supabase/seed.sql)
+	docker exec -i $(DB_CONTAINER) psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/seed.sql
+
+reset: ## Recrée la base : migrations puis seed (efface les données locales)
+	$(SUPABASE) db reset
+
+lint: node_modules ## Lint
+	npm run lint
+
+typecheck: node_modules ## Vérifie les types
+	npm run typecheck
+
+build: node_modules ## Build de production
+	npm run build
