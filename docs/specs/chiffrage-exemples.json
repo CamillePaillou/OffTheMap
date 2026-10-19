@@ -1,0 +1,358 @@
+{
+  "version": 1,
+  "description": "Exemples de docs/specs/chiffrage.md. Montants en centimes. budget_reference_cents : budget réel, sinon annoncé, sinon null. Les alertes sont triées par ordre alphabétique.",
+  "cas": [
+    {
+      "id": "A",
+      "titre": "Week-end à Nantes, nominal",
+      "entree": {
+        "voyageurs": 2,
+        "date_debut": "2026-11-07",
+        "date_fin": "2026-11-08",
+        "nb_nuits": 1,
+        "budget_reference_cents": 40000,
+        "lignes": [
+          {
+            "prestation_id": "train-nantes-01",
+            "type": "transport",
+            "capacite": 8,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 4800,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "hotel-nantes-01",
+            "type": "hebergement",
+            "capacite": 6,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 9600,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "activite-nantes-01",
+            "type": "activite",
+            "capacite": 10,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 3500,
+            "prix_confirme_cents": null
+          }
+        ]
+      },
+      "attendu": {
+        "totaux_lignes_cents": [
+          9600,
+          19200,
+          7000
+        ],
+        "total_cents": 35800,
+        "alertes": []
+      }
+    },
+    {
+      "id": "B",
+      "titre": "Atelier revérifié à 40 €",
+      "entree": {
+        "voyageurs": 2,
+        "date_debut": "2026-11-07",
+        "date_fin": "2026-11-08",
+        "nb_nuits": 1,
+        "budget_reference_cents": 40000,
+        "lignes": [
+          {
+            "prestation_id": "train-nantes-01",
+            "type": "transport",
+            "capacite": 8,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 4800,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "hotel-nantes-01",
+            "type": "hebergement",
+            "capacite": 6,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 9600,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "activite-nantes-01",
+            "type": "activite",
+            "capacite": 10,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 3500,
+            "prix_confirme_cents": 4000
+          }
+        ]
+      },
+      "attendu": {
+        "totaux_lignes_cents": [
+          9600,
+          19200,
+          8000
+        ],
+        "total_cents": 36800,
+        "alertes": [
+          "budget_proche"
+        ]
+      }
+    },
+    {
+      "id": "C",
+      "titre": "Deux nuits, budget dépassé",
+      "entree": {
+        "voyageurs": 2,
+        "date_debut": "2026-11-07",
+        "date_fin": "2026-11-09",
+        "nb_nuits": 2,
+        "budget_reference_cents": 50000,
+        "lignes": [
+          {
+            "prestation_id": "train-nantes-01",
+            "type": "transport",
+            "capacite": 8,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 4800,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "hotel-nantes-01",
+            "type": "hebergement",
+            "capacite": 6,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 9600,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "hotel-nantes-01",
+            "type": "hebergement",
+            "capacite": 6,
+            "actif": true,
+            "date": "2026-11-08",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 9600,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "activite-nantes-01",
+            "type": "activite",
+            "capacite": 10,
+            "actif": true,
+            "date": "2026-11-08",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 3500,
+            "prix_confirme_cents": null
+          }
+        ]
+      },
+      "attendu": {
+        "totaux_lignes_cents": [
+          9600,
+          19200,
+          19200,
+          7000
+        ],
+        "total_cents": 55000,
+        "alertes": [
+          "budget_depasse"
+        ]
+      }
+    },
+    {
+      "id": "D",
+      "titre": "Capacité du train dépassée",
+      "entree": {
+        "voyageurs": 9,
+        "date_debut": "2026-11-07",
+        "date_fin": "2026-11-07",
+        "nb_nuits": 0,
+        "budget_reference_cents": null,
+        "lignes": [
+          {
+            "prestation_id": "train-nantes-01",
+            "type": "transport",
+            "capacite": 8,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 9,
+            "prix_unitaire_catalogue_cents": 4800,
+            "prix_confirme_cents": null
+          }
+        ]
+      },
+      "attendu": {
+        "totaux_lignes_cents": [
+          43200
+        ],
+        "total_cents": 43200,
+        "alertes": [
+          "capacite_depassee"
+        ]
+      }
+    },
+    {
+      "id": "E",
+      "titre": "Hôtel la nuit du départ",
+      "entree": {
+        "voyageurs": 2,
+        "date_debut": "2026-11-07",
+        "date_fin": "2026-11-08",
+        "nb_nuits": 1,
+        "budget_reference_cents": 40000,
+        "lignes": [
+          {
+            "prestation_id": "train-nantes-01",
+            "type": "transport",
+            "capacite": 8,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 4800,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "hotel-nantes-01",
+            "type": "hebergement",
+            "capacite": 6,
+            "actif": true,
+            "date": "2026-11-08",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 9600,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "activite-nantes-01",
+            "type": "activite",
+            "capacite": 10,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 3500,
+            "prix_confirme_cents": null
+          }
+        ]
+      },
+      "attendu": {
+        "totaux_lignes_cents": [
+          9600,
+          19200,
+          7000
+        ],
+        "total_cents": 35800,
+        "alertes": [
+          "date_hors_sejour"
+        ]
+      }
+    },
+    {
+      "id": "F",
+      "titre": "Deux nuits fixées, une seule ligne d’hôtel",
+      "entree": {
+        "voyageurs": 2,
+        "date_debut": "2026-11-07",
+        "date_fin": "2026-11-09",
+        "nb_nuits": 2,
+        "budget_reference_cents": 40000,
+        "lignes": [
+          {
+            "prestation_id": "train-nantes-01",
+            "type": "transport",
+            "capacite": 8,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 4800,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "hotel-nantes-01",
+            "type": "hebergement",
+            "capacite": 6,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 9600,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "activite-nantes-01",
+            "type": "activite",
+            "capacite": 10,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 3500,
+            "prix_confirme_cents": null
+          }
+        ]
+      },
+      "attendu": {
+        "totaux_lignes_cents": [
+          9600,
+          19200,
+          7000
+        ],
+        "total_cents": 35800,
+        "alertes": [
+          "nuits_incoherentes"
+        ]
+      }
+    },
+    {
+      "id": "G",
+      "titre": "Lyon à quatre, sans budget",
+      "entree": {
+        "voyageurs": 4,
+        "date_debut": "2026-11-14",
+        "date_fin": "2026-11-14",
+        "nb_nuits": 0,
+        "budget_reference_cents": null,
+        "lignes": [
+          {
+            "prestation_id": "train-lyon-01",
+            "type": "transport",
+            "capacite": 10,
+            "actif": true,
+            "date": "2026-11-14",
+            "participants": 4,
+            "prix_unitaire_catalogue_cents": 6200,
+            "prix_confirme_cents": null
+          },
+          {
+            "prestation_id": "activite-lyon-01",
+            "type": "activite",
+            "capacite": 12,
+            "actif": true,
+            "date": "2026-11-14",
+            "participants": 4,
+            "prix_unitaire_catalogue_cents": 2900,
+            "prix_confirme_cents": null
+          }
+        ]
+      },
+      "attendu": {
+        "totaux_lignes_cents": [
+          24800,
+          11600
+        ],
+        "total_cents": 36400,
+        "alertes": []
+      }
+    }
+  ]
+}
