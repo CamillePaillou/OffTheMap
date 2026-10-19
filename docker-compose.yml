@@ -1,0 +1,25 @@
+# Application Next.js en local. Supabase (base, Auth, Studio, mails de test) est lancé
+# à part par la CLI Supabase, qui gère ses propres conteneurs : passer par `make up`.
+name: off-the-map
+
+services:
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    env_file:
+      - path: .env
+        required: true
+      # Clés locales de Supabase, générées par `make up` (jamais versionnées).
+      - path: .env.supabase
+        required: false
+    environment:
+      # Depuis le conteneur, Supabase est joignable par l'hôte et non par localhost.
+      SUPABASE_URL: http://host.docker.internal:54321
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - .:/app
+      # node_modules et .next restent ceux du conteneur (binaires Linux).
+      - /app/node_modules
+      - /app/.next
