@@ -34,13 +34,13 @@
 
 **Principe directeur :** l'IA rédige et propose, le code calcule, le conseiller décide. Aucun prix ne vient de l'IA et rien de généré par l'IA ne part au client sans validation du conseiller.
 
-**Sprint Goal :** Un conseiller obtient une proposition chiffrée dont les prix sont vérifiés par l’agent, puis réserve une prestation : option de 30 minutes seulement après son accord, confirmation seulement après une seconde validation.
+**Sprint Goal :** Un conseiller obtient une proposition chiffrée dont les prix sont vérifiés par l’agent, puis réserve une prestation : option de 2 jours ouvrés seulement après son accord, confirmation seulement après une seconde validation.
 
-**Parcours principal, non négociable :** `demande → fiche IA → tri → brouillon chiffré → vérification par l'agent → envoi → acceptation et dépôt → accord du conseiller → option de 30 minutes → confirmation`. L'agent consulte et propose ; il ne pose, ne confirme et n'annule rien. Le reste passe après un parcours principal fiable.
+**Parcours principal, non négociable :** `demande → fiche IA → tri → brouillon chiffré → vérification par l'agent → envoi → acceptation et dépôt → accord du conseiller → option de 2 jours ouvrés → confirmation`. L'agent consulte et propose ; il ne pose, ne confirme et n'annule rien. Le reste passe après un parcours principal fiable.
 
 | Priorité | Sens | Contenu |
 | --- | --- | --- |
-| **Must** | Le MVP ne marche pas sans | Demande, fiche, tri, chiffrage, brouillon, vérification par l'agent, envoi, acceptation et dépôt, accord et option de 30 minutes, confirmation par seconde validation, campagne de 12 cas, dossiers du cours |
+| **Must** | Le MVP ne marche pas sans | Demande, fiche, tri, chiffrage, brouillon, vérification par l'agent, envoi, acceptation et dépôt, accord et option de 2 jours ouvrés, confirmation par seconde validation, campagne de 12 cas, dossiers du cours |
 | **Should** | Important, le parcours tourne sans | Mails modèles en `mailto`, nouvelle version de proposition, mode rejeu, remplacement d'une ligne, écarts entre versions, rappels, retour argumenté et formulaire prérempli |
 | **Could** | Confort | Annulation d'une réservation, proposition d'abandon à J+14 |
 
@@ -69,7 +69,7 @@
 - **ADR-0007 — RGPD et minimisation.** Consentement et mention de l'IA dans le formulaire. Avant tout appel au LLM, seule la catégorie des données de santé et de régime est transmise, jamais l'identité ni le texte libre. Option : un modèle européen gratuit via OpenRouter, s'il en existe un compatible avec les outils.
 - **ADR-0008 — Journal unique.** Toute transition de statut passe par une fonction qui change le statut et écrit dans `historique_dossier` ensemble.
 - **ADR-0009 — Agent de vérification.** Une boucle d'outil écrite à la main : le modèle propose un appel, le code le valide (outil autorisé, arguments conformes), le simulateur répond, le code renvoie le résultat au modèle, qui conclut. Un seul outil est exposé : `verifier_disponibilite(prestation_id, date, participants)`, branché sur `GET /api/v1/disponibilites`. L'agent ne pose, ne confirme et n'annule rien. Si le simulateur échoue, aucun prix ni nombre de places n'est annoncé.
-- **ADR-0010 — Option et réservation avec accord humain.** La réservation a lieu après l'acceptation du client et le dépôt. Pour chaque ligne : vérification par l'agent, puis **accord du conseiller** enregistré par notre serveur (usage unique, lié à la ligne, la date, les participants et le prix), puis **option de 30 minutes** (`POST /api/v1/options`, durée fixée par le simulateur), puis **seconde validation** : le conseiller saisit la clé d'approbation, envoyée avec son nom à `POST /api/v1/reservations`. La clé d'approbation n'est ni stockée, ni journalisée, ni transmise au modèle.
+- **ADR-0010 — Option et réservation avec accord humain.** La réservation a lieu après l'acceptation du client et le dépôt. Pour chaque ligne : vérification par l'agent, puis **accord du conseiller** enregistré par notre serveur (usage unique, lié à la ligne, la date, les participants et le prix), puis **option de 2 jours ouvrés** (`POST /api/v1/options`, durée fixée par le simulateur), puis **seconde validation** : le conseiller saisit la clé d'approbation, envoyée avec son nom à `POST /api/v1/reservations`. La clé d'approbation n'est ni stockée, ni journalisée, ni transmise au modèle.
 - **ADR-0011 — Simulateur du formateur derrière un adaptateur.** Toutes les requêtes passent par un port `Prestataires`. La clé d'équipe (`X-Team-Key`) vient de `.env`, côté serveur seulement. L'adaptateur peut simuler délai dépassé et erreur serveur, que le simulateur ne produit pas ; les changements de prix et de places viennent du simulateur lui-même.
 
 ---
@@ -118,7 +118,7 @@ Huit tables dans le MVP, une demande au centre ; `retours` attend le Should E1.2
 | `prestataires` | une prestation du catalogue, importée du simulateur | identifiant du simulateur (`train-nantes-01`…) |
 | `historique_dossier` | un fait daté du dossier (statut, mail, dépôt, vérification, accord, option, réservation) | `dossier_id`, `proposition_id` optionnel |
 | `verifications` | une vérification d'une ligne par l'agent (réponse du simulateur, prix revérifié, trace expurgée) | `ligne_id` |
-| `options` | l'accord du conseiller, l'option de 30 minutes et sa confirmation, pour une ligne | `ligne_id`, `verification_id` |
+| `options` | l'accord du conseiller, l'option de 2 jours ouvrés et sa confirmation, pour une ligne | `ligne_id`, `verification_id` |
 | `retours` *(hors MVP)* | un motif de correction renvoyé au client | `demande_id` |
 
 **Décisions de modélisation**
@@ -239,7 +239,7 @@ Appelés par le formulaire ou par le back-office, sous la session du conseiller.
 | `POST /api/brouillon` | génère le brouillon et ses lignes | back-office |
 | `POST /api/verification` | lance l'agent de vérification sur une ligne | back-office |
 | `POST /api/accords` | enregistre l'accord du conseiller (usage unique) | écran de proposition |
-| `POST /api/options` | pose l'option de 30 minutes sur le simulateur, avec un accord valide | écran de proposition |
+| `POST /api/options` | pose l'option de 2 jours ouvrés sur le simulateur, avec un accord valide | écran de proposition |
 | `POST /api/reservations` | confirme l'option avec la clé d'approbation saisie | écran de proposition |
 
 Côté simulateur, notre adaptateur appelle `GET /api/v1/catalogue`, `GET /api/v1/disponibilites`, `POST /api/v1/options`, `POST /api/v1/reservations` (et `POST /api/v1/reservations/{id}/annuler` pour le Could E9.8).
@@ -473,13 +473,13 @@ Estimation : **S** ≈ ½ j · **M** ≈ 1 j · **L** > 1 j. « Dépend » = iss
 
 ### E9 — Option et réservation avec accord humain (3 j)
 
-*Objectif : Une option de 30 minutes n'est posée qu'après un accord identifiable du conseiller ; la confirmation exige une seconde validation et la clé d'approbation reste hors du modèle.*
+*Objectif : Une option de 2 jours ouvrés n'est posée qu'après un accord identifiable du conseiller ; la confirmation exige une seconde validation et la clé d'approbation reste hors du modèle.*
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
 | E9.1 | **Schéma des permissions : qui peut lire, proposer, poser, confirmer**<br>En tant qu’équipe, je veux un schéma des permissions afin de défendre qui peut faire quoi. | PO | S | 0,3 | E8.2 | Un schéma d’une page ; l’agent n’a aucune permission d’écriture | M |
 | E9.3 | **Donner son accord depuis l’écran de proposition (accord à usage unique enregistré côté serveur)**<br>En tant que conseiller, je veux voir la prestation, le prix revérifié et les places, puis autoriser une écriture précise afin que rien ne soit écrit sans moi. | P2 | M | 0,7 | E0.5, E0.11, E0.12 | L’accord est créé côté serveur par le conseiller connecté ; à usage unique ; lié à la ligne, la date, les participants et le prix ; réutilisé ou pour une autre prestation : refusé ; jamais transmis au modèle | M |
-| E9.4 | **Poser une option de 30 minutes sur le simulateur après accord**<br>En tant que conseiller, je veux qu’une option de 30 minutes soit posée sur la prestation après mon accord afin de la garder pendant que je décide. | P1 | S | 0,5 | E0.5, E0.17 | POST /api/v1/options n’est appelé qu’avec un accord valide ; la réponse réelle du simulateur est affichée ; sans accord, rien n’est écrit ; l’option expire après 30 minutes | M |
+| E9.4 | **Poser une option de 2 jours ouvrés sur le simulateur après accord**<br>En tant que conseiller, je veux qu’une option de 2 jours ouvrés soit posée sur la prestation après mon accord afin de la garder pendant que je décide. | P1 | S | 0,5 | E0.5, E0.17 | POST /api/v1/options n’est appelé qu’avec un accord valide ; la réponse réelle du simulateur est affichée ; sans accord, rien n’est écrit ; l’option expire après 2 jours ouvrés | M |
 | E9.5 | **Confirmer la réservation par une seconde validation (clé d’approbation)**<br>En tant que conseiller, je veux confirmer une option par une seconde validation, en saisissant la clé d’approbation, afin qu’aucune réservation ne parte sans moi. | P3 | S | 0,5 | E0.17, E0.11, E0.12 | POST /api/v1/reservations reçoit X-Approval-Key et approuve_par ; la clé n’est ni stockée, ni journalisée, ni transmise au modèle ; option expirée : nouvelle vérification et nouvel accord ; dossier gagnee quand toutes les lignes sont confirmées | M |
 | E9.6 | **Garantir que l’agent ne peut rien écrire**<br>En tant qu’équipe, je veux des tests qui prouvent que l’agent ne peut rien écrire afin de défendre la frontière d’action. | P3 | S | 0,4 | E8.3, E9.4 | L’agent ne peut ni poser une option, ni confirmer, ni annuler ; le modèle ne voit ni la clé d’équipe ni la clé d’approbation ; tests automatisés | M |
 | E9.7 | **Note d’une page : échec observé, décision humaine, choix révisé et décision d’usage**<br>En tant qu’équipe, je veux une note sur un échec observé et sur la décision d’autoriser, limiter ou refuser le parcours afin de démontrer ce qu’on a appris. | PO | S | 0,3 | E11.2, E9.6 | Une page relue par l’équipe | M |
@@ -613,7 +613,7 @@ Scénario : accord à usage unique
   Alors l’option est refusée et la tentative est tracée
 ```
 
-**E9.4 — Poser une option de 30 minutes sur le simulateur après accord**
+**E9.4 — Poser une option de 2 jours ouvrés sur le simulateur après accord**
 
 ```gherkin
 Scénario : option sans accord
@@ -626,7 +626,7 @@ Scénario : option sans accord
 
 ```gherkin
 Scénario : option expirée
-  Étant donné une option posée il y a plus de 30 minutes
+  Étant donné une option posée il y a plus de 2 jours ouvrés
   Quand le conseiller confirme avec la clé d’approbation
   Alors le refus du simulateur est affiché, aucune réservation n’est enregistrée et une nouvelle vérification est demandée
 ```
@@ -654,7 +654,7 @@ Scénario : tentative de détournement
 
 ## 8. Planning J1 à J7
 
-**Sprint Goal :** Un conseiller obtient une proposition chiffrée dont les prix sont vérifiés par l’agent, puis réserve une prestation : option de 30 minutes seulement après son accord, confirmation seulement après une seconde validation.
+**Sprint Goal :** Un conseiller obtient une proposition chiffrée dont les prix sont vérifiés par l’agent, puis réserve une prestation : option de 2 jours ouvrés seulement après son accord, confirmation seulement après une seconde validation.
 
 Chaque issue a un jour cible : le jour où elle doit être terminée. Les Should et les Could sont hors sprint (jalon « Hors sprint »). Les jalons J8 et J9 ne servent plus.
 
@@ -914,8 +914,8 @@ E8.4|Voir l’écart de prix et la réponse du serveur dans l’écran de propos
 E8.5|Garder une trace et comparer les faits au JSON du serveur|epic:E8,ws:donnees,type:feat,prio:must|J5 — Proposition chiffrée|P3|0.5|E0.5|En tant que relecteur, je veux une trace expurgée de chaque vérification et la comparaison de ses faits au JSON du serveur afin de contrôler l’agent.|Scénario : fait faux détecté\n  Étant donné une conclusion qui annonce 4 places alors que le serveur en annonce 2\n  Quand les faits sont comparés au JSON du serveur\n  Alors l’écart est signalé
 E9.1|Schéma des permissions : qui peut lire, proposer, poser, confirmer|epic:E9,ws:po,type:docs,prio:must|J2 — Socle|PO|0.3|E8.2|En tant qu’équipe, je veux un schéma des permissions afin de défendre qui peut faire quoi.|
 E9.3|Donner son accord depuis l’écran de proposition (accord à usage unique enregistré côté serveur)|epic:E9,ws:backoffice,type:feat,prio:must|J5 — Proposition chiffrée|P2|0.7|E0.5,E0.11,E0.12|En tant que conseiller, je veux voir la prestation, le prix revérifié et les places, puis autoriser une écriture précise afin que rien ne soit écrit sans moi.|Scénario : accord à usage unique\n  Étant donné un accord déjà utilisé pour une option\n  Quand il est présenté une seconde fois\n  Alors l’option est refusée et la tentative est tracée
-E9.4|Poser une option de 30 minutes sur le simulateur après accord|epic:E9,ws:formulaire,type:feat,prio:must|J6 — Vérification, envoi, changements|P1|0.5|E0.5,E0.17|En tant que conseiller, je veux qu’une option de 30 minutes soit posée sur la prestation après mon accord afin de la garder pendant que je décide.|Scénario : option sans accord\n  Étant donné une prestation vérifiée par l’agent\n  Quand une option est demandée sans accord valide\n  Alors rien n’est envoyé au simulateur et la tentative est tracée
-E9.5|Confirmer la réservation par une seconde validation (clé d’approbation)|epic:E9,ws:donnees,type:feat,prio:must|J6 — Vérification, envoi, changements|P3|0.5|E0.17,E0.11,E0.12|En tant que conseiller, je veux confirmer une option par une seconde validation, en saisissant la clé d’approbation, afin qu’aucune réservation ne parte sans moi.|Scénario : option expirée\n  Étant donné une option posée il y a plus de 30 minutes\n  Quand le conseiller confirme avec la clé d’approbation\n  Alors le refus du simulateur est affiché, aucune réservation n’est enregistrée et une nouvelle vérification est demandée
+E9.4|Poser une option de 2 jours ouvrés sur le simulateur après accord|epic:E9,ws:formulaire,type:feat,prio:must|J6 — Vérification, envoi, changements|P1|0.5|E0.5,E0.17|En tant que conseiller, je veux qu’une option de 2 jours ouvrés soit posée sur la prestation après mon accord afin de la garder pendant que je décide.|Scénario : option sans accord\n  Étant donné une prestation vérifiée par l’agent\n  Quand une option est demandée sans accord valide\n  Alors rien n’est envoyé au simulateur et la tentative est tracée
+E9.5|Confirmer la réservation par une seconde validation (clé d’approbation)|epic:E9,ws:donnees,type:feat,prio:must|J6 — Vérification, envoi, changements|P3|0.5|E0.17,E0.11,E0.12|En tant que conseiller, je veux confirmer une option par une seconde validation, en saisissant la clé d’approbation, afin qu’aucune réservation ne parte sans moi.|Scénario : option expirée\n  Étant donné une option posée il y a plus de 2 jours ouvrés\n  Quand le conseiller confirme avec la clé d’approbation\n  Alors le refus du simulateur est affiché, aucune réservation n’est enregistrée et une nouvelle vérification est demandée
 E9.6|Garantir que l’agent ne peut rien écrire|epic:E9,ws:donnees,type:test,prio:must|J6 — Vérification, envoi, changements|P3|0.4|E8.3,E9.4|En tant qu’équipe, je veux des tests qui prouvent que l’agent ne peut rien écrire afin de défendre la frontière d’action.|Scénario : l’agent ne peut rien écrire\n  Étant donné un agent avec le seul outil de vérification\n  Quand il tente de poser, de confirmer ou d’annuler\n  Alors le code refuse et la tentative est tracée
 E9.7|Note d’une page : échec observé, décision humaine, choix révisé et décision d’usage|epic:E9,ws:po,type:docs,prio:must|J7 — Clôture et démonstration|PO|0.3|E11.2,E9.6|En tant qu’équipe, je veux une note sur un échec observé et sur la décision d’autoriser, limiter ou refuser le parcours afin de démontrer ce qu’on a appris.|
 E10.1|Sprint Goal et Definition of Done écrits dans le dépôt (docs/rituels/)|epic:E10,ws:po,type:docs,prio:must|J1 — Cadrage|PO|0.2|E0.1|En tant qu’équipe, je veux un objectif de sprint et une définition de terminé écrits afin de savoir quand on a fini.|
