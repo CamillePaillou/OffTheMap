@@ -50,3 +50,14 @@ Bouton « relancer » : affiché quand le dossier est au statut `erreur` ; trans
 L'écart avec le prix proposé n'est pas dans le payload : il est calculé par le code (`src/domain/ecartPrix.ts`), jamais par le modèle.
 Écrans : `/conseiller/propositions/{id}` (ouvert depuis la fiche du dossier) (prix proposé, revérifié et écart par ligne) et `/conseiller/propositions/{id}/lignes/{ligneId}` (réponse brute et trace). Ils lisent la base au nom du conseiller (`src/infrastructure/db/propositionsSupabase.ts`).
 Le bouton « Vérifier le prix » / « Revérifier » de l'écran d'une ligne lance `verifierPrestation(ligne, { modele, prestataires, secrets })` (E8.3) par le cas d'usage `reverifierLigne` : l'agent ne reçoit que prestation, nom, date et participants ; le résultat (prix, places, réponse, trace expurgée, `resume`) est écrit dans `verifications` avec la clé service_role. Il faut `LLM_API_KEY`, `LLM_MODEL` et `SIMULATEUR_TEAM_KEY` dans `.env` (voir `.env.example`).
+
+## Relire une proposition (E4.5)
+
+Écran `/conseiller/propositions/{id}`, ouvert depuis la fiche du dossier (lien « ← Fiche du dossier » pour y revenir). Le conseiller y relit avant l'envoi :
+
+- le **statut** en clair, le **total** et sa part du **budget de référence** (réel, sinon annoncé), en pourcentage tronqué : 89,9 % s'affiche 89 %, jamais arrondi au-dessus du seuil de 90 % ;
+- le **programme** du brouillon (E4.4) ;
+- par ligne : prix catalogue, **total de la ligne** (prix confirmé, sinon catalogue, × participants ; barré si la ligne est hors total), et les **alertes de la ligne** ;
+- la liste des **alertes**, avec leur libellé et, en rouge, celles qui bloquent l'envoi (`ALERTES_BLOQUANTES`).
+
+Rien n'est calculé par l'écran : total et alertes viennent du chiffrage (E4.2), recalculés depuis la base tant que la proposition est modifiable (E5.1). La mise en forme est préparée par `src/domain/proposition/resumeProposition.ts`.
