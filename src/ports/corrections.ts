@@ -43,4 +43,6 @@ export interface CorrectionsRepository {
   demander(c: NouvelleCorrection): Promise<{ correctionId: string; boucle: number }>;
   lire(jetonHash: string): Promise<LectureCorrection>;
   corriger(jetonHash: string, demande: NouvelleDemande): Promise<{ demandeId: string; version: number; dossierId: string }>;
+  /** Corrections déjà demandées pour le dossier, et fin de validité du lien encore ouvert s'il y en a un (E3.1). */
+  boucles(dossierId: string): Promise<{ faites: number; lienOuvertJusquau: string | null }>;
 }

@@ -701,6 +701,16 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      trier_dossier: {
+        Args: {
+          p_dossier: string;
+          p_ancien: string;
+          p_decision: Database["public"]["Enums"]["decision_tri"];
+          p_conseiller: string;
+          p_detail?: Json;
+        };
+        Returns: number;
+      };
       terminer_generation_fiche: {
         Args: { p_dossier: string; p_modele: string; p_generation: Json };
         Returns: Database["public"]["Enums"]["statut_dossier"];
@@ -741,7 +751,7 @@ export type Database = {
     Enums: {
       arret_agent: "conclusion" | "tours_max" | "echec_serveur" | "reponse_invalide";
       auteur_evenement: "conseiller" | "systeme";
-      decision_tri: "go" | "a_corriger" | "refusee";
+      decision_tri: "validee" | "a_corriger" | "refusee";
       mobilite: "aucune" | "reduite";
       niveau_physique: "faible" | "modere" | "soutenu" | "intense";
       regime: "vegetarien" | "vegetalien" | "sans_gluten" | "allergie" | "autre";
@@ -751,7 +761,7 @@ export type Database = {
         | "fiche_en_cours"
         | "fiche_prete"
         | "erreur"
-        | "go"
+        | "validee"
         | "a_corriger"
         | "refusee"
         | "rdv_propose"
@@ -907,7 +917,7 @@ export const Constants = {
     Enums: {
       arret_agent: ["conclusion", "tours_max", "echec_serveur", "reponse_invalide"],
       auteur_evenement: ["conseiller", "systeme"],
-      decision_tri: ["go", "a_corriger", "refusee"],
+      decision_tri: ["validee", "a_corriger", "refusee"],
       mobilite: ["aucune", "reduite"],
       niveau_physique: ["faible", "modere", "soutenu", "intense"],
       regime: ["vegetarien", "vegetalien", "sans_gluten", "allergie", "autre"],
@@ -917,7 +927,7 @@ export const Constants = {
         "fiche_en_cours",
         "fiche_prete",
         "erreur",
-        "go",
+        "validee",
         "a_corriger",
         "refusee",
         "rdv_propose",

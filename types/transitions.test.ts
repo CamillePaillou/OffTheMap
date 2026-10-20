@@ -52,7 +52,7 @@ describe('règles clés', () => {
     expect(trouverTransition(TRANSITIONS_DOSSIER, 'nouvelle', 'gagnee', 'systeme')).toBeNull();
   });
   it('refuse une transition faite par le mauvais auteur', () => {
-    expect(trouverTransition(TRANSITIONS_DOSSIER, 'fiche_prete', 'go', 'systeme')).toBeNull();
+    expect(trouverTransition(TRANSITIONS_DOSSIER, 'fiche_prete', 'validee', 'systeme')).toBeNull();
     expect(trouverTransition(TRANSITIONS_OPTION, 'posee', 'confirmee', 'systeme')).toBeNull();
   });
   it('n’accorde jamais au système la confirmation d’une réservation', () => {

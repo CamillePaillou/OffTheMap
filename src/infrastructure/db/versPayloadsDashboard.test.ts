@@ -36,7 +36,7 @@ describe('état de la fiche', () => {
     ['en_proposition', { erreur_generation: null, validee_le: '2026-10-21T14:20:00Z' }, 'validee'],
     // une régénération en cours l'emporte sur la fiche précédente
     ['fiche_en_cours', { erreur_generation: null, validee_le: null }, 'en_cours'],
-    ['go', { erreur_generation: 'délai dépassé', validee_le: null }, 'erreur'],
+    ['validee', { erreur_generation: 'délai dépassé', validee_le: null }, 'erreur'],
   ] as const)('%s + %o → %s', (statut, fiche, attendu) => {
     expect(etatFiche(statut, fiche)).toBe(attendu);
   });
@@ -87,7 +87,7 @@ describe('lignes Supabase → payloads du dashboard', () => {
   it('détail : historique avec la machine concernée et le nom du conseiller', () => {
     const historique: LigneHistorique[] = [
       { cree_le: '2026-10-12T07:00:00+00:00', type: 'statut', proposition_id: null, ancien_statut: null, nouveau_statut: 'nouvelle', auteur: 'systeme', profils: null },
-      { cree_le: '2026-10-12T16:00:00+00:00', type: 'statut', proposition_id: null, ancien_statut: 'fiche_prete', nouveau_statut: 'go', auteur: 'conseiller', profils: { nom_affiche: 'Camille' } },
+      { cree_le: '2026-10-12T16:00:00+00:00', type: 'statut', proposition_id: null, ancien_statut: 'fiche_prete', nouveau_statut: 'validee', auteur: 'conseiller', profils: { nom_affiche: 'Camille' } },
       { cree_le: '2026-10-13T09:00:00+00:00', type: 'statut', proposition_id: '5a1e0000-0000-4000-8000-000000000002', ancien_statut: 'brouillon_en_cours', nouveau_statut: 'brouillon_pret', auteur: 'systeme', profils: null },
     ];
     const d = versDetailDossier(dossierDetail(), historique);

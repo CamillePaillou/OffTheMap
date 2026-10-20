@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
+import { CorrectionsSupabase } from '@/src/infrastructure/db/correctionsSupabase';
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import type { DetailDossier } from '@/types/dashboard';
 import { DECISION, ETAT_FICHE, STATUT_DOSSIER, STATUT_PROPOSITION, euros, instantParis, jour } from '../../_composants/libelles';
 import { BoutonRelancer, FormulaireCorrection } from './formulaires';
+import { PanneauTri } from './panneauTri';
 
 type Props = PageProps<'/conseiller/dossiers/[id]'>;
 
@@ -13,7 +15,7 @@ const REGIME: Record<string, string> = {
   vegetarien: 'végétarien', vegetalien: 'végétalien', sans_gluten: 'sans gluten', allergie: 'allergie alimentaire', autre: 'autre',
 };
 
-// Fiche d'un dossier (E2.1) : la demande du client, la fiche de l'IA, et ce que le conseiller corrige après l'entretien.
+// Fiche d'un dossier (E2.1) : la demande du client, la fiche de l'IA, le tri (E3.1) et ce que le conseiller corrige après l'entretien.
 export default function DossierPage({ params }: Props) {
   return (
     <main className="mx-auto w-full max-w-4xl px-6 py-16">
@@ -34,6 +36,9 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   if (!dossier) notFound();
   const { demande, fiche } = dossier;
   const enErreur = dossier.statut === 'erreur' || fiche?.etat === 'erreur';
+  // tri (E3.1) : sur une fiche prête, ou sur un dossier à corriger (valider, refuser, nouveau lien)
+  const aTrier = (dossier.statut === 'fiche_prete' || dossier.statut === 'a_corriger') && fiche !== null && fiche.etat !== 'erreur';
+  const boucles = aTrier ? await new CorrectionsSupabase().boucles(dossier.dossier_id) : null;
 
   return (
     <>
@@ -122,6 +127,15 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
           </>
         )}
       </section>
+
+      {aTrier && boucles && fiche && (
+        <PanneauTri
+          dossierId={dossier.dossier_id}
+          statut={dossier.statut as 'fiche_prete' | 'a_corriger'}
+          boucles={boucles}
+          pointsFlous={fiche.points_flous}
+        />
+      )}
 
       {dossier.propositions.length > 0 && (
         <section className="mt-10">

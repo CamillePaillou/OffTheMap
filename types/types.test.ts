@@ -13,7 +13,13 @@ const enumSql = (nom: string) => {
   const m = migration.match(new RegExp(`create type ${nom} as enum \\(([^)]*)\\)`));
   if (!m) throw new Error(`enum ${nom} absent des migrations`);
   const ajouts = [...migration.matchAll(new RegExp(`alter type ${nom} add value (?:if not exists )?'([^']+)'`, 'g'))].map((x) => x[1]!);
-  return [...[...(m[1] ?? '').matchAll(/'([^']+)'/g)].map((x) => x[1]), ...ajouts];
+  const valeurs = [...[...(m[1] ?? '').matchAll(/'([^']+)'/g)].map((x) => x[1]!), ...ajouts];
+  // renommages (alter type … rename value 'a' to 'b'), dans l'ordre des migrations
+  for (const r of migration.matchAll(new RegExp(`alter type ${nom} rename value '([^']+)' to '([^']+)'`, 'g'))) {
+    const i = valeurs.indexOf(r[1]!);
+    if (i >= 0) valeurs[i] = r[2]!;
+  }
+  return valeurs;
 };
 
 describe('énumérations identiques à la migration', () => {

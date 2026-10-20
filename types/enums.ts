@@ -8,12 +8,12 @@
  */
 
 export const STATUTS_DOSSIER = [
-  'nouvelle', 'fiche_en_cours', 'fiche_prete', 'erreur', 'go', 'a_corriger', 'refusee',
+  'nouvelle', 'fiche_en_cours', 'fiche_prete', 'erreur', 'validee', 'a_corriger', 'refusee',
   'rdv_propose', 'entretien_fait', 'en_proposition', 'gagnee', 'abandonnee',
 ] as const;
 export type StatutDossier = (typeof STATUTS_DOSSIER)[number];
 
-export const DECISIONS_TRI = ['go', 'a_corriger', 'refusee'] as const;
+export const DECISIONS_TRI = ['validee', 'a_corriger', 'refusee'] as const;
 export type DecisionTri = (typeof DECISIONS_TRI)[number];
 
 export const STATUTS_PROPOSITION = [
