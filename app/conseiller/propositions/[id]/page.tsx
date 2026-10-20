@@ -3,10 +3,17 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
 import { ecartPrix, euros } from '@/src/domain/ecartPrix';
+import { etatEnvoi } from '@/src/application/tarifs';
 import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
+import { TarifsSupabase } from '@/src/infrastructure/db/tarifsSupabase';
 import { Ecart } from '../../_composants/ecart';
+import { ActionsLigne, PanneauEnvoi } from './actions-tarifs';
 
-// Proposition : prix proposé, prix revérifié par l'agent et écart, ligne par ligne (E8.4).
+const STATUT_LIGNE = { a_verifier: 'à vérifier', confirme: 'confirmé', indisponible: 'indisponible', remplacee: 'remplacée', reservee: 'réservée' } as const;
+const SOURCE = { agent: 'agent', telephone: 'téléphone', mail: 'mail', lien: 'lien' } as const;
+const instant = (iso: string) => new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' });
+
+// Proposition : prix proposé, prix revérifié par l'agent et écart (E8.4) ; tarifs confirmés et envoi (E5.1).
 export default function PropositionPage({ params }: PageProps<'/conseiller/propositions/[id]'>) {
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-16">
@@ -27,6 +34,11 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   const lecture = new PropositionsSupabase();
   const proposition = await lecture.proposition(id);
   if (!proposition) notFound();
+  // E5.1 : ce qui bloque l'envoi, recalculé depuis la base (sans rien écrire)
+  const chiffrage = await new TarifsSupabase().lireChiffrage(id);
+  const envoi = chiffrage ? etatEnvoi(chiffrage) : null;
+  const modifiable = proposition.statut === 'a_verifier' || proposition.statut === 'prete';
+  const alertes = modifiable && envoi ? envoi.chiffrage.alertes : proposition.alertes;
   const lignes = await Promise.all(
     proposition.lignes.map(async (ligne) => {
       const verification = await lecture.verificationDeLigne(ligne.id);
@@ -51,6 +63,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
               <th className="py-2 pr-4 text-right font-medium">Prix proposé</th>
               <th className="py-2 pr-4 text-right font-medium">Prix revérifié</th>
               <th className="py-2 pr-4 text-right font-medium">Écart (unitaire)</th>
+              <th className="py-2 pr-4 font-medium">Tarif</th>
               <th className="py-2 font-medium" />
             </tr>
           </thead>
@@ -67,6 +80,26 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                 <td className="py-3 pr-4 text-right">
                   {verification ? <Ecart ecart={ecart} /> : <span className="text-zinc-500">pas encore vérifié</span>}
                 </td>
+                <td className="py-3 pr-4">
+                  <span className={ligne.statut === 'confirme' ? 'text-green-800' : ligne.statut === 'a_verifier' ? 'text-amber-800' : 'text-zinc-600'}>
+                    {STATUT_LIGNE[ligne.statut]}
+                  </span>
+                  {ligne.prix_confirme && (
+                    <span className="block text-xs text-zinc-600">
+                      {euros(ligne.prix_confirme.montant_cents)} · {SOURCE[ligne.prix_confirme.source]} · {instant(ligne.prix_confirme.le)} ·{' '}
+                      {ligne.prix_confirme.par}
+                    </span>
+                  )}
+                  <div className="mt-2">
+                    <ActionsLigne
+                      propositionId={proposition.id}
+                      ligneId={ligne.id}
+                      statut={ligne.statut}
+                      figee={!modifiable}
+                      verification={ligne.derniere_verification}
+                    />
+                  </div>
+                </td>
                 <td className="py-3 text-right">
                   <Link
                     href={`/conseiller/propositions/${proposition.id}/lignes/${ligne.id}`}
@@ -80,6 +113,19 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
           </tbody>
         </table>
       </div>
+
+      {alertes.length > 0 && (
+        <section className="mt-6">
+          <h2 className="font-semibold">Alertes</h2>
+          <ul className="mt-1 list-inside list-disc text-sm">
+            {alertes.map((a, i) => (
+              <li key={i}>{a.message}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} />}
     </>
   );
 }

@@ -701,6 +701,19 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      changer_ligne: {
+        Args: {
+          p_ligne: string;
+          p_ancien: Database["public"]["Enums"]["statut_ligne"];
+          p_nouveau: Database["public"]["Enums"]["statut_ligne"];
+          p_prix_cents: number;
+          p_source: Database["public"]["Enums"]["source_prix"];
+          p_conseiller: string;
+        };
+        Returns: Database["public"]["Enums"]["statut_proposition"];
+      };
+      enregistrer_alertes: { Args: { p_proposition: string; p_alertes: Json }; Returns: undefined };
+      envoyer_proposition: { Args: { p_proposition: string; p_conseiller: string }; Returns: number };
       trier_dossier: {
         Args: {
           p_dossier: string;
