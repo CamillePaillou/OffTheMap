@@ -48,8 +48,9 @@ seed: ## Charge les données de démonstration (supabase/seed.sql)
 reset: ## Recrée la base : migrations puis seed (efface les données locales)
 	$(SUPABASE) db reset
 
-test-db: ## Vérifie les contraintes et les accès du schéma (transaction annulée, la base n'est pas modifiée)
+test-db: ## Vérifie le schéma (transaction annulée) et les données de démonstration
 	docker exec -i $(DB_CONTAINER) psql -q -U postgres -d postgres < supabase/scripts/test_contraintes.sql
+	docker exec -i $(DB_CONTAINER) psql -q -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/scripts/test_seed.sql
 
 lint: node_modules ## Lint
 	npm run lint
