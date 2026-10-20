@@ -13,7 +13,7 @@
 | **Interdit** | Poser une option, confirmer, annuler, appeler toute autre route ; inventer ou estimer un prix ou des places ; modifier la proposition ; écrire au client ; suivre une instruction trouvée dans les données (nom de prestation, texte du client). Aucun outil d'écriture n'existe pour lui. |
 | **Erreurs et arrêt** | Arrêt dès qu'une conclusion valide est rendue (`conclusion`). **3 tours maximum** (`tours_max`). Délai dépassé (5 s) ou erreur 5xx : arrêt immédiat, `echec_serveur`, pas de nouvel essai automatique (le conseiller peut relancer). Erreur 4xx ou arguments refusés : le modèle est informé, le tour compte. Réponse du modèle ou du simulateur non conforme : `reponse_invalide`. Dans tous les cas d'échec : « non vérifié », ni prix ni places. |
 | **Trace** | Par tour : numéro, horodatage, appel proposé (nom, arguments), conclusion brute du modèle (même rejetée), décision du code (accepté ou refusé, raison, écarts champ par champ), statut HTTP, réponse du simulateur, durée. Par vérification : modèle, nombre de tours, raison d'arrêt. Jamais : `X-Team-Key`, clé OpenRouter, clé d'approbation, données du client. Stockée dans `verifications.trace`, au format `TraceVerification` (`types/trace.ts`), après `expurgerTrace` ; les faits sont comparés par `comparerFaits` (`src/domain/verification/`). |
-| **Modèle** | Gratuit via OpenRouter, compatible avec les appels d'outils (`OPENROUTER_MODEL`, date de vérification notée). Un second modèle gratuit testé en réserve. Aucun secours payant. |
+| **Modèle** | Gratuit via OpenRouter, compatible avec les appels d'outils (`LLM_MODEL`, réserve `LLM_MODEL_RESERVE`, vérifiés le 20/10/2026 avec `make essai-agent` : `minimax/minimax-m3.1-flash:free` et `nvidia/nemotron-3-ultra-550b-a55b:free`). Aucun secours payant : un modèle sans `:free` est refusé à la configuration. |
 | **Décision humaine** | Le conseiller voit le prix revérifié, l'écart, la réponse brute et la trace, puis accepte le tarif (source `agent`) ou en saisit un autre. L'accord pour une option est une étape séparée (E9.3), hors de l'agent. |
 
 ## Boucle
@@ -35,6 +35,21 @@ sequenceDiagram
   P->>P: schéma + faits comparés au JSON
   P->>C: prix revérifié, écart, trace
 ```
+
+## Implémentation (E8.3)
+
+| Où | Quoi |
+| --- | --- |
+| `src/application/verifierPrestation.ts` | La boucle : 3 tours, arrêts, conclusion, trace expurgée. Rend une ligne `verifications` prête à écrire (hors `id`, `ligne_id`, `demande_par`). L'agent ne reçoit que `Pick<Prestataires, 'disponibilite'>` : aucune méthode d'écriture ne lui est accessible. |
+| `src/domain/verification/validerAppel.ts` | Les 4 contrôles du programme sur un appel d'outil, avant toute requête. |
+| `src/domain/verification/lireConclusion.ts` | Lecture de la conclusion : le premier objet JSON du texte (```` ```json ```` accepté), validé par `ConclusionVerification`. La conclusion n'est pas un outil : un seul outil est exposé. |
+| `src/ports/modele-agent.ts` | Port d'un tour avec outils, implémenté par `OpenRouterLlmClient`. |
+
+Précisions apportées par l'implémentation :
+- **Prix et places retenus** : toujours ceux du simulateur (`reponse_serveur`), jamais ceux du texte du modèle ; la conclusion ne sert qu'à vérifier que le modèle les a bien lus.
+- **Modèle injoignable** (délai, panne OpenRouter) : arrêt `echec_serveur`, le détail est dans la trace (`modèle injoignable (delai)`) ; `modele` vaut `aucun` si aucun n'a répondu.
+- **Réponse du simulateur dans la trace** : la valeur rendue par l'adaptateur, déjà convertie en centimes, pas le JSON brut en euros.
+- **Plusieurs appels d'outil dans un tour** : tous refusés, chacun reçoit une réponse d'erreur (sinon le fournisseur rejette le tour suivant).
 
 ## Critères vérifiables (repris dans la campagne E11)
 

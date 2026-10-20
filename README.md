@@ -55,6 +55,7 @@ Une nouvelle migration se crée avec `npx supabase migration new <nom>`.
 | `types/historique.ts` | Détail de chaque type d'événement du journal |
 | `supabase/migrations/20261019130000_fonction_transition.sql` | Fonction SQL `changer_statut` : statut et historique écrits dans la même transaction, réservée au serveur |
 | `src/application/changerStatut.ts` | Fonction de transition (E0.7) : seul point d'écriture d'un statut ; refuse ce que la matrice `types/transitions.ts` n'autorise pas (voir `docs/specs/transitions.md`) |
+| `src/application/verifierPrestation.ts` | Boucle de l'agent de vérification (E8.3) : un seul outil en lecture, 3 tours, prix et places repris du simulateur, trace expurgée (`docs/agent/contrat-agent.md`). Essai réel : `make essai-agent` |
 | `types/dashboard.ts` · `fixtures/dashboard/` | Payloads du back-office (liste, détail, proposition) et fixtures validées, pour afficher les écrans sans la base (`docs/specs/dashboard.md`) |
 
 `npm test` lance les tests des types (Vitest). Les règles portées par la base se vérifient sur la base locale :

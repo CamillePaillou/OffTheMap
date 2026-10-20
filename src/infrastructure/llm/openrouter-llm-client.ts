@@ -13,6 +13,7 @@ import { FicheIA, schemaBrouillon } from '../../../types';
 import type { BrouillonIA, DemandePourLLM } from '../../../types';
 import { LlmError } from '../../ports/llm-client';
 import type { EntreeBrouillon, LlmClient } from '../../ports/llm-client';
+import type { DefinitionOutil, ModeleAgent, ReponseChat, RequeteChat } from '../../ports/modele-agent';
 
 const URL_OPENROUTER = 'https://openrouter.ai/api/v1/chat/completions';
 const DELAI_PAR_DEFAUT_MS = 30_000;
@@ -38,36 +39,6 @@ export function lireConfigOpenRouter(env: Record<string, string | undefined>): C
   }
   const delaiMs = Number(env.LLM_TIMEOUT_MS) || DELAI_PAR_DEFAUT_MS;
   return { cle, modeles, delaiMs };
-}
-
-// ------------------------------------------------------------------ format « chat completions » (compatible OpenAI)
-export interface AppelOutil {
-  id: string;
-  type: 'function';
-  function: { name: string; arguments: string };
-}
-
-export type MessageChat =
-  | { role: 'system' | 'user'; content: string }
-  | { role: 'assistant'; content: string | null; tool_calls?: AppelOutil[] }
-  | { role: 'tool'; tool_call_id: string; content: string };
-
-export interface DefinitionOutil {
-  type: 'function';
-  function: { name: string; description: string; parameters: object };
-}
-
-export interface RequeteChat {
-  messages: MessageChat[];
-  tools: readonly DefinitionOutil[];
-  /** `auto` pour la boucle de l'agent (E8.3), un nom d'outil pour imposer une réponse structurée. */
-  outilImpose?: string;
-}
-
-export interface ReponseChat {
-  /** Modèle qui a répondu : à enregistrer dans `verifications.modele`. */
-  modele: string;
-  message: { content: string | null; tool_calls?: AppelOutil[] };
 }
 
 const schemaReponse = z.object({
@@ -105,7 +76,7 @@ const CONSIGNES_BROUILLON =
   'en choisissant uniquement parmi les prestations autorisées. Une ligne ne dépasse jamais le nombre de participants. ' +
   'Indique dans « ecartes » les prestations autorisées que tu n’as pas retenues, avec la raison.';
 
-export class OpenRouterLlmClient implements LlmClient {
+export class OpenRouterLlmClient implements LlmClient, ModeleAgent {
   private readonly fetch: typeof fetch;
 
   constructor(private readonly config: ConfigOpenRouter) {
