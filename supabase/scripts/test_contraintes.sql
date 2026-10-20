@@ -104,6 +104,25 @@ select doit_echouer($$select deposer_demande('{"consentement_rgpd": false, "cons
   "email": "sans@example.org", "date_debut": "2026-11-07", "date_fin": "2026-11-08", "nb_nuits": 1, "voyageurs": ["adulte"]}')$$, 'demande sans consentement RGPD');
 select doit_valoir($$select count(*) - (select n from avant_depot) from dossiers$$, 0, 'refus du dépôt : aucun dossier orphelin');
 
+-- fiche (E2.1) : la correction du conseiller et la génération (E2.2) n'écrivent pas les mêmes champs
+select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'modele-1',
+  '{"envies": ["atelier"], "contraintes": ["sans voiture"], "points_flous": ["une nuit ?"], "regimes": [], "mobilite": null, "niveau_physique": "faible"}');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1' and envies = '{atelier}' and erreur_generation is null$$, 1, 'génération écrite');
+select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 38000, '2026-11-07', '2026-11-08', 1, 'Rappeler mardi');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'
+  and budget_reel_cents = 38000 and date_debut_fixe = '2026-11-07' and nb_nuits_fixe = 1 and notes_conseiller = 'Rappeler mardi' and envies = '{atelier}'$$, 1, 'correction écrite, contenu de l''IA intact');
+select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'modele-2',
+  '{"envies": ["musée"], "contraintes": [], "points_flous": [], "regimes": ["vegetarien"], "mobilite": "reduite", "niveau_physique": null}');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'
+  and envies = '{musée}' and modele = 'modele-2' and budget_reel_cents = 38000 and date_fin_fixe = '2026-11-08' and notes_conseiller = 'Rappeler mardi'$$, 1, 'une régénération n''écrase ni budget réel, ni dates fixes, ni notes');
+select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'modele-3', '{"erreur": "délai dépassé"}');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'
+  and erreur_generation = 'délai dépassé' and envies = '{musée}' and budget_reel_cents = 38000$$, 1, 'un échec de génération garde la fiche et la correction');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'$$, 1, 'toujours une seule fiche par version');
+select doit_echouer($$select corriger_fiche('00000000-0000-0000-0000-0000000000f9', 38000, null, null, null, null)$$, 'correction d''une fiche inexistante');
+select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 0, null, null, null, null)$$, 'budget réel nul');
+select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), null, '2026-11-08', '2026-11-07', null, null)$$, 'dates fixes inversées');
+
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');
@@ -114,6 +133,7 @@ select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, 
   values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un visiteur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un visiteur');
 select doit_echouer($$select deposer_demande('{}')$$, 'dépôt direct en base par un visiteur');
+select doit_echouer($$select corriger_fiche('00000000-0000-0000-0000-0000000000f9', 38000, null, null, null, null)$$, 'correction de fiche par un visiteur');
 reset role;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000ff', false);
@@ -127,6 +147,8 @@ select doit_valoir($$select count(*) from verifications where ligne_id = '000000
 select doit_valoir($$select count(*) from options where ligne_id = '00000000-0000-0000-0000-0000000000a1'$$, 1, 'un conseiller lit les options');
 select doit_echouer($$insert into dossiers default values$$, 'écriture directe par un conseiller');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un conseiller');
+select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 1, null, null, null, null)$$, 'correction en base directe par un conseiller (passe par le serveur)');
+select doit_echouer($$select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'm', '{}')$$, 'génération écrite par un conseiller');
 -- tables de l'agent (E0.5) : seul le serveur écrit ; un conseiller connecté ne crée, ne modifie ni ne supprime rien
 select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, modele, nb_tours, arret)
   values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un conseiller');
