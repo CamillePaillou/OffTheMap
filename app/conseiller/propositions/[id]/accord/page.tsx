@@ -5,6 +5,7 @@ import { exigerConseiller } from '@/lib/auth/conseiller';
 import { LIMITES } from '@/types/enums';
 import { MESSAGES_REFUS_ACCORD, evaluerAccord, prixReverifieCents } from '@/src/domain/accord';
 import { BoutonAccord } from './bouton-accord';
+import { BoutonOption } from './bouton-option';
 import { accordsDemo } from './depot';
 
 // Écran d'accord (E9.3) : prestations, prix revérifié et conditions, puis autorisation d'UNE écriture précise.
@@ -51,6 +52,7 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
         {proposition.lignes.map((ligne) => {
           const prix = prixReverifieCents(ligne);
           const accord = accordsDemo.accordValable(ligne.id, maintenant);
+          const optionPosee = accordsDemo.accords.find((a) => a.ligne_id === ligne.id && a.statut === 'posee');
           const verdict = evaluerAccord({
             statutProposition: proposition.statut,
             ligne,
@@ -73,10 +75,17 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
               </dl>
               {v && <p className="mt-1 text-xs text-zinc-500">Vérifié par l’agent à {heure(v.le)}.</p>}
 
-              {accord ? (
+              {optionPosee ? (
                 <p className="mt-3 rounded bg-green-50 px-3 py-2 text-sm text-green-800" role="status">
-                  Accord donné pour {euros(accord.prix_accorde_cents)}, valable jusqu’à {heure(accord.accord_expire_le)}. L’option sera posée à l’étape suivante.
+                  Option posée : {optionPosee.option_id_simulateur}. Expiration confirmée par le simulateur : {optionPosee.expire_option_le ? new Date(optionPosee.expire_option_le).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }) : 'non renseignée'}.
                 </p>
+              ) : accord ? (
+                <>
+                  <p className="mt-3 rounded bg-green-50 px-3 py-2 text-sm text-green-800" role="status">
+                    Accord donné pour {euros(accord.prix_accorde_cents)}, valable jusqu’à {heure(accord.accord_expire_le)}.
+                  </p>
+                  <BoutonOption propositionId={proposition.id} ligneId={ligne.id} />
+                </>
               ) : verdict.ok && prix !== null ? (
                 <BoutonAccord propositionId={proposition.id} ligneId={ligne.id} prixAfficheCents={prix} prixAffiche={euros(prix)} />
               ) : (
