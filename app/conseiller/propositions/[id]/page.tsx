@@ -11,6 +11,7 @@ import { STATUT_PROPOSITION } from '../../_composants/libelles';
 import { resumerProposition } from '@/src/domain/proposition/resumeProposition';
 import { REGLES_CHIFFRAGE } from '@/types/chiffrage';
 import { ActionsLigne, PanneauEnvoi } from './actions-tarifs';
+import { PanneauReponse } from './panneau-reponse';
 import { CarteMail } from '../../_composants/carte-mail';
 import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
 import { lienMailto, mailProposition, MailImpossibleErreur } from '@/src/domain/mails';
@@ -201,6 +202,8 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
       )}
 
       {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} />}
+
+      <PanneauReponse propositionId={proposition.id} statut={proposition.statut} />
 
       {mail && (
         <section className="mt-8">

@@ -293,6 +293,17 @@ select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-000000
 select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', '00000000-0000-0000-0000-0000000000fa', 'proposition', '00000000-0000-0000-0000-00000000000a')$$, 'proposition d''un autre dossier');
 select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000da', null, 'relance', '00000000-0000-0000-0000-00000000000a')$$, 'modèle inconnu');
 
+-- acceptation et dépôt (E7.1) : deux clics journalisés ; une seule proposition acceptée par dossier
+insert into propositions (id, dossier_id, version, statut) values ('00000000-0000-0000-0000-0000000000fb', '00000000-0000-0000-0000-0000000000da', 2, 'envoyee');
+select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fa', 'depot_recu', '00000000-0000-0000-0000-00000000000a')$$, 'dépôt avant l''acceptation');
+select doit_valoir($$select (enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fa', 'acceptee', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'acceptation enregistrée');
+select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fb', 'acceptee', '00000000-0000-0000-0000-00000000000a')$$, 'seconde proposition acceptée sur le même dossier');
+select doit_valoir($$select (enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fa', 'depot_recu', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'dépôt reçu enregistré');
+select doit_valoir($$select count(*) from propositions p join historique_dossier h on h.proposition_id = p.id
+  where p.id = '00000000-0000-0000-0000-0000000000fa' and p.statut = 'depot_recu' and h.auteur = 'conseiller'
+  and h.auteur_id = '00000000-0000-0000-0000-00000000000a' and h.nouveau_statut in ('acceptee', 'depot_recu')$$, 2, 'acceptation et dépôt journalisés au nom du conseiller');
+select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fa', 'depot_recu', '00000000-0000-0000-0000-00000000000a')$$, 'dépôt enregistré deux fois');
+
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');
@@ -303,6 +314,7 @@ select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, 
   values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un visiteur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un visiteur');
 select doit_echouer($$select deposer_demande('{}')$$, 'dépôt direct en base par un visiteur');
+select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fb', 'acceptee', '00000000-0000-0000-0000-00000000000a')$$, 'acceptation enregistrée par un visiteur');
 select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', null, 'rendez_vous', '00000000-0000-0000-0000-00000000000a')$$, 'mail marqué par un visiteur');
 select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi appelé par un visiteur');
 select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b5', '00000000-0000-0000-0000-00000000000a')$$, 'brouillon démarré par un visiteur');
