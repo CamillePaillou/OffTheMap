@@ -51,6 +51,7 @@ Une nouvelle migration se crée avec `npx supabase migration new <nom>`.
 | `types/historique.ts` | Détail de chaque type d'événement du journal |
 | `supabase/migrations/20261019130000_fonction_transition.sql` | Fonction SQL `changer_statut` : statut et historique écrits dans la même transaction, réservée au serveur |
 | `src/application/changerStatut.ts` | Fonction de transition (E0.7) : seul point d'écriture d'un statut ; refuse ce que la matrice `types/transitions.ts` n'autorise pas (voir `docs/specs/transitions.md`) |
+| `types/dashboard.ts` · `fixtures/dashboard/` | Payloads du back-office (liste, détail, proposition) et fixtures validées, pour afficher les écrans sans la base (`docs/specs/dashboard.md`) |
 
 `npm test` lance les tests des types (Vitest). Les règles portées par la base se vérifient sur la base locale :
 
@@ -59,6 +60,12 @@ docker exec -i supabase_db_off-the-map psql -U postgres -d postgres -v ON_ERROR_
 ```
 
 Le script travaille dans une transaction annulée à la fin : il ne laisse aucune donnée. Il se termine par « TOUS LES TESTS SONT PASSÉS ».
+
+## Connexion du conseiller
+
+`/conseiller` exige une connexion (Supabase Auth, e-mail et mot de passe) : sans session, le proxy (`proxy.ts`) renvoie vers `/connexion`. Chaque page du back-office appelle `exigerConseiller()` (`lib/auth/conseiller.ts`), qui vérifie la session et le profil du conseiller.
+
+Compte de démonstration créé par le seed (base locale uniquement) : `conseiller@offthemap.test` / `offthemap-demo`.
 
 ## Variables d'environnement
 

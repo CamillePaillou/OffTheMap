@@ -34,13 +34,13 @@
 
 **Principe directeur :** l'IA rédige et propose, le code calcule, le conseiller décide. Aucun prix ne vient de l'IA et rien de généré par l'IA ne part au client sans validation du conseiller.
 
-**Sprint Goal :** Un conseiller obtient une proposition chiffrée dont les prix sont vérifiés par l’agent, puis réserve une prestation : option de 2 jours ouvrés seulement après son accord, confirmation seulement après une seconde validation.
+**Sprint Goal :** Un conseiller obtient une proposition chiffrée dont les prix sont vérifiés par l’agent, puis réserve une prestation : option de 72 h seulement après son accord, confirmation seulement après une seconde validation.
 
-**Parcours principal, non négociable :** `demande → fiche IA → tri → brouillon chiffré → vérification par l'agent → envoi → acceptation et dépôt → accord du conseiller → option de 2 jours ouvrés → confirmation`. L'agent consulte et propose ; il ne pose, ne confirme et n'annule rien. Le reste passe après un parcours principal fiable.
+**Parcours principal, non négociable :** `demande → fiche IA → tri → brouillon chiffré → vérification par l'agent → envoi → acceptation et dépôt → accord du conseiller → option de 72 h → confirmation`. L'agent consulte et propose ; il ne pose, ne confirme et n'annule rien. Le reste passe après un parcours principal fiable.
 
 | Priorité | Sens | Contenu |
 | --- | --- | --- |
-| **Must** | Le MVP ne marche pas sans | Demande, fiche, tri, chiffrage, brouillon, vérification par l'agent, envoi, acceptation et dépôt, accord et option de 2 jours ouvrés, confirmation par seconde validation, campagne de 12 cas, dossiers du cours |
+| **Must** | Le MVP ne marche pas sans | Demande, fiche, tri, chiffrage, brouillon, vérification par l'agent, envoi, acceptation et dépôt, accord et option de 72 h, confirmation par seconde validation, campagne de 12 cas, dossiers du cours |
 | **Should** | Important, le parcours tourne sans | Mails modèles en `mailto`, nouvelle version de proposition, mode rejeu, remplacement d'une ligne, écarts entre versions, rappels, retour argumenté et formulaire prérempli |
 | **Could** | Confort | Annulation d'une réservation, proposition d'abandon à J+14 |
 
@@ -69,7 +69,7 @@
 - **ADR-0007 — RGPD et minimisation.** Consentement et mention de l'IA dans le formulaire. Avant tout appel au LLM, seule la catégorie des données de santé et de régime est transmise, jamais l'identité ni le texte libre. Option : un modèle européen gratuit via OpenRouter, s'il en existe un compatible avec les outils.
 - **ADR-0008 — Journal unique.** Toute transition de statut passe par une fonction qui change le statut et écrit dans `historique_dossier` ensemble.
 - **ADR-0009 — Agent de vérification.** Une boucle d'outil écrite à la main : le modèle propose un appel, le code le valide (outil autorisé, arguments conformes), le simulateur répond, le code renvoie le résultat au modèle, qui conclut. Un seul outil est exposé : `verifier_disponibilite(prestation_id, date, participants)`, branché sur `GET /api/v1/disponibilites`. L'agent ne pose, ne confirme et n'annule rien. Si le simulateur échoue, aucun prix ni nombre de places n'est annoncé.
-- **ADR-0010 — Option et réservation avec accord humain.** La réservation a lieu après l'acceptation du client et le dépôt. Pour chaque ligne : vérification par l'agent, puis **accord du conseiller** enregistré par notre serveur (usage unique, lié à la ligne, la date, les participants et le prix), puis **option de 2 jours ouvrés** (`POST /api/v1/options`, durée fixée par le simulateur), puis **seconde validation** : le conseiller saisit la clé d'approbation, envoyée avec son nom à `POST /api/v1/reservations`. La clé d'approbation n'est ni stockée, ni journalisée, ni transmise au modèle.
+- **ADR-0010 — Option et réservation avec accord humain.** La réservation a lieu après l'acceptation du client et le dépôt. Pour chaque ligne : vérification par l'agent, puis **accord du conseiller** enregistré par notre serveur (usage unique, lié à la ligne, la date, les participants et le prix), puis **option de 72 h** (`POST /api/v1/options`, durée fixée par le simulateur), puis **seconde validation** : le conseiller saisit la clé d'approbation, envoyée avec son nom à `POST /api/v1/reservations`. La clé d'approbation n'est ni stockée, ni journalisée, ni transmise au modèle.
 - **ADR-0011 — Simulateur du formateur derrière un adaptateur.** Toutes les requêtes passent par un port `Prestataires`. La clé d'équipe (`X-Team-Key`) vient de `.env`, côté serveur seulement. L'adaptateur peut simuler délai dépassé et erreur serveur, que le simulateur ne produit pas ; les changements de prix et de places viennent du simulateur lui-même.
 
 ---
@@ -118,7 +118,7 @@ Huit tables dans le MVP, une demande au centre ; `retours` attend le Should E1.2
 | `prestataires` | une prestation du catalogue, importée du simulateur | identifiant du simulateur (`train-nantes-01`…) |
 | `historique_dossier` | un fait daté du dossier (statut, mail, dépôt, vérification, accord, option, réservation) | `dossier_id`, `proposition_id` optionnel |
 | `verifications` | une vérification d'une ligne par l'agent (réponse du simulateur, prix revérifié, trace expurgée) | `ligne_id` |
-| `options` | l'accord du conseiller, l'option de 2 jours ouvrés et sa confirmation, pour une ligne | `ligne_id`, `verification_id` |
+| `options` | l'accord du conseiller, l'option de 72 h et sa confirmation, pour une ligne | `ligne_id`, `verification_id` |
 | `retours` *(hors MVP)* | un motif de correction renvoyé au client | `demande_id` |
 
 **Décisions de modélisation**
@@ -162,7 +162,7 @@ Dossier `/types` : la forme exacte de chaque table (champs, types, obligatoire o
 
 ### 5.2 Payloads du dashboard (proposition à valider par P2 et P3)
 
-Principes : montants en centimes ; valeur indisponible = `null`, jamais `0` ; pagination par `limit` et `offset` ; dates en UTC ISO-8601. Issue : E0.12. Ces formats sont des fixtures construites sur les types TypeScript partagés : pas de spécification séparée.
+Principes : montants en centimes ; valeur indisponible = `null`, jamais `0` ; pagination par `limit` et `offset` ; dates en UTC ISO-8601. Issue : E0.12. Ces formats sont des fixtures construites sur les types TypeScript partagés : pas de spécification séparée. Version retenue et écarts avec les exemples ci-dessous : `docs/specs/dashboard.md` et `types/dashboard.ts`.
 
 **Liste des dossiers : `GET /api/dossiers`**
 
@@ -239,7 +239,7 @@ Appelés par le formulaire ou par le back-office, sous la session du conseiller.
 | `POST /api/brouillon` | génère le brouillon et ses lignes | back-office |
 | `POST /api/verification` | lance l'agent de vérification sur une ligne | back-office |
 | `POST /api/accords` | enregistre l'accord du conseiller (usage unique) | écran de proposition |
-| `POST /api/options` | pose l'option de 2 jours ouvrés sur le simulateur, avec un accord valide | écran de proposition |
+| `POST /api/options` | pose l'option de 72 h sur le simulateur, avec un accord valide | écran de proposition |
 | `POST /api/reservations` | confirme l'option avec la clé d'approbation saisie | écran de proposition |
 
 Côté simulateur, notre adaptateur appelle `GET /api/v1/catalogue`, `GET /api/v1/disponibilites`, `POST /api/v1/options`, `POST /api/v1/reservations` (et `POST /api/v1/reservations/{id}/annuler` pour le Could E9.8).
@@ -473,13 +473,13 @@ Estimation : **S** ≈ ½ j · **M** ≈ 1 j · **L** > 1 j. « Dépend » = iss
 
 ### E9 — Option et réservation avec accord humain (2,8 j)
 
-*Objectif : Une option de 2 jours ouvrés n'est posée qu'après un accord identifiable du conseiller ; la confirmation exige une seconde validation et la clé d'approbation reste hors du modèle.*
+*Objectif : Une option de 72 h n'est posée qu'après un accord identifiable du conseiller ; la confirmation exige une seconde validation et la clé d'approbation reste hors du modèle.*
 
 | ID | Issue | Resp. | Estim. | Charge | Dépend | Résultat vérifiable | Prio |
 | --- | --- | --- | --- | ---: | --- | --- | --- |
 | E9.1 | **Schéma des permissions : qui peut lire, proposer, poser, confirmer**<br>En tant qu’équipe, je veux un schéma des permissions afin de défendre qui peut faire quoi. | PO | S | 0,3 | E8.2 | Un schéma d’une page ; l’agent n’a aucune permission d’écriture | M |
 | E9.3 | **Écran d’accord : prestations, prix revérifié et conditions**<br>En tant que conseiller, je veux voir les prestations, le prix revérifié et les conditions, puis autoriser une écriture précise afin de décider avant toute option. | P2 | M | 0,6 | E0.5, E0.11, E0.12 | Le conseiller autorise une écriture précise (prestation, prix) ; l’accord enregistre le conseiller, la prestation et le prix | M |
-| E9.4 | **Poser une option de 2 jours ouvrés après accord**<br>En tant que conseiller, je veux qu’une option de 2 jours ouvrés soit posée sur la prestation après mon accord afin de la garder pendant que je décide. | P4 | S | 0,5 | E0.5, E0.17, E9.3 | L’option est posée avec la réponse réelle du serveur ; sans accord valide, rien n’est écrit ; elle expire après 2 jours ouvrés | M |
+| E9.4 | **Poser une option de 72 h après accord**<br>En tant que conseiller, je veux qu’une option de 72 h soit posée sur la prestation après mon accord afin de la garder pendant que je décide. | P4 | S | 0,5 | E0.5, E0.17, E9.3 | L’option est posée avec la réponse réelle du serveur ; sans accord valide, rien n’est écrit ; elle expire après 72 h | M |
 | E9.5 | **Seconde validation avant confirmation**<br>En tant que conseiller, je veux une seconde validation distincte avant toute confirmation afin de éviter une confirmation par erreur. | P2 | S | 0,4 | E9.4 | Sans seconde validation distincte, aucune confirmation n’est possible ; nouveau prix revérifié si l’option a expiré | S |
 | E9.6 | **Garantir que l’agent ne peut rien écrire**<br>En tant qu’équipe, je veux des tests qui prouvent que l’agent ne peut rien écrire afin de défendre la frontière d’action. | P3 | S | 0,4 | E8.3, E9.4 | L’agent ne peut ni poser une option, ni confirmer, ni annuler ; le modèle ne voit jamais la clé ; tests automatisés | M |
 | E9.7 | **Note d’une page : un échec observé, la décision humaine, le choix de conception révisé**<br>En tant qu’équipe, je veux une note sur un échec observé et le choix de conception révisé afin de démontrer ce qu’on a appris. | PO | S | 0,3 | E9.6, E11.2 | Une page relue par l’équipe | M |
@@ -613,7 +613,7 @@ Scénario : fait faux détecté
   Alors l’écart est signalé
 ```
 
-**E9.4 — Poser une option de 2 jours ouvrés après accord**
+**E9.4 — Poser une option de 72 h après accord**
 
 ```gherkin
 Scénario : option sans accord
@@ -645,7 +645,7 @@ Scénario : tentative de détournement
 
 ## 8. Planning J1 à J9
 
-**Sprint Goal :** Un conseiller obtient une proposition chiffrée dont les prix sont vérifiés par l’agent, puis réserve une prestation : option de 2 jours ouvrés seulement après son accord, confirmation seulement après une seconde validation.
+**Sprint Goal :** Un conseiller obtient une proposition chiffrée dont les prix sont vérifiés par l’agent, puis réserve une prestation : option de 72 h seulement après son accord, confirmation seulement après une seconde validation.
 
 Chaque issue a un jour cible : le jour où elle doit être terminée (jalon GitHub). Les jalons J8 et J9 (« Débordement ») portent les issues qui ne tiennent pas dans J7. ✅ = issue terminée.
 
@@ -765,7 +765,7 @@ Chaque issue a un jour cible : le jour où elle doit être terminée (jalon GitH
 | E8.5 | Garder une trace et comparer les faits au JSON du serveur | P3 | J6 | E0.5 | E11.2 |  |
 | E9.1 | Schéma des permissions : qui peut lire, proposer, poser, confirmer | PO | J1 | E8.2 | E12.1 |  |
 | E9.3 | Écran d’accord : prestations, prix revérifié et conditions | P2 | J6 | E0.5, E0.11, E0.12 | E9.4 |  |
-| E9.4 | Poser une option de 2 jours ouvrés après accord | P4 | J6 | E0.5, E0.17, E9.3 | E7.4, E9.5, E9.6, E11.2 |  |
+| E9.4 | Poser une option de 72 h après accord | P4 | J6 | E0.5, E0.17, E9.3 | E7.4, E9.5, E9.6, E11.2 |  |
 | E9.5 | Seconde validation avant confirmation | P2 | Hors sprint | E9.4 | E9.8 |  |
 | E9.6 | Garantir que l’agent ne peut rien écrire | P3 | J7 | E8.3, E9.4 | E9.7 |  |
 | E9.7 | Note d’une page : un échec observé, la décision humaine, le choix de conception révisé | PO | J7 | E9.6, E11.2 | — |  |
@@ -908,7 +908,7 @@ Closes #<numéro>
 | Modèle gratuit qui n'appelle pas d'outils ou limité en débit | Agent inutilisable en démonstration | Choisir et tester le modèle dès le J2 (E0.19) ; second modèle en réserve ; faux client pour les tests ; rejeu annoncé (E11.3) |
 | Écriture involontaire par l'agent | Option ou réservation non voulue | Aucun outil d'écriture exposé ; option seulement avec un accord valide ; confirmation seulement avec la clé saisie par le conseiller ; tests de non-écriture (E9.6) |
 | Simulateur sans pannes réseau | Échecs non éprouvés | L'adaptateur simule délai dépassé et erreur serveur (E0.17) ; prix et places modifiés par le formateur |
-| Option expirée avant la confirmation | Confirmation refusée par le simulateur | Afficher le refus, revérifier, demander un nouvel accord ; confirmer juste après la pose |
+| Option de 72 h côté agence, 30 min dans le simulateur du cours | Option expirée pendant la démonstration | L'expiration est lue dans `expire_le` du simulateur ; confirmer juste après la pose en démo ; écart annoncé dans les limites |
 | Estimations optimistes liées à l'IA | Retard sur les Must | Mesurer la vitesse réelle après deux jours et recaler le plan |
 | Rituels abandonnés en cours de sprint | Pas de trace de la méthode | Scrum Master du jour qui écrit la note ; daily de 15 minutes ; issues E10.x dans le tableau |
 | Types et énumérations qui bougent | Blocage entre les quatre développeurs | Les figer le J1 ; toute évolution par PR `contract` |
@@ -969,7 +969,7 @@ E8.4|Voir l’écart de prix et la réponse du serveur|epic:E8,ws:backoffice,typ
 E8.5|Garder une trace et comparer les faits au JSON du serveur|epic:E8,ws:donnees,type:feat,prio:must|J6 — Vérification, envoi, changements|P3|0.7|E0.5|En tant que relecteur, je veux une trace expurgée de chaque vérification et la comparaison de ses faits au JSON du serveur afin de contrôler l’agent.|Scénario : fait faux détecté\n  Étant donné une conclusion qui annonce 4 places alors que le serveur en annonce 2\n  Quand les faits sont comparés au JSON du serveur\n  Alors l’écart est signalé
 E9.1|Schéma des permissions : qui peut lire, proposer, poser, confirmer|epic:E9,ws:po,type:docs,prio:must|J1 — Cadrage|PO|0.3|E8.2|En tant qu’équipe, je veux un schéma des permissions afin de défendre qui peut faire quoi.|
 E9.3|Écran d’accord : prestations, prix revérifié et conditions|epic:E9,ws:backoffice,type:feat,prio:must|J6 — Vérification, envoi, changements|P2|0.6|E0.5,E0.11,E0.12|En tant que conseiller, je veux voir les prestations, le prix revérifié et les conditions, puis autoriser une écriture précise afin de décider avant toute option.|
-E9.4|Poser une option de 2 jours ouvrés après accord|epic:E9,ws:ia,type:feat,prio:must|J6 — Vérification, envoi, changements|P4|0.5|E0.5,E0.17,E9.3|En tant que conseiller, je veux qu’une option de 2 jours ouvrés soit posée sur la prestation après mon accord afin de la garder pendant que je décide.|Scénario : option sans accord\n  Étant donné une prestation vérifiée par l’agent\n  Quand une option est demandée sans accord valide\n  Alors rien n’est écrit et la tentative est tracée
+E9.4|Poser une option de 72 h après accord|epic:E9,ws:ia,type:feat,prio:must|J6 — Vérification, envoi, changements|P4|0.5|E0.5,E0.17,E9.3|En tant que conseiller, je veux qu’une option de 72 h soit posée sur la prestation après mon accord afin de la garder pendant que je décide.|Scénario : option sans accord\n  Étant donné une prestation vérifiée par l’agent\n  Quand une option est demandée sans accord valide\n  Alors rien n’est écrit et la tentative est tracée
 E9.5|Seconde validation avant confirmation|epic:E9,ws:backoffice,type:feat,prio:should|Hors sprint|P2|0.4|E9.4|En tant que conseiller, je veux une seconde validation distincte avant toute confirmation afin de éviter une confirmation par erreur.|
 E9.6|Garantir que l’agent ne peut rien écrire|epic:E9,ws:donnees,type:test,prio:must|J7 — Clôture et démonstration|P3|0.4|E8.3,E9.4|En tant qu’équipe, je veux des tests qui prouvent que l’agent ne peut rien écrire afin de défendre la frontière d’action.|Scénario : l’agent ne peut rien écrire\n  Étant donné un agent avec le seul outil de vérification\n  Quand il tente de poser, de confirmer ou d’annuler\n  Alors le code refuse et la tentative est tracée
 E9.7|Note d’une page : un échec observé, la décision humaine, le choix de conception révisé|epic:E9,ws:po,type:docs,prio:must|J7 — Clôture et démonstration|PO|0.3|E9.6,E11.2|En tant qu’équipe, je veux une note sur un échec observé et le choix de conception révisé afin de démontrer ce qu’on a appris.|

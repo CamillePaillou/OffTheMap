@@ -1,7 +1,7 @@
 /**
  * Contrat du chiffrage (E4.1). Règles détaillées : docs/specs/chiffrage.md.
  * La fonction de chiffrage (E4.2) vit dans src/domain et doit donner les résultats de
- * docs/specs/chiffrage-exemples.json. Les valeurs marquées « à confirmer » attendent le client.
+ * docs/specs/chiffrage-exemples.json. Les choix faits sans le client sont dans la section 5 du document.
  */
 
 /** Codes des alertes écrites dans propositions.alertes. */
@@ -9,7 +9,7 @@ export const CODES_ALERTE = [
   'capacite_depassee', // participants > capacité de la prestation
   'participants_superieurs_voyageurs', // participants > nombre de voyageurs du dossier
   'date_hors_sejour', // date en dehors du séjour (hébergement : la nuit du départ est exclue)
-  'nuits_incoherentes', // nombre de nuits d'hébergement différent de nb_nuits_fixe
+  'nuits_incoherentes', // nuits d'hébergement différentes des nuits de référence (fixées, sinon demandées)
   'prestation_inactive', // prestation retirée du catalogue
   'budget_depasse', // total > budget de référence
   'budget_proche', // total >= SEUIL_BUDGET_PROCHE du budget de référence
@@ -29,7 +29,9 @@ export interface Alerte {
 
 export const REGLES_CHIFFRAGE = {
   margeCents: 0, // décidé : pas de marge
-  seuilBudgetProche: 0.9, // à confirmer
+  budget: 'global', // décidé : pour tout le groupe, jamais par personne
+  statutsHorsTotal: ['remplacee', 'indisponible'] as const,
+  seuilBudgetProche: 0.9, // choix de l'équipe
   devise: 'EUR',
   locale: 'fr-FR',
 } as const;

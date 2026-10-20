@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "description": "Exemples de docs/specs/chiffrage.md. Montants en centimes. budget_reference_cents : budget réel, sinon annoncé, sinon null. Les alertes sont triées par ordre alphabétique.",
+  "version": 2,
+  "description": "Exemples de docs/specs/chiffrage.md (version 2). Montants en centimes. budget_reference_cents : budget global du groupe (réel, sinon annoncé, sinon null). nb_nuits : nuits de référence (fixées, sinon demandées). Les lignes remplacee et indisponible gardent leur total de ligne (comme la colonne calculée en base) mais n'entrent pas dans le total de la proposition. Les alertes sont triées par ordre alphabétique.",
   "cas": [
     {
       "id": "A",
@@ -20,7 +20,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 4800,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "hotel-nantes-01",
@@ -30,7 +31,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 9600,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "activite-nantes-01",
@@ -40,7 +42,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 3500,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           }
         ]
       },
@@ -72,7 +75,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 4800,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "hotel-nantes-01",
@@ -82,7 +86,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 9600,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "activite-nantes-01",
@@ -92,7 +97,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 3500,
-            "prix_confirme_cents": 4000
+            "prix_confirme_cents": 4000,
+            "statut": "confirme"
           }
         ]
       },
@@ -126,7 +132,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 4800,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "hotel-nantes-01",
@@ -136,7 +143,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 9600,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "hotel-nantes-01",
@@ -146,7 +154,8 @@
             "date": "2026-11-08",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 9600,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "activite-nantes-01",
@@ -156,7 +165,8 @@
             "date": "2026-11-08",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 3500,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           }
         ]
       },
@@ -191,7 +201,8 @@
             "date": "2026-11-07",
             "participants": 9,
             "prix_unitaire_catalogue_cents": 4800,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           }
         ]
       },
@@ -223,7 +234,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 4800,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "hotel-nantes-01",
@@ -233,7 +245,8 @@
             "date": "2026-11-08",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 9600,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "activite-nantes-01",
@@ -243,7 +256,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 3500,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           }
         ]
       },
@@ -277,7 +291,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 4800,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "hotel-nantes-01",
@@ -287,7 +302,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 9600,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "activite-nantes-01",
@@ -297,7 +313,8 @@
             "date": "2026-11-07",
             "participants": 2,
             "prix_unitaire_catalogue_cents": 3500,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           }
         ]
       },
@@ -331,7 +348,8 @@
             "date": "2026-11-14",
             "participants": 4,
             "prix_unitaire_catalogue_cents": 6200,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           },
           {
             "prestation_id": "activite-lyon-01",
@@ -341,7 +359,8 @@
             "date": "2026-11-14",
             "participants": 4,
             "prix_unitaire_catalogue_cents": 2900,
-            "prix_confirme_cents": null
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
           }
         ]
       },
@@ -351,6 +370,61 @@
           11600
         ],
         "total_cents": 36400,
+        "alertes": []
+      }
+    },
+    {
+      "id": "H",
+      "titre": "Atelier indisponible, hors du total",
+      "entree": {
+        "voyageurs": 2,
+        "date_debut": "2026-11-07",
+        "date_fin": "2026-11-08",
+        "nb_nuits": 1,
+        "budget_reference_cents": 40000,
+        "lignes": [
+          {
+            "prestation_id": "train-nantes-01",
+            "type": "transport",
+            "capacite": 8,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 4800,
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
+          },
+          {
+            "prestation_id": "hotel-nantes-01",
+            "type": "hebergement",
+            "capacite": 6,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 9600,
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
+          },
+          {
+            "prestation_id": "activite-nantes-01",
+            "type": "activite",
+            "capacite": 10,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_unitaire_catalogue_cents": 3500,
+            "prix_confirme_cents": null,
+            "statut": "indisponible"
+          }
+        ]
+      },
+      "attendu": {
+        "totaux_lignes_cents": [
+          9600,
+          19200,
+          7000
+        ],
+        "total_cents": 28800,
         "alertes": []
       }
     }
