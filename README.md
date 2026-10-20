@@ -71,6 +71,15 @@ Le script travaille dans une transaction annulée à la fin : il ne laisse aucun
 
 Compte de démonstration créé par le seed (base locale uniquement) : `conseiller@offthemap.test` / `offthemap-demo`.
 
+## Simulateur du formateur
+
+Les prestations (catalogue, disponibilités, options, réservations) viennent du simulateur du formateur (dépôt `PANDORMedia/gestion-projet-agentique-web3`, `server/app.py`), appelé uniquement par le serveur à travers `src/infrastructure/prestataires/simulateur.ts` (port `src/ports/prestataires.ts`).
+
+- `make up` le construit depuis GitHub et le lance en mode démonstration : API sur http://localhost:8765, tableau de bord en lecture seule sur http://localhost:8765/dashboard. Aucun clone à faire.
+- Clés de démonstration : équipe `demo-key`, approbation `demo-approval` (la clé d'approbation est saisie par le conseiller, jamais envoyée par l'agent). La clé d'équipe se règle dans `.env` : `SIMULATEUR_TEAM_KEY`.
+- Pour viser le serveur du formateur plutôt que le simulateur local, changer `SIMULATEUR_URL` et `SIMULATEUR_TEAM_KEY` dans `.env`.
+- Pannes que le simulateur ne produit pas : `SIMULATEUR_PANNE=delai` ou `erreur_serveur` dans `.env` (puis relancer l'application) ; l'adaptateur rend alors une erreur explicite et aucun prix. `aucune` rétablit le fonctionnement normal.
+
 ## Variables d'environnement
 
 `.env.example` liste toutes les variables, sans valeur sensible. Toute nouvelle variable y est ajoutée dans la même PR.
