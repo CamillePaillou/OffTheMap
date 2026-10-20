@@ -14,7 +14,7 @@ type Ligne<T extends keyof Tables, K extends keyof Tables[T]['Row']> = Pick<Tabl
 const utc = (instant: string) => new Date(instant).toISOString();
 
 /** Version en cours : celle qui n'a pas été remplacée, sinon la plus récente. */
-function versionEnCours<D extends { version: number; remplacee_le: string | null }>(demandes: D[]): D | undefined {
+export function versionEnCours<D extends { version: number; remplacee_le: string | null }>(demandes: D[]): D | undefined {
   return [...demandes].sort((a, b) => Number(a.remplacee_le !== null) - Number(b.remplacee_le !== null) || b.version - a.version)[0];
 }
 

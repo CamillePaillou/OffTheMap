@@ -709,6 +709,7 @@ export type Database = {
         Args: { p_dossier: string; p_proposition: string | null; p_modele: string; p_conseiller: string };
         Returns: number;
       };
+      enregistrer_rappel: { Args: { p_proposition: string; p_jour: number }; Returns: number };
       changer_ligne: {
         Args: {
           p_ligne: string;
