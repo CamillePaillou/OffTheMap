@@ -48,5 +48,6 @@
   "alertes": [
     { "code": "budget_proche", "message": "Le total atteint 92 % du budget de référence." }
   ],
-  "ecarts": null
+  "ecarts": null,
+  "motif_changement": null
 }

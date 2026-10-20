@@ -20,7 +20,7 @@ export type LignePropositionBase = Ligne<'proposition_lignes',
   verifications: Ligne<'verifications', 'statut' | 'prix_unitaire_cents' | 'places_restantes' | 'cree_le'>[];
 };
 
-export type PropositionBase = Ligne<'propositions', 'id' | 'dossier_id' | 'version' | 'statut' | 'programme' | 'total_cents' | 'alertes' | 'ecarts'> & {
+export type PropositionBase = Ligne<'propositions', 'id' | 'dossier_id' | 'version' | 'statut' | 'programme' | 'total_cents' | 'alertes' | 'ecarts' | 'motif_changement'> & {
   proposition_lignes: LignePropositionBase[];
   dossiers: {
     demandes: (Ligne<'demandes', 'version' | 'remplacee_le' | 'budget_annonce_cents'> & {
@@ -68,6 +68,7 @@ export function versProposition(p: PropositionBase): Proposition {
     budget_reference_cents: budgetReference(p),
     alertes: p.alertes,
     ecarts: p.ecarts,
+    motif_changement: p.motif_changement,
   });
 }
 

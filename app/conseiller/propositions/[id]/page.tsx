@@ -11,6 +11,7 @@ import { STATUT_PROPOSITION } from '../../_composants/libelles';
 import { resumerProposition } from '@/src/domain/proposition/resumeProposition';
 import { REGLES_CHIFFRAGE } from '@/types/chiffrage';
 import { ActionsLigne, PanneauEnvoi } from './actions-tarifs';
+import { PanneauChangement } from './panneau-changement';
 import { PanneauReponse } from './panneau-reponse';
 import { CarteMail } from '../../_composants/carte-mail';
 import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
@@ -83,6 +84,22 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
           </span>
         )}
       </p>
+
+      {proposition.statut === 'remplacee' && (
+        <p className="mt-6 rounded border border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+          Version remplacée après un changement demandé par le client. Elle reste telle qu’elle a été envoyée ; la version suivante est
+          dans la{' '}
+          <Link href={`/conseiller/dossiers/${proposition.dossier_id}`} className="underline underline-offset-4">
+            fiche du dossier
+          </Link>
+          .
+        </p>
+      )}
+      {proposition.motif_changement && (
+        <p className="mt-6 rounded border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <span className="font-medium">Changement demandé par le client :</span> {proposition.motif_changement}
+        </p>
+      )}
 
       {proposition.statut === 'brouillon_en_cours' && (
         <p role="status" className="mt-6 text-zinc-600">
@@ -204,6 +221,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
       {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} />}
 
       <PanneauReponse propositionId={proposition.id} statut={proposition.statut} />
+      {proposition.statut === 'envoyee' && <PanneauChangement propositionId={proposition.id} version={proposition.version} />}
 
       {mail && (
         <section className="mt-8">

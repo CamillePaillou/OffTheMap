@@ -737,6 +737,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["statut_dossier"];
       };
       demarrer_brouillon: { Args: { p_dossier: string; p_conseiller: string }; Returns: string };
+      creer_version_suivante: { Args: { p_proposition: string; p_conseiller: string; p_motif: string; p_resultat: Json }; Returns: string };
       terminer_brouillon: {
         Args: { p_proposition: string; p_resultat: Json };
         Returns: Database["public"]["Enums"]["statut_proposition"];

@@ -160,6 +160,7 @@ export const Proposition = z.object({
   budget_reference_cents: centsPositif.nullable(), // réel, sinon annoncé, sinon null
   alertes: z.array(z.object({ code: z.enum(CODES_ALERTE), ligne_id: uuid.optional(), message: z.string().min(1) }).strict()),
   ecarts: z.object({ resume: z.string() }).strict().nullable(), // Should
+  motif_changement: z.string().nullable(), // E6.1 : changement demandé par le client, sur la version qui y répond
 }).strict();
 export type Proposition = z.infer<typeof Proposition>;
 
