@@ -52,10 +52,10 @@ sequenceDiagram
 | `expire` | « Ce lien a expiré, contactez votre conseiller » |
 | `clos` | « Votre demande n'attend plus de correction » |
 
-## Ce qui reste à brancher
+## Côté conseiller
 
-- **Bouton côté conseiller** (écran de tri, E3.x) : appeler `demanderCorrection` avec le conseiller de `exigerConseiller()`, puis ouvrir le mail (mailto) avec l'adresse publique du site + `cheminCorrection(jeton)`. Le jeton n'est affiché qu'à ce moment : il n'est pas récupérable ensuite.
-- **Nouvelle fiche** : le dossier repasse en `fiche_en_cours` ; la génération de la fiche de la nouvelle version est lancée par E2.2, comme après un dépôt.
+- **Créer le lien** (E3.1, `docs/specs/tri.md`) : depuis la fiche, « À corriger » (ou « Envoyer un lien de correction » sur un dossier déjà à corriger) appelle `demanderCorrection`, puis ouvre le mail (mailto) avec l'adresse du site + `cheminCorrection(jeton)`. Le jeton n'est affiché qu'à ce moment : il n'est pas récupérable ensuite.
+- **Nouvelle fiche** : le dossier repasse en `fiche_en_cours` ; la fiche de la nouvelle version est générée par E2.2, comme après un dépôt.
 
 ## Démonstration
 

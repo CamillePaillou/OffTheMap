@@ -701,6 +701,16 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      trier_dossier: {
+        Args: {
+          p_dossier: string;
+          p_ancien: string;
+          p_decision: Database["public"]["Enums"]["decision_tri"];
+          p_conseiller: string;
+          p_detail?: Json;
+        };
+        Returns: number;
+      };
       terminer_generation_fiche: {
         Args: { p_dossier: string; p_modele: string; p_generation: Json };
         Returns: Database["public"]["Enums"]["statut_dossier"];

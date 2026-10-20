@@ -206,6 +206,26 @@ select doit_echouer($$select corriger_fiche('00000000-0000-0000-0000-0000000000f
 select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 0, null, null, null, null)$$, 'budget réel nul');
 select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), null, '2026-11-08', '2026-11-07', null, null)$$, 'dates fixes inversées');
 
+-- tri (E3.1) : statut, journal avec la décision et fiches.decision écrits ensemble ; un seul tri gagne
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000000d8', 'fiche_prete'), ('00000000-0000-0000-0000-0000000000d9', 'fiche_prete');
+insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs)
+  values ('00000000-0000-0000-0000-0000000000e8', '00000000-0000-0000-0000-0000000000d8', true, true, 'Zoé', 'zoe@example.org', '2026-11-07', '2026-11-08', 1, '{adulte}'),
+         ('00000000-0000-0000-0000-0000000000e9', '00000000-0000-0000-0000-0000000000d9', true, true, 'Max', 'max@example.org', '2026-11-07', '2026-11-08', 1, '{adulte}');
+insert into fiches (demande_id) values ('00000000-0000-0000-0000-0000000000e8');
+select doit_valoir($$select (trier_dossier('00000000-0000-0000-0000-0000000000d8', 'fiche_prete', 'go', '00000000-0000-0000-0000-00000000000a',
+  '{"type": "statut", "cible": "dossier", "ancien": "fiche_prete", "nouveau": "go", "decision": "go"}') is not null)::int$$, 1, 'tri go accepté');
+select doit_valoir($$select count(*) from dossiers d join demandes m on m.dossier_id = d.id join fiches f on f.demande_id = m.id
+  where d.id = '00000000-0000-0000-0000-0000000000d8' and d.statut = 'go' and f.decision = 'go'$$, 1, 'statut go et décision sur la fiche');
+select doit_valoir($$select count(*) from historique_dossier where dossier_id = '00000000-0000-0000-0000-0000000000d8'
+  and ancien_statut = 'fiche_prete' and nouveau_statut = 'go' and auteur = 'conseiller'
+  and auteur_id = '00000000-0000-0000-0000-00000000000a' and detail ->> 'decision' = 'go'$$, 1, 'décision visible dans l''historique, avec le conseiller');
+select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d8', 'fiche_prete', 'refusee', '00000000-0000-0000-0000-00000000000a')$$, 'second tri sur un dossier déjà trié');
+select doit_valoir($$select count(*) from fiches f join demandes m on m.id = f.demande_id where m.dossier_id = '00000000-0000-0000-0000-0000000000d8' and f.decision = 'go'$$, 1, 'second tri refusé : décision inchangée');
+select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d9', 'fiche_prete', 'go', '00000000-0000-0000-0000-00000000000a')$$, 'tri d''un dossier sans fiche');
+select doit_valoir($$select count(*) from dossiers where id = '00000000-0000-0000-0000-0000000000d9' and statut = 'fiche_prete'$$, 1, 'sans fiche : statut inchangé');
+select doit_valoir($$select count(*) from historique_dossier where dossier_id = '00000000-0000-0000-0000-0000000000d9'$$, 0, 'sans fiche : rien au journal');
+select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d8', 'go', 'go', null)$$, 'tri sans conseiller identifié');
+
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');
@@ -216,6 +236,7 @@ select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, 
   values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un visiteur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un visiteur');
 select doit_echouer($$select deposer_demande('{}')$$, 'dépôt direct en base par un visiteur');
+select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d9', 'fiche_prete', 'go', '00000000-0000-0000-0000-00000000000a')$$, 'tri appelé par un visiteur');
 select doit_valoir($$select count(*) from corrections$$, 0, 'un visiteur ne lit pas les liens de correction');
 select doit_echouer($$select lire_correction(repeat('0', 64))$$, 'lecture d’un lien en base par un visiteur');
 select doit_echouer($$select corriger_demande(repeat('0', 64), '{}')$$, 'correction directe en base par un visiteur');

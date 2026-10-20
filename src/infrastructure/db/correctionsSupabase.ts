@@ -67,4 +67,15 @@ export class CorrectionsSupabase implements CorrectionsRepository {
     if (erreurLecture) throw new Error(`dossier de la demande corrigée : ${erreurLecture.message}`);
     return { demandeId: ligne.demande_id, version: ligne.version, dossierId: version.dossier_id };
   }
+
+  async boucles(dossierId: string) {
+    const { data, error } = await clientService()
+      .from('corrections')
+      .select('expire_le, utilisee_le')
+      .eq('dossier_id', dossierId);
+    if (error) throw new Error(`corrections du dossier : ${error.message}`);
+    const maintenant = Date.now();
+    const ouvert = (data ?? []).find((c) => c.utilisee_le === null && Date.parse(c.expire_le) > maintenant);
+    return { faites: data?.length ?? 0, lienOuvertJusquau: ouvert?.expire_le ?? null };
+  }
 }

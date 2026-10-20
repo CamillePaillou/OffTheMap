@@ -72,4 +72,10 @@ export class CorrectionsEnMemoire implements CorrectionsRepository {
     dossier.statut = 'fiche_en_cours';
     return { demandeId: nouvelle.id, version: nouvelle.version, dossierId: lien.dossierId };
   }
+
+  async boucles(dossierId: string) {
+    const liens = this.liens.filter((l) => l.dossierId === dossierId);
+    const ouvert = liens.find((l) => !l.utilisee && Date.parse(l.expireLe) > this.maintenant().getTime());
+    return { faites: liens.length, lienOuvertJusquau: ouvert?.expireLe ?? null };
+  }
 }
