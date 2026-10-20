@@ -11,7 +11,7 @@ export function FormulaireConnexion({ suite, erreurInitiale }: { suite: string; 
       <input type="hidden" name="suite" value={suite} />
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">Adresse e-mail</span>
-        <input name="email" type="email" autoComplete="email" required className="rounded-lg border border-[#b7c7d3] bg-white px-3 py-2.5" />
+        <input name="email" type="email" autoComplete="email" required className="bo-champ" />
       </label>
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">Mot de passe</span>
@@ -20,15 +20,15 @@ export function FormulaireConnexion({ suite, erreurInitiale }: { suite: string; 
           type="password"
           autoComplete="current-password"
           required
-          className="rounded-lg border border-[#b7c7d3] bg-white px-3 py-2.5"
+          className="bo-champ"
         />
       </label>
       {etat.erreur && (
-        <p role="alert" className="rounded-lg border-l-4 border-red-700 bg-red-50 px-3 py-2 text-sm text-red-800">
+        <p role="alert" className="rounded-[10px] bg-grenade-pale px-3 py-2 text-sm text-grenade">
           {etat.erreur}
         </p>
       )}
-      <button type="submit" disabled={enCours} className="mt-2 rounded-lg bg-nuit px-4 py-2.5 font-bold text-white hover:bg-[#0a3a57] disabled:opacity-60">
+      <button type="submit" disabled={enCours} className="bo-btn mt-2 w-full">
         {enCours ? 'Connexion…' : 'Se connecter'}
       </button>
     </form>

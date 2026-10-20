@@ -5,7 +5,7 @@ import { CHAMPS_CORRIGEABLES, LIBELLES_CHAMPS, MOTIFS_TYPES, REGLES_CORRECTION }
 import { CarteMail } from '../../_composants/carte-mail';
 import { demanderUneCorrection, trier, type EtatTri } from './tri';
 
-const champ = 'rounded-lg border border-[#b7c7d3] bg-white px-3 py-2';
+const champ = 'bo-champ';
 
 interface Props {
   dossierId: string;
@@ -30,16 +30,17 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
   const e = etatLien.erreurs ?? {};
   const alerte = (texte?: string) =>
     texte ? (
-      <p role="alert" className="text-sm text-red-700">
+      <p role="alert" className="text-sm text-grenade">
         {texte}
       </p>
     ) : null;
 
   return (
-    <section className="mt-4">
-      <h3 className="text-lg">{statut === 'fiche_prete' ? 'Trier la demande' : 'Demande à corriger'}</h3>
+    <section className="mt-1">
+      {/* le titre (« Trier la demande ») est celui du bloc « Maintenant » de la fiche */}
+      {statut === 'fiche_prete' && <p className="text-sm text-[#3d4570]">Relisez la fiche, puis validez, demandez une précision au client ou refusez.</p>}
       {statut === 'a_corriger' && (
-        <p className="mt-1 text-sm text-doux">
+        <p className="mt-1 text-sm text-ardoise">
           {boucles.lienOuvertJusquau
             ? `Lien de correction envoyé, valable jusqu’au ${date(boucles.lienOuvertJusquau)}. Si le client répond autrement (téléphone, mail), reportez sa réponse dans la fiche puis validez la demande.`
             : 'Aucun lien de correction en cours.'}
@@ -48,14 +49,14 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
 
       <div className="mt-4 flex flex-wrap items-start gap-4">
         <form action={valider} className="flex flex-col gap-2">
-          <button type="submit" disabled={validationEnCours} className="rounded-lg bg-green-700 px-5 py-2.5 font-bold text-white hover:bg-green-800 disabled:opacity-50">
+          <button type="submit" disabled={validationEnCours} className="bo-btn">
             {validationEnCours ? 'Enregistrement…' : 'Valider'}
           </button>
           {alerte(etatValider.erreurs?.formulaire)}
         </form>
 
         <form action={refuser} className="flex flex-col gap-2">
-          <button type="submit" disabled={refusEnCours} className="self-start rounded-lg border-2 border-red-700 bg-white px-5 py-2 font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
+          <button type="submit" disabled={refusEnCours} className="bo-btn-2 self-start text-grenade!">
             {refusEnCours ? 'Enregistrement…' : 'Refuser'}
           </button>
           <label className="flex items-center gap-2 text-sm">
@@ -63,7 +64,7 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
             Je confirme : le refus est définitif
           </label>
           {etatRefus.erreurs?.confirmer_refus && (
-            <p id="refus-erreur" role="alert" className="text-sm text-red-700">
+            <p id="refus-erreur" role="alert" className="text-sm text-grenade">
               {etatRefus.erreurs.confirmer_refus}
             </p>
           )}
@@ -72,9 +73,9 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
       </div>
 
       {etatLien.lien ? (
-        <div role="status" className="mt-6 flex flex-col gap-2 rounded-lg border-l-4 border-green-700 bg-green-50 p-4 text-sm">
-          <p className="font-medium text-green-900">Lien de correction créé, valable jusqu’au {date(etatLien.lien.expireLe)}.</p>
-          <p className="text-green-900">Il n’est affiché qu’ici : envoyez-le maintenant. Relisez le mail avant de l’envoyer.</p>
+        <div role="status" className="mt-5 flex flex-col gap-2 rounded-[14px] bg-white p-4 text-sm">
+          <p className="font-medium text-sauge">Lien de correction créé, valable jusqu’au {date(etatLien.lien.expireLe)}.</p>
+          <p className="text-sauge">Il n’est affiché qu’ici : envoyez-le maintenant. Relisez le mail avant de l’envoyer.</p>
           <CarteMail
             dossierId={dossierId}
             propositionId={null}
@@ -88,10 +89,10 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
           <input readOnly value={etatLien.lien.url} aria-label="Lien de correction" className={`${champ} font-mono text-xs`} onFocus={(ev) => ev.currentTarget.select()} />
         </div>
       ) : peutCorriger ? (
-        <details open={Object.keys(e).length > 0} className="mt-5 border-t border-filet pt-4">
-          <summary className="cursor-pointer font-semibold text-nuit">
+        <details open={Object.keys(e).length > 0} className="mt-5 rounded-[14px] bg-white/70 px-4 py-3">
+          <summary className="cursor-pointer font-semibold text-encre">
             {statut === 'fiche_prete' ? 'À corriger : demander des précisions au client' : 'Envoyer un lien de correction'}
-            <span className="ml-2 text-sm font-normal text-doux">
+            <span className="ml-2 text-sm font-normal text-ardoise">
               ({bouclesRestantes} {bouclesRestantes > 1 ? 'corrections possibles' : 'correction possible'})
             </span>
           </summary>
@@ -100,7 +101,7 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
             <fieldset className="flex flex-col gap-2">
               <legend className="text-sm font-medium">Points à revoir par le client</legend>
               {CHAMPS_CORRIGEABLES.map((c) => (
-                <div key={c} className="flex flex-col gap-1.5 rounded-lg p-2 has-[:checked]:bg-ciel">
+                <div key={c} className="grid items-center gap-1.5 rounded-[10px] p-2 transition-colors has-[:checked]:bg-white sm:grid-cols-[13rem_1fr]">
                   <label className="flex items-center gap-2 text-sm">
                     <input name="champs" value={c} type="checkbox" defaultChecked={v[`champ_${c}`] === 'on'} />
                     {LIBELLES_CHAMPS[c]}
@@ -127,7 +128,7 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
             </fieldset>
             <label className="flex flex-col gap-1">
               <span className="text-sm font-medium">Message au client</span>
-              <span className="text-xs text-doux">Lu par le client dans le mail et sur le formulaire : rien d’interne.</span>
+              <span className="text-xs text-ardoise">Lu par le client dans le mail et sur le formulaire : rien d’interne.</span>
               <textarea
                 name="motif"
                 rows={4}
@@ -137,14 +138,14 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
               />
               {alerte(e.motif)}
             </label>
-            <button type="submit" disabled={lienEnCours} className="self-start rounded-lg bg-nuit px-5 py-2.5 font-bold text-white hover:bg-[#0a3a57] disabled:opacity-50">
+            <button type="submit" disabled={lienEnCours} className="bo-btn self-start">
               {lienEnCours ? 'Création du lien…' : statut === 'fiche_prete' ? 'Passer à corriger et créer le lien' : 'Créer le lien'}
             </button>
           </form>
         </details>
       ) : (
         bouclesRestantes <= 0 && (
-          <p className="mt-6 text-sm text-doux">
+          <p className="mt-6 text-sm text-ardoise">
             Deux corrections ont déjà été demandées : appelez le client, ou validez ou refusez la demande.
           </p>
         )

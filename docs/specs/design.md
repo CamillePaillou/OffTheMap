@@ -40,6 +40,39 @@ Elle sert à l'accueil (« De votre demande au départ »), dans le formulaire (
 | Fiche d'un dossier | En-tête (nom, statut, ligne) ; à gauche la demande, la fiche et l'historique ; à droite **« À faire »** (tri, relance, brouillon), propositions et mails | Lecture à gauche, décisions à droite, toujours au même endroit |
 | Proposition | Total et jauge du budget, tarifs confirmés, alertes bloquantes ; panneau d'envoi ou de réponse à côté ; prestations ; programme et mail | L'envoi n'est possible que si tout est vérifié : on voit pourquoi en un coup d'œil |
 
+## Espace conseiller : son propre design system
+
+Le site public garde la charte DÉTOUR. L'espace conseiller est un outil de travail : il a son propre design system, **clair, calme et simple** (maquette validée par la PO). Une seule couleur d'action ; la couleur vient des photos des destinations. Tout est sous la classe `bo` (`app/conseiller/layout.tsx`, en-tête et page de connexion).
+
+### Jetons (`app/globals.css`, préfixe `--bo-`)
+
+| Jeton | Valeur | Classe | Usage |
+| --- | --- | --- | --- |
+| Encre | `#1f2430` | `encre` | texte |
+| Ardoise | `#5b6270` | `ardoise` | texte secondaire |
+| Trait | `#e7e9ec` | `trait` | bordures |
+| Brume | `#f5f6f7` | `brume` | fond |
+| Pervenche | `#4f5fd6` | `pervenche` | action (boutons, avancement) |
+| Pervenche foncée | `#3a48b8` | `pervenche-fonce` | texte d'action, survol |
+| Pervenche pâle | `#eef0fb` | `pervenche-pale` | sélection, « À vous » |
+| Miel | `#e3a34b` / `#8a5a12` / `#fbf4e6` | `miel`, `miel-fonce`, `miel-pale` | jauges ; attente du client ; départ proche |
+| Sauge | `#2f7a52` / `#e8f3ec` | `sauge`, `sauge-pale` | confirmé |
+| Grenade | `#b03a33` / `#fbedec` | `grenade`, `grenade-pale` | bloquant, erreur |
+
+- **Typographie** : Instrument Sans seule. Échelle 40 (titre du séjour) · 32 · 24 · 16 · 15 (texte) · 13 (légendes) ; graisses 400 et 600.
+- **Formes** : plus un élément est grand, plus il est arrondi : 10 px bouton et champ, 14 px ligne de liste, 18 px tuile (`bo-carte`), 22 px bloc principal (`bo-bloc`). Pas de bordure sur les surfaces : du blanc posé sur la brume.
+- **Composants** : `bo-btn` (action principale, une par écran), `bo-btn-2` (secondaire), `bo-champ`, `bo-puce` (pastilles : statut, « À vous », « Client », « Auto »), `Avancement` (cinq étapes), `Fil` (fil d'Ariane).
+- **Mouvement** : une seule courbe, `cubic-bezier(.2, .8, .2, 1)`. 150 ms au survol et à l'appui ; 450 ms pour l'apparition d'une page (`bo-entre`) ; 600 ms quand une jauge ou l'avancement change (`bo-glisse`). Coupé si l'ordinateur demande moins de mouvement.
+- Contrastes testés dans `lib/design.test.ts`.
+
+### Écrans
+
+- **Liste + dossier ouvert** : la liste reste à gauche (layout), avec la recherche, les onglets « À traiter », « En attente », « Tous », une vignette photo par dossier, ce qu'il reste à faire et le délai avant le départ. Sur téléphone, la liste et le dossier s'affichent l'un après l'autre.
+- **Accueil** : « Bonjour », ce qui est à faire, les départs des 30 prochains jours.
+- **Dossier** : photo, « Paris → ville », dates, avancement ; un bloc **« Maintenant »** qui dit quoi faire avec l'action sur place (tri, relance, brouillon, ouvrir la proposition), sa couleur dit qui doit agir ; trois tuiles (budget ou total, départ, envies) ; demande, fiche, propositions, mails, activité.
+- **Proposition, vérification d'un prix, accord, connexion** : mêmes jetons et composants.
+- **Prochaine étape** (`prochaineEtape()`) : déduite du statut du dossier et de sa dernière proposition, avec qui doit agir ; testée pour chaque statut.
+
 ## Règles
 
 - **Une action principale par écran** (`.btn-principal`, orange foncé). Les actions secondaires sont en bleu nuit, en contour ou en lien.

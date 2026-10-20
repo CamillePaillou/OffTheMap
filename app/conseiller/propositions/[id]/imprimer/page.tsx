@@ -20,7 +20,7 @@ const jour = (d: string) => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full'
 export default function ImprimerPage({ params }: Props) {
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-10 print:max-w-none print:px-0 print:py-0">
-      <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+      <Suspense fallback={<p className="text-ardoise">Chargement…</p>}>
         <Contenu params={params} />
       </Suspense>
     </main>
@@ -42,7 +42,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
     if (!(e instanceof MailImpossibleErreur)) throw e;
     return (
       <>
-        <p className="text-texte">Cette proposition a encore des prix non vérifiés : elle ne peut pas être imprimée pour le client.</p>
+        <p className="text-encre">Cette proposition a encore des prix non vérifiés : elle ne peut pas être imprimée pour le client.</p>
         <Link href={`/conseiller/propositions/${id}`} className="mt-4 inline-block text-sm underline underline-offset-4">
           ← Proposition
         </Link>
@@ -58,7 +58,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   const { demande } = dossier;
 
   return (
-    <article className="text-texte">
+    <article className="text-encre">
       <div className="mb-8 flex items-center justify-between print:hidden">
         <Link href={`/conseiller/propositions/${id}`} className="text-sm underline underline-offset-4">
           ← Proposition
@@ -66,12 +66,12 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
         <BoutonImprimer />
       </div>
 
-      <header className="border-b border-filet pb-4">
-        <p className="text-sm uppercase tracking-wide text-doux">DÉTOUR · proposition de voyage</p>
+      <header className="border-b border-trait pb-4">
+        <p className="text-sm uppercase tracking-wide text-ardoise">DÉTOUR · proposition de voyage</p>
         <h1 className="mt-1 text-3xl">
           {demande.destination ?? 'Votre séjour'} · {demande.client.nom}
         </h1>
-        <p className="mt-1 text-texte">
+        <p className="mt-1 text-encre">
           Du {jour(demande.dates.debut)} au {jour(demande.dates.fin)} · {demande.voyageurs.length} voyageur{demande.voyageurs.length > 1 ? 's' : ''}
         </p>
       </header>
@@ -84,7 +84,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
               <h3 className="font-medium">
                 {jour(j.date)} · {j.titre}
               </h3>
-              <p className="mt-1 whitespace-pre-line text-sm text-texte">{j.texte}</p>
+              <p className="mt-1 whitespace-pre-line text-sm text-encre">{j.texte}</p>
             </div>
           ))}
         </section>
@@ -93,7 +93,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
       <section className="mt-8 break-inside-avoid">
         <h2 className="text-lg font-semibold">Prestations et prix</h2>
         <table className="mt-3 w-full text-left text-sm">
-          <thead className="border-b border-filet text-doux">
+          <thead className="border-b border-trait text-ardoise">
             <tr>
               <th className="py-2 pr-4 font-medium">Date</th>
               <th className="py-2 pr-4 font-medium">Prestation</th>
@@ -104,7 +104,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
           </thead>
           <tbody>
             {lignes.map((l) => (
-              <tr key={l.id} className="border-b border-filet">
+              <tr key={l.id} className="border-b border-trait">
                 <td className="py-2 pr-4">{jour(l.date)}</td>
                 <td className="py-2 pr-4">{l.prestation.nom}</td>
                 <td className="py-2 pr-4 text-right">{l.participants}</td>
@@ -122,10 +122,10 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
             </tr>
           </tfoot>
         </table>
-        <p className="mt-2 text-xs text-doux">Prix vérifiés auprès de nos prestataires. Taxes non comprises (catalogue fictif).</p>
+        <p className="mt-2 text-xs text-ardoise">Prix vérifiés auprès de nos prestataires. Taxes non comprises (catalogue fictif).</p>
       </section>
 
-      <footer className="mt-10 text-sm text-texte">
+      <footer className="mt-10 text-sm text-encre">
         <p>Votre conseiller : {conseiller.nomAffiche}, DÉTOUR.</p>
         <p>Pour accepter cette proposition, répondez au mail qui l’accompagne.</p>
       </footer>

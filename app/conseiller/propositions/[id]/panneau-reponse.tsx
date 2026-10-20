@@ -28,8 +28,8 @@ export function PanneauReponse({ propositionId, statut }: { propositionId: strin
 
   if (statut === 'depot_recu') {
     return (
-      <section className="rounded-lg border-l-4 border-green-700 bg-green-50 p-4 text-sm">
-        <p className="font-medium text-green-900">Proposition acceptée, dépôt de garantie reçu.</p>
+      <section className="rounded-[18px] bg-sauge-pale p-4 text-sm">
+        <p className="font-medium text-sauge">Proposition acceptée, dépôt de garantie reçu.</p>
         <Link href={`/conseiller/propositions/${propositionId}/accord`} className="mt-2 inline-block underline underline-offset-4">
           Passer à la réservation : donner l’accord pour les options
         </Link>
@@ -39,18 +39,18 @@ export function PanneauReponse({ propositionId, statut }: { propositionId: strin
   if (!etape) return null;
   const t = ETAPES[etape];
   return (
-    <form action={action} className="panneau flex flex-col gap-3 border-t-4 border-t-orange p-5">
+    <form action={action} className="bo-carte flex flex-col gap-3 p-5">
       <h2 className="text-xl">{t.titre}</h2>
-      {etape === 'depot_recu' && <p className="text-sm text-green-800">Acceptation enregistrée.</p>}
+      {etape === 'depot_recu' && <p className="text-sm text-sauge">Acceptation enregistrée.</p>}
       <label className="flex items-center gap-2 text-sm">
         <input name="confirmer" type="checkbox" />
         {t.case}
       </label>
-      <button type="submit" disabled={enCours} className="self-start rounded-lg bg-nuit px-5 py-2.5 font-bold text-white hover:bg-[#0a3a57] disabled:opacity-50">
+      <button type="submit" disabled={enCours} className="bo-btn self-start">
         {enCours ? 'Enregistrement…' : t.bouton}
       </button>
       {etat.erreur && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-grenade">
           {etat.erreur}
         </p>
       )}

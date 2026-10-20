@@ -7,6 +7,7 @@ import { etatEnvoi } from '@/src/application/tarifs';
 import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
 import { TarifsSupabase } from '@/src/infrastructure/db/tarifsSupabase';
 import { Ecart } from '../../_composants/ecart';
+import { Fil } from '../../_composants/fil';
 import { STATUT_PROPOSITION } from '../../_composants/libelles';
 import { resumerProposition } from '@/src/domain/proposition/resumeProposition';
 import { REGLES_CHIFFRAGE } from '@/types/chiffrage';
@@ -29,7 +30,7 @@ const instant = (iso: string) => new Date(iso).toLocaleString('fr-FR', { timeZon
 export default function PropositionPage({ params }: PageProps<'/conseiller/propositions/[id]'>) {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-      <Suspense fallback={<p className="mt-6 text-doux">Chargement…</p>}>
+      <Suspense fallback={<p className="mt-6 text-ardoise">Chargement…</p>}>
         <Contenu params={params} />
       </Suspense>
     </main>
@@ -54,9 +55,9 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
 
   // mail de la proposition (E5.4) : seulement une fois envoyée, donc tous ses prix vérifiés (E5.1)
   const envoyee = ['envoyee', 'sans_reponse', 'changement_demande', 'acceptee', 'depot_recu', 'reservee'].includes(proposition.statut);
-  const dossier = envoyee ? await new DossiersSupabase().detail(proposition.dossier_id) : null;
+  const dossier = await new DossiersSupabase().detail(proposition.dossier_id); // nom du client (fil d'Ariane) et mail
   let mail: { sujet: string; corps: string; mailto: string } | null = null;
-  if (dossier) {
+  if (dossier && envoyee) {
     try {
       const m = mailProposition(sejourDe(dossier, conseiller.nomAffiche), lignesPourMail(proposition));
       mail = { ...m, mailto: lienMailto(dossier.demande.client.email, m) };
@@ -78,22 +79,26 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   const jauge = resume.budget ? Math.min(resume.budget.part_pourcent, 100) : 0;
   // colonne de droite seulement s'il y a quelque chose à faire : envoyer, ou enregistrer la réponse du client
   const aCote = (modifiable && envoi !== null) || ['envoyee', 'sans_reponse', 'acceptee', 'depot_recu'].includes(proposition.statut);
-  const tonJauge = resume.budget?.depasse ? 'bg-red-700' : (resume.budget?.part_pourcent ?? 0) >= 90 ? 'bg-amber-500' : 'bg-bleu';
+  const tonJauge = resume.budget?.depasse ? 'bg-grenade' : (resume.budget?.part_pourcent ?? 0) >= 90 ? 'bg-miel' : 'bg-pervenche';
 
   return (
     <>
-      <Link href={`/conseiller/dossiers/${proposition.dossier_id}`} className="text-sm font-semibold underline underline-offset-4">
-        ← Fiche du dossier
-      </Link>
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <Fil
+        etapes={[
+          { libelle: 'Dossiers', href: '/conseiller' },
+          { libelle: dossier?.demande.client.nom ?? 'Dossier', href: `/conseiller/dossiers/${proposition.dossier_id}` },
+          { libelle: `Proposition v${proposition.version}` },
+        ]}
+      />
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <h1 className="text-3xl sm:text-4xl">Proposition, version {proposition.version}</h1>
-        <span className="rounded-full bg-ciel px-2.5 py-0.5 text-sm font-semibold text-nuit ring-1 ring-inset ring-[#bcd8ea]">
+        <span className="rounded-full bg-pervenche-pale px-2.5 py-0.5 text-sm font-semibold text-encre ring-1 ring-inset ring-transparent">
           {STATUT_PROPOSITION[proposition.statut]}
         </span>
       </div>
 
       {proposition.statut === 'remplacee' && (
-        <p className="mt-6 rounded-lg border-l-4 border-doux bg-[#eef1f3] p-4 text-sm text-texte">
+        <p className="mt-6 rounded-[18px] bg-[#eef1f3] p-4 text-sm text-encre">
           Version remplacée après un changement demandé par le client. Elle reste telle qu’elle a été envoyée ; la version suivante est
           dans la{' '}
           <Link href={`/conseiller/dossiers/${proposition.dossier_id}`} className="font-semibold underline underline-offset-4">
@@ -103,20 +108,20 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
         </p>
       )}
       {proposition.motif_changement && (
-        <p className="mt-6 rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4 text-sm text-amber-950">
+        <p className="mt-6 rounded-[18px] bg-miel-pale p-4 text-sm text-[#5c3d0c]">
           <span className="font-semibold">Changement demandé par le client :</span> {proposition.motif_changement}
         </p>
       )}
 
       {proposition.statut === 'brouillon_en_cours' && (
-        <p role="status" className="panneau mt-6 p-4 text-doux">
+        <p role="status" className="bo-carte mt-6 p-4 text-ardoise">
           Brouillon en cours de génération…
           <RafraichirPendantGeneration />
         </p>
       )}
       {proposition.statut === 'erreur' && (
-        <section className="mt-6 rounded-lg border-l-4 border-red-700 bg-red-50 p-4">
-          <p className="font-semibold text-red-800">La génération du brouillon a échoué.</p>
+        <section className="mt-6 rounded-[18px] bg-grenade-pale p-4">
+          <p className="font-semibold text-grenade">La génération du brouillon a échoué.</p>
           <div className="mt-3">
             <BoutonRelancerBrouillon propositionId={proposition.id} />
           </div>
@@ -124,34 +129,34 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
       )}
 
       <div className={`mt-6 grid items-start gap-6 ${aCote ? 'lg:grid-cols-[minmax(0,1fr)_24rem]' : ''}`}>
-        <section aria-labelledby="titre-total" className="panneau grid gap-6 p-5 sm:grid-cols-3 sm:p-6">
+        <section aria-labelledby="titre-total" className="bo-carte grid gap-6 p-5 sm:grid-cols-3 sm:p-6">
           <div className="sm:col-span-2">
-            <h2 id="titre-total" className="text-base text-doux!">Total</h2>
-            <p className="mt-1 font-titre text-4xl font-semibold text-nuit">{total === null ? '—' : euros(total)}</p>
+            <h2 id="titre-total" className="text-base text-ardoise!">Total</h2>
+            <p className="mt-1 text-4xl font-semibold text-encre">{total === null ? '—' : euros(total)}</p>
             {resume.budget ? (
               <div className="mt-4">
-                <div className="h-2.5 overflow-hidden rounded-full bg-filet" aria-hidden>
+                <div className="h-2.5 overflow-hidden rounded-full bg-brume" aria-hidden>
                   <div className={`h-full rounded-full ${tonJauge}`} style={{ width: `${jauge}%` }} />
                 </div>
-                <p className={`mt-2 text-sm ${resume.budget.depasse ? 'font-semibold text-red-700' : resume.budget.part_pourcent >= 90 ? 'text-amber-900' : 'text-doux'}`}>
+                <p className={`mt-2 text-sm ${resume.budget.depasse ? 'font-semibold text-grenade' : resume.budget.part_pourcent >= 90 ? 'text-[#5c3d0c]' : 'text-ardoise'}`}>
                   {resume.budget.part_pourcent} % du budget de {euros(resume.budget.reference_cents)}
                   {resume.budget.depasse ? ' : budget dépassé' : ''}
                 </p>
               </div>
             ) : (
-              <p className="mt-2 text-sm text-doux">Pas de budget de référence.</p>
+              <p className="mt-2 text-sm text-ardoise">Pas de budget de référence.</p>
             )}
           </div>
-          <dl className="flex flex-col gap-3 text-sm sm:border-l sm:border-filet sm:pl-6">
+          <dl className="flex flex-col gap-3 text-sm sm:border-l sm:border-trait sm:pl-6">
             <div>
-              <dt className="text-doux">Tarifs confirmés</dt>
-              <dd className="font-titre text-2xl font-semibold text-nuit">
+              <dt className="text-ardoise">Tarifs confirmés</dt>
+              <dd className=" text-2xl font-semibold text-encre">
                 {confirmees} / {comptees.length}
               </dd>
             </div>
             <div>
-              <dt className="text-doux">Alertes bloquantes</dt>
-              <dd className={`font-titre text-2xl font-semibold ${resume.bloquantes > 0 ? 'text-red-700' : 'text-nuit'}`}>{resume.bloquantes}</dd>
+              <dt className="text-ardoise">Alertes bloquantes</dt>
+              <dd className={` text-2xl font-semibold ${resume.bloquantes > 0 ? 'text-grenade' : 'text-encre'}`}>{resume.bloquantes}</dd>
             </div>
           </dl>
         </section>
@@ -167,10 +172,10 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
 
       <h2 className="mt-10 text-2xl">Prestations</h2>
       <div className="mt-3">
-      <div className="panneau overflow-x-auto">
+      <div className="bo-carte overflow-x-auto">
           <table className="w-full min-w-[60rem] text-left text-sm">
             <caption className="sr-only">Prestations de la proposition et leurs tarifs</caption>
-            <thead className="bg-fond text-doux">
+            <thead className="bg-brume text-ardoise">
               <tr>
                 <th className="px-3 py-3 font-semibold">Prestation</th>
                 <th className="px-3 py-3 font-semibold">Date</th>
@@ -183,13 +188,13 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                 <th className="px-3 py-3 font-semibold" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-filet">
+            <tbody className="divide-y divide-trait">
               {lignes.map(({ ligne, verification, remplacantes, ecart }) => (
-                <tr key={ligne.id} className={`align-top ${ligne.statut === 'remplacee' ? 'text-doux line-through' : ''}`}>
+                <tr key={ligne.id} className={`align-top ${ligne.statut === 'remplacee' ? 'text-ardoise line-through' : ''}`}>
                   <td className="px-3 py-3 font-semibold">
                     {ligne.prestation.nom}
                     {resume.parLigne.get(ligne.id)?.map((a, i) => (
-                      <span key={i} className={`block text-xs ${a.bloquante ? 'text-red-700' : 'text-amber-700'}`}>
+                      <span key={i} className={`block text-xs ${a.bloquante ? 'text-grenade' : 'text-miel-fonce'}`}>
                         {a.libelle}
                       </span>
                     ))}
@@ -197,31 +202,31 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                   <td className="whitespace-nowrap px-3 py-3">{ligne.date}</td>
                   <td className="px-3 py-3 text-right">{ligne.participants}</td>
                   <td className="px-3 py-3 text-right">{euros(ligne.prix_unitaire_catalogue_cents)}</td>
-                  <td className={`px-3 py-3 text-right ${HORS_TOTAL.includes(ligne.statut) ? 'text-doux line-through' : ''}`}>
+                  <td className={`px-3 py-3 text-right ${HORS_TOTAL.includes(ligne.statut) ? 'text-ardoise line-through' : ''}`}>
                     {euros(ligne.total_ligne_cents)}
                   </td>
                   <td className="px-3 py-3 text-right">
                     {verification?.prix_unitaire_cents == null ? '—' : euros(verification.prix_unitaire_cents)}
                   </td>
                   <td className="px-3 py-3 text-right">
-                    {verification ? <Ecart ecart={ecart} /> : <span className="text-doux">pas encore vérifié</span>}
+                    {verification ? <Ecart ecart={ecart} /> : <span className="text-ardoise">pas encore vérifié</span>}
                   </td>
                   <td className="px-3 py-3">
                     <span
                       className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${
                         ligne.statut === 'confirme'
-                          ? 'bg-green-50 text-green-800 ring-green-200'
+                          ? 'bg-sauge-pale text-sauge ring-transparent'
                           : ligne.statut === 'a_verifier'
-                            ? 'bg-amber-50 text-amber-900 ring-amber-200'
+                            ? 'bg-miel-pale text-[#5c3d0c] ring-transparent'
                             : ligne.statut === 'indisponible'
-                              ? 'bg-red-50 text-red-800 ring-red-200'
-                              : 'bg-[#eef1f3] text-doux ring-filet'
+                              ? 'bg-grenade-pale text-grenade ring-transparent'
+                              : 'bg-[#eef1f3] text-ardoise ring-trait'
                       }`}
                     >
                       {STATUT_LIGNE[ligne.statut]}
                     </span>
                     {ligne.prix_confirme && (
-                      <span className="block text-xs text-doux">
+                      <span className="block text-xs text-ardoise">
                         {euros(ligne.prix_confirme.montant_cents)} · {SOURCE[ligne.prix_confirme.source]} · {instant(ligne.prix_confirme.le)} ·{' '}
                         {ligne.prix_confirme.par}
                       </span>
@@ -241,11 +246,13 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                   </td>
                   <td className="px-3 py-3 text-right">
                     <Link
-                      href={`/conseiller/propositions/${proposition.id}/lignes/${ligne.id}`}
-                      className="underline underline-offset-4"
-                    >
-                      {verification ? 'Détail' : 'Vérifier'}
-                    </Link>
+                    href={`/conseiller/propositions/${proposition.id}/lignes/${ligne.id}`}
+                    className={`inline-flex whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold no-underline ${
+                      verification ? 'border border-[#d5d9df] bg-white text-encre hover:bg-brume' : 'bg-pervenche text-white hover:bg-pervenche-fonce'
+                    }`}
+                  >
+                    {verification ? 'Détail' : 'Vérifier le prix'}
+                  </Link>
                   </td>
                 </tr>
               ))}
@@ -255,14 +262,14 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
       </div>
 
       {alertes.length > 0 && (
-        <section aria-labelledby="titre-alertes" className="mt-6 rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4">
-          <h2 id="titre-alertes" className="text-lg text-amber-950!">
-            Alertes{resume.bloquantes > 0 && <span className="ml-2 text-sm font-normal text-red-700">{resume.bloquantes} bloquante{resume.bloquantes > 1 ? 's' : ''}</span>}
+        <section aria-labelledby="titre-alertes" className="mt-6 rounded-[18px] bg-miel-pale p-4">
+          <h2 id="titre-alertes" className="text-lg text-[#5c3d0c]!">
+            Alertes{resume.bloquantes > 0 && <span className="ml-2 text-sm font-normal text-grenade">{resume.bloquantes} bloquante{resume.bloquantes > 1 ? 's' : ''}</span>}
           </h2>
-          <ul className="mt-2 flex flex-col gap-1 text-sm text-amber-950">
+          <ul className="mt-2 flex flex-col gap-1 text-sm text-[#5c3d0c]">
             {[...resume.generales, ...[...resume.parLigne.values()].flat()].map((a, i) => (
               <li key={i}>
-                <span className={a.bloquante ? 'font-semibold text-red-700' : 'font-semibold'}>{a.libelle}</span>
+                <span className={a.bloquante ? 'font-semibold text-grenade' : 'font-semibold'}>{a.libelle}</span>
                 {a.bloquante ? ' (bloque l’envoi)' : ''} : {a.message}
               </li>
             ))}
@@ -272,12 +279,12 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
 
       <div className={`mt-10 grid items-start gap-6 ${proposition.programme && mail ? 'lg:grid-cols-2' : ''}`}>
         {proposition.programme && (
-          <section aria-labelledby="titre-programme" className="panneau p-5 sm:p-6">
+          <section aria-labelledby="titre-programme" className="bo-carte p-5 sm:p-6">
             <h2 id="titre-programme" className="text-2xl">Programme</h2>
-            <ol className="mt-4 flex flex-col gap-5 border-l-2 border-orange pl-5 text-sm">
+            <ol className="mt-4 flex flex-col gap-5 border-l-2 border-pervenche-pale pl-5 text-sm">
               {proposition.programme.map((jour, i) => (
                 <li key={i}>
-                  <span className="font-titre text-base font-semibold text-nuit">{jour.date} · {jour.titre}</span>
+                  <span className="text-base font-semibold text-encre">{jour.date} · {jour.titre}</span>
                   <p className="mt-1 whitespace-pre-line leading-relaxed">{jour.texte}</p>
                 </li>
               ))}

@@ -1,7 +1,24 @@
-import Link from 'next/link';
+'use client';
 
-/** Pied de page bleu nuit : l'agence, ses destinations, l'accès conseiller. */
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+/** Pied de page : complet sur le site public, réduit à une ligne dans l'espace conseiller (un outil de travail). */
 export function PiedDePage() {
+  const chemin = usePathname();
+  return chemin.startsWith('/conseiller') || chemin.startsWith('/connexion') ? <PiedDePageReduit /> : <PiedDePagePublic />;
+}
+
+/** Une ligne : sert aussi de repli au prérendu, avant que le chemin soit connu. */
+export function PiedDePageReduit() {
+  return (
+    <footer className="border-t border-trait bg-white px-4 py-3 text-center text-xs text-ardoise print:hidden">
+      DÉTOUR · Projet pédagogique Off the Map. Agence, prestataires et prix fictifs.
+    </footer>
+  );
+}
+
+function PiedDePagePublic() {
   return (
     <footer className="bg-nuit text-[#d8e6f0] print:hidden">
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 text-sm sm:grid-cols-3 sm:px-6">

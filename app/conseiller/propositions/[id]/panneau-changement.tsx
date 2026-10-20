@@ -10,10 +10,10 @@ export function PanneauChangement({ propositionId, version }: { propositionId: s
     {},
   );
   return (
-    <details className="panneau p-5" open={etat.erreur !== undefined}>
-      <summary className="cursor-pointer font-semibold text-nuit">Le client demande un changement</summary>
+    <details className="bo-carte p-5" open={etat.erreur !== undefined}>
+      <summary className="cursor-pointer font-semibold text-encre">Le client demande un changement</summary>
       <form action={action} className="mt-3 flex flex-col gap-2">
-        <p className="text-sm text-doux">
+        <p className="text-sm text-ardoise">
           La version {version} reste telle qu’elle a été envoyée. Une version {version + 1} est créée à partir d’elle : ses lignes
           repartent « à vérifier », au prix actuel du catalogue.
         </p>
@@ -24,15 +24,15 @@ export function PanneauChangement({ propositionId, version }: { propositionId: s
             rows={3}
             maxLength={1000}
             defaultValue={etat.motif}
-            className="rounded-lg border border-[#b7c7d3] bg-white px-3 py-2"
+            className="rounded-lg border border-[#d5d9df] bg-white px-3 py-2"
             {...(etat.erreur ? { 'aria-invalid': true, 'aria-describedby': 'motif-erreur' } : {})}
           />
         </label>
-        <button type="submit" disabled={enCours} className="self-start rounded-lg border border-doux bg-white px-4 py-2 text-sm font-semibold hover:bg-ciel disabled:opacity-50">
+        <button type="submit" disabled={enCours} className="bo-btn-2 self-start text-sm">
           {enCours ? 'Création…' : `Créer la version ${version + 1}`}
         </button>
         {etat.erreur && (
-          <p id="motif-erreur" role="alert" className="text-sm text-red-700">
+          <p id="motif-erreur" role="alert" className="text-sm text-grenade">
             {etat.erreur}
           </p>
         )}

@@ -39,3 +39,21 @@ describe('couleurs DÉTOUR', () => {
     expect(contraste(couleur('detour-orange'), '#ffffff')).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe('couleurs de l’espace conseiller', () => {
+  it.each(['bo-encre', 'bo-ardoise', 'bo-pervenche-fonce'])('%s : texte lisible sur blanc, sur le fond et sur la sélection (≥ 4,5:1)', (nom) => {
+    for (const fond of ['#ffffff', couleur('bo-brume'), couleur('bo-pervenche-pale')]) expect(contraste(couleur(nom), fond)).toBeGreaterThanOrEqual(4.5);
+  });
+  it.each([
+    ['bo-miel-fonce', 'bo-miel-pale'],
+    ['bo-sauge', 'bo-sauge-pale'],
+    ['bo-grenade', 'bo-grenade-pale'],
+    ['bo-ardoise', 'bo-miel-pale'],
+  ])('pastille %s sur %s lisible (≥ 4,5:1)', (texte, fond) => {
+    expect(contraste(couleur(texte), couleur(fond))).toBeGreaterThanOrEqual(4.5);
+  });
+  it('bouton : texte blanc lisible sur la pervenche et sur son survol', () => {
+    expect(contraste('#ffffff', couleur('bo-pervenche'))).toBeGreaterThanOrEqual(4.5);
+    expect(contraste('#ffffff', couleur('bo-pervenche-fonce'))).toBeGreaterThanOrEqual(4.5);
+  });
+});

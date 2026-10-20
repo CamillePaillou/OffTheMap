@@ -248,6 +248,16 @@ export function FormulaireDemande({
         </div>
       )}
 
+      {/* sur téléphone, le billet est sous le formulaire : un rappel reste collé en bas pendant la saisie */}
+      <div aria-hidden className="sticky bottom-3 z-10 -mx-2 lg:hidden">
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-nuit px-4 py-3 text-sm text-white shadow-[0_8px_24px_rgb(14_74_110/0.3)]">
+          <span className="truncate font-semibold">Paris → {courant.destination?.trim() || 'à proposer'}</span>
+          <span className="shrink-0 text-[#d8e6f0]">
+            {faites} / {OBLIGATOIRES.length} étapes
+          </span>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-2 border-t border-filet pt-6 sm:flex-row sm:items-center sm:gap-5">
         <button type="submit" disabled={enCours} className="btn-principal self-start text-lg">
           {enCours ? 'Envoi…' : libelleEnvoi}

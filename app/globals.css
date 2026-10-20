@@ -18,7 +18,46 @@
   --detour-ciel: #e8f2f9; /* aplats légers */
 }
 
+/*
+ * Espace conseiller : son propre design system, clair et calme (docs/specs/design.md, « Back-office »).
+ * Une seule couleur d'action (pervenche) ; la couleur vient des photos des destinations.
+ */
+:root {
+  --bo-encre: #1f2430; /* texte */
+  --bo-ardoise: #5b6270; /* texte secondaire */
+  --bo-trait: #e7e9ec; /* bordures */
+  --bo-brume: #f5f6f7; /* fond */
+  --bo-pervenche: #4f5fd6; /* action */
+  --bo-pervenche-fonce: #3a48b8; /* texte d'action, survol */
+  --bo-pervenche-pale: #eef0fb; /* sélection */
+  --bo-miel: #e3a34b; /* jauges (jamais du texte) */
+  --bo-miel-fonce: #8a5a12; /* attente, texte */
+  --bo-miel-pale: #fbf4e6;
+  --bo-sauge: #2f7a52; /* confirmé */
+  --bo-sauge-pale: #e8f3ec;
+  --bo-grenade: #b03a33; /* bloquant */
+  --bo-grenade-pale: #fbedec;
+  --bo-courbe: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 @theme inline {
+  --color-encre: var(--bo-encre);
+  --color-ardoise: var(--bo-ardoise);
+  --color-trait: var(--bo-trait);
+  --color-brume: var(--bo-brume);
+  --color-pervenche: var(--bo-pervenche);
+  --color-pervenche-fonce: var(--bo-pervenche-fonce);
+  --color-pervenche-pale: var(--bo-pervenche-pale);
+  --color-miel: var(--bo-miel);
+  --color-miel-fonce: var(--bo-miel-fonce);
+  --color-miel-pale: var(--bo-miel-pale);
+  --color-sauge: var(--bo-sauge);
+  --color-sauge-pale: var(--bo-sauge-pale);
+  --color-grenade: var(--bo-grenade);
+  --color-grenade-pale: var(--bo-grenade-pale);
+  --font-bo: var(--font-instrument), system-ui, sans-serif;
+  --ease-bo: var(--bo-courbe);
+
   --color-nuit: var(--detour-nuit);
   --color-bleu: var(--detour-bleu);
   --color-lien: var(--detour-lien);
@@ -120,4 +159,62 @@
     font-weight: 650;
     color: var(--detour-nuit);
   }
+}
+
+/* ---------------------------------------------------------------- espace conseiller */
+@layer base {
+  .bo {
+    font-family: var(--font-instrument), system-ui, sans-serif;
+    font-size: 15px;
+    color: var(--bo-encre);
+    background: var(--bo-brume);
+  }
+  .bo h1, .bo h2, .bo h3 {
+    font-family: inherit;
+    color: var(--bo-encre);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .bo a { color: var(--bo-pervenche-fonce); }
+  .bo :focus-visible { outline: 2px solid var(--bo-pervenche); outline-offset: 2px; }
+}
+
+@layer components {
+  /* surfaces : plus un élément est grand, plus il est arrondi (10 bouton, 14 ligne, 18 tuile, 22 bloc principal) */
+  .bo-carte { background: #fff; border-radius: 18px; }
+  .bo-bloc { background: #fff; border-radius: 22px; }
+  .bo-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    border-radius: 10px; padding: 0.6rem 1.1rem; font-weight: 600; text-decoration: none;
+    background: var(--bo-pervenche); color: #fff;
+    transition: background-color 150ms var(--bo-courbe), transform 150ms var(--bo-courbe);
+  }
+  .bo-btn:hover { background: var(--bo-pervenche-fonce); color: #fff; }
+  .bo-btn:active { transform: scale(0.98); }
+  .bo-btn:disabled { background: #b7bdcc; cursor: not-allowed; transform: none; }
+  .bo-btn-2 {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    border-radius: 10px; padding: 0.55rem 1rem; text-decoration: none;
+    background: #fff; color: var(--bo-encre); border: 1px solid var(--bo-trait);
+    transition: background-color 150ms var(--bo-courbe);
+  }
+  .bo-btn-2:hover { background: var(--bo-brume); color: var(--bo-encre); }
+  .bo-btn-2:disabled { opacity: 0.55; }
+  .bo-champ {
+    border-radius: 10px; border: 1px solid #d5d9df; background: #fff; padding: 0.55rem 0.75rem;
+    transition: border-color 150ms var(--bo-courbe);
+  }
+  .bo-champ:hover { border-color: var(--bo-ardoise); }
+  .bo-puce { display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .bo-entre { animation: bo-entre 450ms var(--bo-courbe) both; }
+  .bo-glisse { transition: width 600ms var(--bo-courbe), background-color 300ms var(--bo-courbe), border-color 300ms var(--bo-courbe); }
+}
+
+@keyframes bo-entre {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bo *, .bo { animation: none !important; transition: none !important; }
 }

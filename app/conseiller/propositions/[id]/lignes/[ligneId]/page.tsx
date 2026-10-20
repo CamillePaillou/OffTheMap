@@ -1,9 +1,10 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
 import { ecartPrix, euros } from '@/src/domain/ecartPrix';
+import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
+import { Fil } from '../../../../_composants/fil';
 import { Ecart } from '../../../../_composants/ecart';
 import { BoutonReverifier } from './bouton-reverifier';
 
@@ -20,7 +21,7 @@ const ARRETS: Record<string, string> = {
 export default function VerificationPage({ params }: Props) {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-      <Suspense fallback={<p className="text-doux">Chargement…</p>}>
+      <Suspense fallback={<p className="text-ardoise">Chargement…</p>}>
         <Contenu params={params} />
       </Suspense>
     </main>
@@ -32,91 +33,124 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   await exigerConseiller(`/conseiller/propositions/${id}/lignes/${ligneId}`);
 
   const lecture = new PropositionsSupabase();
-  const ligne = (await lecture.proposition(id))?.lignes.find((l) => l.id === ligneId);
-  if (!ligne) notFound();
-  const verification = await lecture.verificationDeLigne(ligneId);
+  const proposition = await lecture.proposition(id);
+  const ligne = proposition?.lignes.find((l) => l.id === ligneId);
+  if (!proposition || !ligne) notFound();
+  const [verification, dossier] = await Promise.all([lecture.verificationDeLigne(ligneId), new DossiersSupabase().detail(proposition.dossier_id)]);
+  const ecart = verification ? ecartPrix(ligne, verification) : null;
+  const STATUT_VERIF = { ok: 'disponible', indisponible: 'indisponible', echec: 'échec de la vérification' } as const;
 
   return (
     <>
-      <Link href={`/conseiller/propositions/${id}`} className="text-sm underline underline-offset-4">
-        ← Proposition
-      </Link>
-      <h1 className="mt-6 text-3xl">{ligne.prestation.nom}</h1>
-      <p className="mt-1 text-doux">
-        {ligne.date} · {ligne.participants} participant{ligne.participants > 1 ? 's' : ''} · {ligne.prestation.id}
-      </p>
-
-      <div className="mt-6">
+      <Fil
+        etapes={[
+          { libelle: 'Dossiers', href: '/conseiller' },
+          { libelle: dossier?.demande.client.nom ?? 'Dossier', href: `/conseiller/dossiers/${proposition.dossier_id}` },
+          { libelle: `Proposition v${proposition.version}`, href: `/conseiller/propositions/${id}` },
+          { libelle: ligne.prestation.nom },
+        ]}
+      />
+      <div className="mt-3 flex flex-wrap items-end justify-between gap-4 border-b border-trait pb-6">
+        <div>
+          <h1 className="text-3xl sm:text-4xl">{ligne.prestation.nom}</h1>
+          <p className="mt-1 text-ardoise">
+            {ligne.date} · {ligne.participants} participant{ligne.participants > 1 ? 's' : ''} · réf. {ligne.prestation.id}
+          </p>
+        </div>
         <BoutonReverifier propositionId={id} ligneId={ligne.id} deja={verification !== null} />
       </div>
 
       {!verification ? (
-        <p className="mt-8 text-doux">Cette ligne n’a pas encore été vérifiée.</p>
+        <div className="bo-carte mt-8 p-6">
+          <h2 className="text-xl">Pas encore vérifiée</h2>
+          <p className="mt-2 max-w-2xl text-ardoise">
+            L’agent interroge le prestataire et compare son prix à celui de la proposition. Le résultat, la réponse du serveur et chaque étape de
+            l’agent s’afficheront ici.
+          </p>
+        </div>
       ) : (
         <>
-          <dl className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <dl className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Chiffre titre="Prix proposé" valeur={euros(ligne.prix_unitaire_catalogue_cents)} detail="par personne" />
             <Chiffre
               titre="Prix revérifié"
-              valeur={verification.prix_unitaire_cents === null ? 'non vérifié' : euros(verification.prix_unitaire_cents)}
+              valeur={verification.prix_unitaire_cents === null ? 'non obtenu' : euros(verification.prix_unitaire_cents)}
               detail="par personne"
+              accent
             />
-            <Chiffre titre="Écart (unitaire)" valeur={<Ecart ecart={ecartPrix(ligne, verification)} />} />
-            <Chiffre titre="Écart (ligne)" valeur={<Ecart ecart={ecartPrix(ligne, verification)} total />} />
+            <Chiffre titre="Écart par personne" valeur={<Ecart ecart={ecart} />} />
+            <Chiffre titre="Écart sur la ligne" valeur={<Ecart ecart={ecart} total />} detail={`${ligne.participants} participant${ligne.participants > 1 ? 's' : ''}`} />
           </dl>
 
-          <p className="mt-6 text-sm text-doux">
-            Statut : <strong>{verification.statut}</strong> · Places restantes : {verification.places_restantes ?? '—'} ·
-            Arrêt : {ARRETS[verification.arret]} · {verification.nb_tours} tour(s) · {verification.modele} · demandée par{' '}
-            {verification.demandee_par} le {new Date(verification.le).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}
-          </p>
-          {verification.resume && <p className="mt-2 italic text-texte">« {verification.resume} »</p>}
+          <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="flex flex-col gap-6">
+              {verification.resume && (
+                <blockquote className="bo-carte p-5 leading-relaxed">
+                  <p className="text-sm text-ardoise">Conclusion de l’agent</p>
+                  <p className="mt-1">« {verification.resume} »</p>
+                </blockquote>
+              )}
 
-          <h2 className="mt-10 text-lg font-semibold">Réponse brute du serveur</h2>
-          {verification.reponse_serveur == null ? (
-            <p className="mt-2 text-doux">Aucune réponse : le serveur n’a pas répondu.</p>
-          ) : (
-            <pre className="mt-2 overflow-x-auto rounded-lg bg-fond p-4 text-sm">
-              {JSON.stringify(verification.reponse_serveur, null, 2)}
-            </pre>
-          )}
+              <section aria-labelledby="titre-trace" className="bo-carte overflow-x-auto">
+                <h2 id="titre-trace" className="px-5 pt-5 text-xl">
+                  Étapes de l’agent
+                </h2>
+                <table className="mt-3 w-full min-w-[40rem] text-left text-sm">
+                  <thead className="bg-brume text-ardoise">
+                    <tr>
+                      <th scope="col" className="px-4 py-2 font-semibold">Tour</th>
+                      <th scope="col" className="px-4 py-2 font-semibold">Appel</th>
+                      <th scope="col" className="px-4 py-2 font-semibold">Décision du code</th>
+                      <th scope="col" className="px-4 py-2 font-semibold">HTTP</th>
+                      <th scope="col" className="px-4 py-2 text-right font-semibold">Durée</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-trait">
+                    {verification.trace.map((t) => (
+                      <tr key={t.numero} className="align-top">
+                        <td className="px-4 py-2">{t.numero}</td>
+                        <td className="px-4 py-2 font-mono text-xs break-all">
+                          {t.appel ? `${t.appel.nom}(${JSON.stringify(t.appel.arguments)})` : `conclusion : ${JSON.stringify(t.conclusion)}`}
+                        </td>
+                        <td className="px-4 py-2">
+                          {t.decision.statut}
+                          {t.decision.raison && ` : ${t.decision.raison}`}
+                          {t.decision.ecarts.map((e) => (
+                            <span key={e.champ} className="block text-xs text-grenade">
+                              {e.champ} : annoncé {String(e.annonce)}, serveur {e.serveur === null ? '—' : String(e.serveur)}
+                            </span>
+                          ))}
+                        </td>
+                        <td className="px-4 py-2">{t.http_statut ?? (t.appel ? 'aucune réponse' : '—')}</td>
+                        <td className="whitespace-nowrap px-4 py-2 text-right">{t.duree_ms} ms</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
 
-          <h2 className="mt-10 text-lg font-semibold">Trace de l’agent</h2>
-          <div className="mt-2 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-filet text-doux">
-                <tr>
-                  <th className="py-2 pr-4 font-medium">Tour</th>
-                  <th className="py-2 pr-4 font-medium">Appel</th>
-                  <th className="py-2 pr-4 font-medium">Décision du code</th>
-                  <th className="py-2 pr-4 font-medium">HTTP</th>
-                  <th className="py-2 text-right font-medium">Durée</th>
-                </tr>
-              </thead>
-              <tbody>
-                {verification.trace.map((t) => (
-                  <tr key={t.numero} className="border-b border-filet align-top">
-                    <td className="py-2 pr-4">{t.numero}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">
-                      {t.appel
-                        ? `${t.appel.nom}(${JSON.stringify(t.appel.arguments)})`
-                        : `conclusion : ${JSON.stringify(t.conclusion)}`}
-                    </td>
-                    <td className="py-2 pr-4">
-                      {t.decision.statut}
-                      {t.decision.raison && ` : ${t.decision.raison}`}
-                      {t.decision.ecarts.map((e) => (
-                        <span key={e.champ} className="block text-xs text-red-700">
-                          {e.champ} : annoncé {String(e.annonce)}, serveur {e.serveur === null ? '—' : String(e.serveur)}
-                        </span>
-                      ))}
-                    </td>
-                    <td className="py-2 pr-4">{t.http_statut ?? (t.appel ? 'aucune réponse' : '—')}</td>
-                    <td className="py-2 text-right">{t.duree_ms} ms</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              <details className="bo-carte p-5">
+                <summary className="cursor-pointer font-semibold text-encre">Réponse brute du serveur</summary>
+                {verification.reponse_serveur == null ? (
+                  <p className="mt-3 text-ardoise">Aucune réponse : le serveur n’a pas répondu.</p>
+                ) : (
+                  <pre className="mt-3 overflow-x-auto rounded-lg bg-brume p-4 text-xs">{JSON.stringify(verification.reponse_serveur, null, 2)}</pre>
+                )}
+              </details>
+            </div>
+
+            <aside aria-label="Détails de la vérification" className="bo-carte p-5 text-sm">
+              <h2 className="text-lg">Vérification</h2>
+              <dl className="mt-3 flex flex-col divide-y divide-trait">
+                <Info terme="Résultat" valeur={STATUT_VERIF[verification.statut]} />
+                <Info terme="Places restantes" valeur={verification.places_restantes ?? '—'} />
+                <Info terme="Arrêt" valeur={ARRETS[verification.arret]} />
+                <Info terme="Tours" valeur={verification.nb_tours} />
+                <Info terme="Modèle" valeur={verification.modele} />
+                <Info terme="Demandée par" valeur={verification.demandee_par} />
+                <Info terme="Le" valeur={new Date(verification.le).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' })} />
+              </dl>
+            </aside>
           </div>
         </>
       )}
@@ -124,12 +158,21 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   );
 }
 
-function Chiffre({ titre, valeur, detail }: { titre: string; valeur: React.ReactNode; detail?: string }) {
+function Info({ terme, valeur }: { terme: string; valeur: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-filet p-3">
-      <dt className="text-xs text-doux">{titre}</dt>
-      <dd className="mt-1 text-lg">{valeur}</dd>
-      {detail && <dd className="text-xs text-doux">{detail}</dd>}
+    <div className="flex justify-between gap-3 py-2">
+      <dt className="text-ardoise">{terme}</dt>
+      <dd className="text-right font-semibold break-all">{valeur}</dd>
+    </div>
+  );
+}
+
+function Chiffre({ titre, valeur, detail, accent = false }: { titre: string; valeur: React.ReactNode; detail?: string; accent?: boolean }) {
+  return (
+    <div className={`bo-carte p-4 ${accent ? '' : ''}`}>
+      <dt className="text-sm text-ardoise">{titre}</dt>
+      <dd className="mt-1 text-xl font-semibold text-encre">{valeur}</dd>
+      {detail && <dd className="text-sm text-ardoise">{detail}</dd>}
     </div>
   );
 }

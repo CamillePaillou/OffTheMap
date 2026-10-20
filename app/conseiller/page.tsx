@@ -1,104 +1,98 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
-import { deconnecter } from '../connexion/actions';
-import { ETAT_FICHE, euros, jour } from './_composants/libelles';
-import { GROUPES, groupeDe, PastilleStatut } from './_composants/statut';
+import { jour } from './_composants/libelles';
+import { joursAvantDepart, photoDestination, prochaineEtape, texteDepart } from './_composants/statut';
 
 export const metadata: Metadata = { title: 'Dossiers' };
 
 const PAR_PAGE = 50;
 
-// Back-office des conseillers (P2). Sans connexion, le proxy et exigerConseiller() renvoient vers /connexion.
+// Accueil de l'espace conseiller (P2). La liste est dans la colonne de gauche (layout) ; ici, la journée en un coup d'œil.
+// Sur téléphone, seule la liste s'affiche.
 export default function ConseillerPage() {
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
-      <Suspense fallback={<p className="text-doux">Chargement des dossiers…</p>}>
-        <Contenu />
+    <main className="hidden flex-1 px-9 pt-7 pb-10 lg:block">
+      <Suspense fallback={null}>
+        <Apercu />
       </Suspense>
     </main>
   );
 }
 
-async function Contenu() {
+async function Apercu() {
   const conseiller = await exigerConseiller();
-  const dossiers = await new DossiersSupabase().liste({ limit: PAR_PAGE, offset: 0 });
-  const compte = Object.fromEntries(GROUPES.map((g) => [g.id, dossiers.items.filter((d) => groupeDe(d.statut).id === g.id).length]));
-  const partiel = dossiers.total > dossiers.items.length;
+  const { items } = await new DossiersSupabase().liste({ limit: PAR_PAGE, offset: 0 });
+  const avecEtape = items.map((d) => ({ d, etape: prochaineEtape(d.statut, d.proposition), jours: joursAvantDepart(d.demande.date_debut) }));
+  const aFaire = avecEtape.filter((x) => x.etape.acteur === 'conseiller').sort((a, b) => a.jours - b.jours);
+  const enAttente = avecEtape.filter((x) => x.etape.acteur === 'client' || x.etape.acteur === 'systeme').length;
+  const departs = avecEtape.filter((x) => x.etape.acteur !== null && x.jours >= 0 && x.jours <= 30).sort((a, b) => a.jours - b.jours);
+  const prenom = conseiller.nomAffiche.split(' ')[0];
 
   return (
-    <>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl sm:text-4xl">Dossiers</h1>
-          <p className="mt-1 text-doux">
-            Bonjour {conseiller.nomAffiche}. {dossiers.total === 0 ? 'Aucun dossier pour l’instant.' : `${dossiers.total} dossier${dossiers.total > 1 ? 's' : ''} au total.`}
-          </p>
-        </div>
-        <form action={deconnecter}>
-          <button type="submit" className="rounded-md px-3 py-2 text-sm text-doux underline underline-offset-4 hover:bg-ciel">
-            Se déconnecter
-          </button>
-        </form>
+    <div className="bo-entre flex max-w-4xl flex-col gap-6">
+      <div>
+        <h2 className="text-[32px] leading-tight">Bonjour {prenom}</h2>
+        <p className="mt-1 text-ardoise">
+          {aFaire.length === 0 ? 'Rien ne vous attend : tout avance.' : `${aFaire.length} dossier${aFaire.length > 1 ? 's attendent' : ' attend'} votre réponse.`}{' '}
+          {enAttente > 0 && `${enAttente} avance${enAttente > 1 ? 'nt' : ''} sans vous.`}
+        </p>
       </div>
 
-      {dossiers.items.length > 0 && (
-        <>
-          <ul aria-label={partiel ? `Répartition des ${dossiers.items.length} dossiers affichés` : 'Répartition des dossiers'} className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-            {GROUPES.map((g) => (
-              <li key={g.id} className={`panneau flex flex-col px-4 py-3 ${g.id === 'a_trier' && compte[g.id] ? 'border-l-4 border-l-orange' : ''}`}>
-                <span className="font-titre text-3xl font-semibold text-nuit">{compte[g.id]}</span>
-                <span className="text-sm text-doux">{g.libelle}</span>
+      {aFaire.length > 0 && (
+        <section aria-labelledby="titre-afaire" className="bo-carte p-5">
+          <h3 id="titre-afaire" className="text-base">À faire</h3>
+          <ul className="mt-3 flex flex-col divide-y divide-trait">
+            {aFaire.slice(0, 5).map(({ d, etape, jours }) => (
+              <li key={d.dossier_id} className="flex items-center gap-4 py-3">
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="font-semibold">{etape.texte}</span>
+                  <span className="truncate text-sm text-ardoise">
+                    {d.client.nom} · {d.demande.destination ?? 'destination à proposer'} · {texteDepart(jours)}
+                  </span>
+                </span>
+                <Link href={`/conseiller/dossiers/${d.dossier_id}`} className="bo-btn-2 shrink-0 text-sm">
+                  Ouvrir
+                </Link>
               </li>
             ))}
           </ul>
-
-          <div className="panneau mt-6 overflow-x-auto">
-            <table className="w-full min-w-[46rem] text-left text-sm">
-              <caption className="sr-only">Dossiers, du plus récent au plus ancien</caption>
-              <thead className="bg-fond text-doux">
-                <tr>
-                  <th scope="col" className="px-4 py-3 font-semibold">Client</th>
-                  <th scope="col" className="px-4 py-3 font-semibold">Destination</th>
-                  <th scope="col" className="px-4 py-3 font-semibold">Dates</th>
-                  <th scope="col" className="px-4 py-3 text-right font-semibold">Voyageurs</th>
-                  <th scope="col" className="px-4 py-3 text-right font-semibold">Budget annoncé</th>
-                  <th scope="col" className="px-4 py-3 font-semibold">Statut</th>
-                  <th scope="col" className="px-4 py-3 font-semibold">Fiche</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-filet">
-                {dossiers.items.map((d) => (
-                  <tr key={d.dossier_id} className="hover:bg-ciel/60">
-                    <td className="px-4 py-3">
-                      <Link href={`/conseiller/dossiers/${d.dossier_id}`} className="font-semibold underline-offset-4 hover:underline">
-                        {d.client.nom}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">{d.demande.destination ?? <span className="italic text-doux">à proposer</span>}</td>
-                    <td className="whitespace-nowrap px-4 py-3">
-                      {jour(d.demande.date_debut)} → {jour(d.demande.date_fin)}
-                    </td>
-                    <td className="px-4 py-3 text-right">{d.demande.voyageurs}</td>
-                    <td className="px-4 py-3 text-right">{d.demande.budget_annonce ? euros(d.demande.budget_annonce.montant_cents) : <span className="text-doux">—</span>}</td>
-                    <td className="px-4 py-3"><PastilleStatut statut={d.statut} /></td>
-                    <td className={`px-4 py-3 ${d.fiche?.etat === 'erreur' ? 'font-semibold text-red-700' : 'text-doux'}`}>
-                      {d.fiche ? ETAT_FICHE[d.fiche.etat] : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {partiel && (
-            <p className="mt-3 text-sm text-doux">
-              Les {dossiers.items.length} dossiers les plus récents sur {dossiers.total}, compteurs compris.
-            </p>
-          )}
-        </>
+        </section>
       )}
-    </>
+
+      <section aria-labelledby="titre-departs">
+        <h3 id="titre-departs" className="text-base">Départs des 30 prochains jours</h3>
+        {departs.length === 0 ? (
+          <p className="bo-carte mt-3 p-5 text-ardoise">Aucun départ prévu d’ici un mois.</p>
+        ) : (
+          <ul className="mt-3 grid grid-cols-3 gap-4">
+            {departs.slice(0, 6).map(({ d, jours }) => {
+              const photo = photoDestination(d.demande.destination);
+              return (
+                <li key={d.dossier_id}>
+                  <Link href={`/conseiller/dossiers/${d.dossier_id}`} className="bo-carte group block overflow-hidden text-encre! no-underline">
+                    {photo ? (
+                      <Image src={photo} alt="" width={400} height={240} className="h-28 w-full object-cover transition-transform duration-500 ease-bo group-hover:scale-[1.03]" />
+                    ) : (
+                      <span className="flex h-28 items-center justify-center bg-[#f1eee8] text-sm text-[#7a5a2a]">Destination à proposer</span>
+                    )}
+                    <span className="flex flex-col gap-0.5 p-4">
+                      <span className="font-semibold">{d.demande.destination ?? 'À proposer'}</span>
+                      <span className="text-sm text-ardoise">
+                        {d.client.nom} · {jour(d.demande.date_debut)}
+                      </span>
+                      <span className={`text-sm ${jours < 15 ? 'font-semibold text-miel-fonce' : 'text-ardoise'}`}>{texteDepart(jours, true)}</span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+    </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useActionState } from 'react';
 import { demanderBrouillonAction, enregistrerCorrection, relancer, type EtatCorrection } from './actions';
 
-const champ = 'rounded-lg border border-[#b7c7d3] bg-white px-3 py-2';
+const champ = 'bo-champ';
 
 export interface ValeursCorrection {
   budget_reel_euros: string;
@@ -21,7 +21,7 @@ export function FormulaireCorrection({ dossierId, valeurs }: { dossierId: string
   const v: ValeursCorrection = { ...valeurs, ...etat.valeurs };
   const erreur = (nom: string) =>
     e[nom] ? (
-      <span id={`${nom}-erreur`} role="alert" className="text-sm text-red-700">
+      <span id={`${nom}-erreur`} role="alert" className="text-sm text-grenade">
         {e[nom]}
       </span>
     ) : null;
@@ -31,7 +31,7 @@ export function FormulaireCorrection({ dossierId, valeurs }: { dossierId: string
     // La clé remonte le formulaire quand les valeurs changent : defaultValue n'est lu qu'au montage.
     <form key={JSON.stringify(v)} action={action} noValidate className="mt-4 flex flex-col gap-4">
       {e.formulaire && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">
+        <p role="alert" className="rounded-lg bg-grenade-pale px-3 py-2 text-sm text-grenade">
           {e.formulaire}
         </p>
       )}
@@ -63,11 +63,11 @@ export function FormulaireCorrection({ dossierId, valeurs }: { dossierId: string
         {erreur('notes_conseiller')}
       </label>
       <div className="flex items-center gap-4">
-        <button type="submit" disabled={enCours} className="rounded-lg bg-nuit px-5 py-2.5 font-bold text-white hover:bg-[#0a3a57] disabled:opacity-50">
+        <button type="submit" disabled={enCours} className="bo-btn-2">
           {enCours ? 'Enregistrement…' : 'Enregistrer'}
         </button>
         {etat.enregistre && !enCours && (
-          <span role="status" className="text-sm text-green-700">
+          <span role="status" className="text-sm text-sauge">
             Correction enregistrée.
           </span>
         )}
@@ -80,11 +80,11 @@ export function BoutonRelancer({ dossierId }: { dossierId: string }) {
   const [etat, action, enCours] = useActionState<{ erreur?: string }, FormData>(() => relancer(dossierId), {});
   return (
     <form action={action} className="flex items-center gap-4">
-      <button type="submit" disabled={enCours} className="rounded-lg bg-red-700 px-5 py-2.5 font-bold text-white disabled:opacity-50">
+      <button type="submit" disabled={enCours} className="bo-btn">
         {enCours ? 'Relance…' : 'Relancer'}
       </button>
       {etat.erreur && (
-        <span role="alert" className="text-sm text-red-700">
+        <span role="alert" className="text-sm text-grenade">
           {etat.erreur}
         </span>
       )}
@@ -97,11 +97,11 @@ export function BoutonBrouillon({ dossierId, valideFiche }: { dossierId: string;
   const [etat, action, enCours] = useActionState<{ erreur?: string }, FormData>(() => demanderBrouillonAction(dossierId), {});
   return (
     <form action={action} className="flex flex-wrap items-center gap-4">
-      <button type="submit" disabled={enCours} className="rounded-lg border border-doux bg-white px-5 py-2.5 font-semibold hover:bg-ciel disabled:opacity-50">
+      <button type="submit" disabled={enCours} className="bo-btn">
         {enCours ? 'Lancement…' : valideFiche ? 'Valider la fiche et générer le brouillon' : 'Générer le brouillon'}
       </button>
       {etat.erreur && !enCours && (
-        <span role="alert" className="text-sm text-red-700">
+        <span role="alert" className="text-sm text-grenade">
           {etat.erreur}
         </span>
       )}
