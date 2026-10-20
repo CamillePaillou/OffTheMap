@@ -7,22 +7,16 @@ import type { ConfigOpenRouter } from './openrouter-llm-client';
 const demande = versDemandePourLLM({
   nom: 'Sophie Marchand',
   email: 'sophie.marchand@example.org',
-  tel: '0611223344',
   destination: 'Nantes',
   date_debut: '2026-11-07',
   date_fin: '2026-11-09',
-  dates_flexibles: false,
   nb_nuits: 2,
   voyageurs: ['adulte', 'adulte'],
   budget_annonce_cents: 40000,
-  budget_ferme: true,
   envies: 'Un week-end créatif sans voiture',
   contraintes: 'Pas de longues marches',
-  niveau_physique: null,
   regimes: ['vegetarien'],
-  regime_precision: 'allergie sévère aux arachides',
   mobilite: 'reduite',
-  sante_precision: 'asthme, traitement en cours',
 } satisfies DemandeLue);
 
 const fiche = { envies: ['week-end créatif'], contraintes: ['pas de longues marches'], regimes: ['vegetarien'], mobilite: 'reduite', niveau_physique: null, points_flous: [] };

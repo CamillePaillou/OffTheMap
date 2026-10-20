@@ -29,11 +29,11 @@ describe.skipIf(!actif)('OpenRouter, appel réel', () => {
 
     it(`${modele} rend une fiche conforme`, async () => {
       const fiche = await llm.genererFiche(versDemandePourLLM({
-        nom: 'Personne Test', email: 'test@example.org', tel: null,
-        destination: 'Nantes', date_debut: '2026-11-07', date_fin: '2026-11-09', dates_flexibles: false, nb_nuits: 2,
-        voyageurs: ['adulte', 'adulte'], budget_annonce_cents: 40000, budget_ferme: true,
-        envies: 'Un week-end créatif sans voiture', contraintes: 'Pas de longues marches', niveau_physique: null,
-        regimes: ['vegetarien'], regime_precision: null, mobilite: 'reduite', sante_precision: null,
+        nom: 'Personne Test', email: 'test@example.org',
+        destination: 'Nantes', date_debut: '2026-11-07', date_fin: '2026-11-09', nb_nuits: 2,
+        voyageurs: ['adulte', 'adulte'], budget_annonce_cents: 40000,
+        envies: 'Un week-end créatif sans voiture', contraintes: 'Pas de longues marches',
+        regimes: ['vegetarien'], mobilite: 'reduite',
       }));
       expect(fiche.regimes).toEqual(['vegetarien']);
     }, 60_000);

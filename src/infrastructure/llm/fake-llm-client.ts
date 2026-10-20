@@ -30,7 +30,7 @@ export class FauxLlmClient implements LlmClient {
       contraintes: demande.contraintes ? [demande.contraintes.slice(0, 200)] : [],
       regimes: demande.regimes,
       mobilite: demande.mobilite,
-      niveau_physique: demande.niveau_physique,
+      niveau_physique: null, // déduit des envies par le vrai modèle ; le formulaire ne le demande pas
       points_flous: demande.destination ? [] : ['destination non précisée'],
     };
     return validerFiche(brute);
