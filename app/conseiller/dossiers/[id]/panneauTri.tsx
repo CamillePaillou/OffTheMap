@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { CHAMPS_CORRIGEABLES, LIBELLES_CHAMPS, REGLES_CORRECTION } from '@/types/correction';
+import { CarteMail } from '../../_composants/carte-mail';
 import { demanderUneCorrection, trier, type EtatTri } from './tri';
 
 const champ = 'rounded border border-zinc-300 px-3 py-2';
@@ -74,9 +75,16 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
         <div role="status" className="mt-6 flex flex-col gap-2 rounded border border-green-300 bg-green-50 p-4 text-sm">
           <p className="font-medium text-green-900">Lien de correction créé, valable jusqu’au {date(etatLien.lien.expireLe)}.</p>
           <p className="text-green-900">Il n’est affiché qu’ici : envoyez-le maintenant. Relisez le mail avant de l’envoyer.</p>
-          <a href={etatLien.lien.mailto} className="self-start rounded bg-zinc-900 px-4 py-2 text-white">
-            Ouvrir le mail dans ma messagerie
-          </a>
+          <CarteMail
+            dossierId={dossierId}
+            propositionId={null}
+            modele="a_corriger"
+            titre="Mail « Demande à corriger »"
+            sujet={etatLien.lien.sujet}
+            corps={etatLien.lien.corps}
+            mailto={etatLien.lien.mailto}
+            ouvert
+          />
           <input readOnly value={etatLien.lien.url} aria-label="Lien de correction" className={`${champ} font-mono text-xs`} onFocus={(ev) => ev.currentTarget.select()} />
         </div>
       ) : peutCorriger ? (

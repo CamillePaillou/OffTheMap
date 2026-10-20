@@ -701,6 +701,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      marquer_mail_envoye: {
+        Args: { p_dossier: string; p_proposition: string | null; p_modele: string; p_conseiller: string };
+        Returns: number;
+      };
       changer_ligne: {
         Args: {
           p_ligne: string;
