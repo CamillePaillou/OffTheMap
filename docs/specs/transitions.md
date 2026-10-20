@@ -51,11 +51,11 @@ Source de vérité : `types/transitions.ts`, utilisée par la fonction de transi
 | prete | a_verifier | systeme | une ligne ajoutée ou repassée à vérifier | — | must |
 | prete | envoyee | conseiller | envoi au client | aucune ligne a_verifier ni indisponible | must |
 | envoyee | acceptee | conseiller | acceptation du client enregistrée | — | must |
-| envoyee | changement_demande | conseiller | le client demande un changement | — | should |
+| envoyee | changement_demande | conseiller | le client demande un changement | — | must (E6.1) |
 | envoyee | sans_reponse | systeme | rappel à J+3 | — | should |
 | sans_reponse | acceptee | conseiller | acceptation du client enregistrée | — | should |
 | sans_reponse | changement_demande | conseiller | le client demande un changement | — | should |
-| changement_demande | remplacee | systeme | version suivante créée | version suivante en brouillon_en_cours | should |
+| changement_demande | remplacee | systeme | version suivante créée | version suivante en brouillon_en_cours | must (E6.1) |
 | acceptee | depot_recu | conseiller | dépôt de garantie reçu | — | must |
 | depot_recu | reservee | systeme | dernière ligne réservée | toutes les lignes sont reservee | must |
 

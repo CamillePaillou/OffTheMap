@@ -7,7 +7,7 @@ import type { ResultatVerification } from '../../application/verifierPrestation'
 import type { PropositionsLecture, VerificationsEcriture } from '../../ports/propositions';
 import { versProposition, versVerificationLigne, type PropositionBase, type VerificationBase } from './versPayloadsPropositions';
 
-const SELECT_PROPOSITION = `id, dossier_id, version, statut, programme, total_cents, alertes, ecarts,
+const SELECT_PROPOSITION = `id, dossier_id, version, statut, programme, total_cents, alertes, ecarts, motif_changement,
   proposition_lignes (id, date, participants, prix_unitaire_catalogue_cents, prix_confirme_cents, source, confirme_le, statut,
     total_ligne_cents, cree_le,
     prestations (id, nom, type, capacite, actif),
