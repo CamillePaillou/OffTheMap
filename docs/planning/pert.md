@@ -75,7 +75,7 @@ Triées par début au plus tôt. Jours ouvrés comptés depuis le début du J1 (
 | E7.6 | #120 | Sprint Review | Tous | 0,6 j | J+6 | J+6,6 | J+6 | J+6,6 | **0 (critique)** |
 | E10.5 | #138 | Rétrospective de fin de sprint | Tous | 0 j | J+6 | J+6 | J+6,6 | J+6,6 | 0,6 j |
 
-Charge totale des Must : 25,85 jours-personne (PO comprise), pour un chemin critique de 6,6 jours : le travail en parallèle à quatre développeurs et une PO est indispensable.
+Charge totale des Must : 25,85 jours-personne (PO comprise), pour un chemin critique de 6,6 jours : le travail en parallèle à cinq (quatre développeurs et une PO qui développe aussi) est indispensable.
 
 ## Hors sprint (Should et Could)
 
