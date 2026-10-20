@@ -31,6 +31,19 @@ export class PropositionsSupabase implements PropositionsLecture {
     return data ? versProposition(data satisfies PropositionBase) : null;
   }
 
+  async versionDuDossier(dossierId: string, version: number) {
+    if (!estUuid(dossierId)) return null;
+    const supabase = await clientSupabase();
+    const { data, error } = await supabase
+      .from('propositions')
+      .select(SELECT_PROPOSITION)
+      .eq('dossier_id', dossierId)
+      .eq('version', version)
+      .maybeSingle();
+    if (error) throw new Error(`version ${version} du dossier : ${error.message}`);
+    return data ? versProposition(data satisfies PropositionBase) : null;
+  }
+
   async verificationDeLigne(ligneId: string) {
     if (!estUuid(ligneId)) return null;
     const supabase = await clientSupabase();
