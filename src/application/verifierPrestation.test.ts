@@ -134,6 +134,34 @@ describe('critères du contrat de l’agent', () => {
     expect(r.trace.every((t) => t.decision.statut === 'refuse')).toBe(true);
   });
 
+  it('E9.6 — ne peut ni poser, ni confirmer, ni annuler : seuls les outils de lecture sont exposés et chaque tentative est tracée', async () => {
+    const modele = fauxModele(
+      outil('poser_option', ARGS),
+      outil('confirmer_reservation', { option_id: 'option-fictive', cle_approbation: 'secret-approbation' }),
+      outil('annuler_reservation', { reservation_id: 'reservation-fictive' }),
+    );
+    const simulateur = fauxSimulateur();
+
+    const r = await verifier(modele, simulateur);
+
+    // La liste envoyée au LLM reste strictement en lecture seule à chaque tour.
+    expect(modele.requetes).toHaveLength(3);
+    for (const requete of modele.requetes) {
+      expect(requete.tools.map((t) => t.function.name)).toEqual(['verifier_disponibilite']);
+    }
+    // La clé factice n'est pas fournie par le serveur dans le contexte initial du modèle.
+    expect(JSON.stringify(modele.requetes[0])).not.toContain('secret-approbation');
+    // Les trois noms d'outils proposés sont refusés par le programme avant tout appel réseau.
+    expect(simulateur.appels).toEqual([]);
+    expect(r.trace.map((t) => t.appel?.nom)).toEqual(['poser_option', 'confirmer_reservation', 'annuler_reservation']);
+    expect(r.trace.map((t) => t.decision)).toEqual([
+      { statut: 'refuse', raison: 'outil non autorisé : poser_option', ecarts: [] },
+      { statut: 'refuse', raison: 'outil non autorisé : confirmer_reservation', ecarts: [] },
+      { statut: 'refuse', raison: 'outil non autorisé : annuler_reservation', ecarts: [] },
+    ]);
+    expect(r).toMatchObject({ statut: 'echec', arret: 'tours_max', nb_tours: 3 });
+  });
+
   it('3. une autre date ou une autre prestation que la ligne : refus tracé', async () => {
     const simulateur = fauxSimulateur();
     const r = await verifier(
