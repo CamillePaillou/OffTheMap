@@ -75,6 +75,21 @@ update options set statut = 'confirmee', reservation_id_simulateur = 'res_x', co
   where id = '00000000-0000-0000-0000-0000000000c1';
 select doit_echouer($$insert into historique_dossier (dossier_id, type, nouveau_statut, auteur) values ('00000000-0000-0000-0000-0000000000d1', 'statut', 'go', 'conseiller')$$, 'événement conseiller sans auteur identifié');
 
+-- fonction de transition (E0.7) : statut et historique écrits ensemble, ou rien
+select doit_valoir($$select (changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'nouvelle', 'fiche_en_cours', 'systeme', null) is not null)::int$$, 1, 'transition acceptée');
+select doit_valoir($$select count(*) from dossiers where id = '00000000-0000-0000-0000-0000000000d1' and statut = 'fiche_en_cours'$$, 1, 'le statut du dossier a changé');
+select doit_valoir($$select count(*) from historique_dossier where dossier_id = '00000000-0000-0000-0000-0000000000d1' and type = 'statut'
+  and ancien_statut = 'nouvelle' and nouveau_statut = 'fiche_en_cours' and auteur = 'systeme'$$, 1, 'la transition a créé une ligne d''historique');
+select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'nouvelle', 'fiche_en_cours', 'systeme', null)$$, 'transition depuis un statut qui n''est plus le bon');
+select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d9', 'nouvelle', 'fiche_en_cours', 'systeme', null)$$, 'transition d''un dossier inexistant');
+-- l'historique refuse un conseiller sans identifiant : le statut ne doit pas avoir changé non plus
+select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'conseiller', null)$$, 'transition dont l''historique est invalide');
+select doit_valoir($$select count(*) from dossiers where id = '00000000-0000-0000-0000-0000000000d1' and statut = 'fiche_en_cours'$$, 1, 'historique refusé : statut inchangé');
+select changer_statut('proposition', '00000000-0000-0000-0000-0000000000f1', 'brouillon_en_cours', 'brouillon_pret', 'systeme', null, '{"type": "statut", "cible": "proposition"}');
+select doit_valoir($$select count(*) from historique_dossier where proposition_id = '00000000-0000-0000-0000-0000000000f1'
+  and dossier_id = '00000000-0000-0000-0000-0000000000d1' and nouveau_statut = 'brouillon_pret'$$, 1, 'transition de proposition rattachée au dossier');
+select doit_valoir($$select count(*) from historique_dossier where type = 'statut'$$, 2, 'une ligne d''historique par transition, aucune pour les refus');
+
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');
@@ -83,6 +98,7 @@ select doit_valoir($$select count(*) from verifications$$, 0, 'un visiteur ne li
 select doit_valoir($$select count(*) from options$$, 0, 'un visiteur ne lit pas les options');
 select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, modele, nb_tours, arret)
   values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un visiteur');
+select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un visiteur');
 reset role;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000ff', false);
@@ -94,6 +110,7 @@ select doit_valoir($$select count(*) from demandes$$, 1, 'un conseiller lit tout
 select doit_valoir($$select count(*) from verifications$$, 1, 'un conseiller lit les vérifications');
 select doit_valoir($$select count(*) from options$$, 1, 'un conseiller lit les options');
 select doit_echouer($$insert into dossiers default values$$, 'écriture directe par un conseiller');
+select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un conseiller');
 -- tables de l'agent (E0.5) : seul le serveur écrit ; un conseiller connecté ne crée, ne modifie ni ne supprime rien
 select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, modele, nb_tours, arret)
   values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un conseiller');

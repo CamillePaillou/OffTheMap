@@ -49,6 +49,8 @@ Une nouvelle migration se crée avec `npx supabase migration new <nom>`.
 | `types/llm.ts` | `DemandePourLLM` : seule forme de demande acceptée par le LLM (minimisation) |
 | `types/simulateur.ts` | Réponses du simulateur du formateur, lues par l'adaptateur seulement |
 | `types/historique.ts` | Détail de chaque type d'événement du journal |
+| `supabase/migrations/20261019130000_fonction_transition.sql` | Fonction SQL `changer_statut` : statut et historique écrits dans la même transaction, réservée au serveur |
+| `src/application/changerStatut.ts` | Fonction de transition (E0.7) : seul point d'écriture d'un statut ; refuse ce que la matrice `types/transitions.ts` n'autorise pas (voir `docs/specs/transitions.md`) |
 
 `npm test` lance les tests des types (Vitest). Les règles portées par la base se vérifient sur la base locale :
 

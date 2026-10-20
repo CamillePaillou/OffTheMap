@@ -90,6 +90,24 @@
 
 États finaux : `expiree`, `echec`, `annulee`. Valeurs couvertes : 6.
 
+## Fonction de transition (E0.7)
+
+Tout changement de statut d'un dossier ou d'une proposition passe par `changerStatut` (`src/application/changerStatut.ts`). Aucun autre code n'écrit `dossiers.statut`, `propositions.statut` ni les lignes `statut` de `historique_dossier`.
+
+1. Le statut actuel est lu.
+2. La règle pure `verifierTransition` (`src/domain/transition.ts`) cherche la transition dans la matrice ci-dessus.
+3. Si elle est acceptée, la fonction SQL `changer_statut` (migration `20261019130000_fonction_transition.sql`) écrit le statut et la ligne d'historique dans la même transaction : les deux, ou rien. Elle verrouille la ligne et refuse l'écriture si le statut a changé depuis la lecture. Seul le serveur (`service_role`) peut l'appeler.
+
+Résultat en cas de refus (rien n'est écrit) :
+
+- `transition_interdite` : absente de la matrice, ou déclenchée par le mauvais auteur ;
+- `transition_non_livree` : dans la matrice, mais de priorité should ou could (`PRIORITES_LIVREES` vaut `['must']`) ;
+- `auteur_non_identifie` : transition « conseiller » sans identifiant de conseiller ;
+- `introuvable` : le dossier ou la proposition n'existe pas ;
+- `statut_modifie` : une autre transition est passée entre la lecture et l'écriture.
+
+Le détail de la ligne d'historique suit `DetailEvenement` (`types/historique.ts`) ; un tri depuis `fiche_prete` y ajoute la `decision`. Les gardes de la colonne Garde restent vérifiées par le cas d'usage appelant, avant `changerStatut`. Les créations (« — ») et les statuts des lignes et des options, journalisés par leurs propres événements (`verification`, `accord`, `option`, `reservation`), ne passent pas encore par cette fonction.
+
 ## Limites connues du MVP
 
 - Une ligne restée `indisponible` bloque l'envoi tant que son remplacement (Should E5.2) n'est pas livré : le conseiller peut seulement la revérifier.
