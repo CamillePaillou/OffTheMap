@@ -1,6 +1,6 @@
 # Mails modèles ouverts dans la messagerie du conseiller (E5.4)
 
-Textes : `src/domain/mails.ts`. Journal : `supabase/migrations/20261020200000_mails_envoyes.sql`. Écrans : fiche du dossier, panneau de tri, page de la proposition, version imprimable.
+Textes : `src/domain/mails.ts`. Journal : `supabase/migrations/20261020200100_mails_envoyes.sql`. Écrans : fiche du dossier, panneau de tri, page de la proposition, version imprimable.
 
 ## Principe
 

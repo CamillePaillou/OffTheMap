@@ -8,6 +8,7 @@ import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupaba
 import { TarifsSupabase } from '@/src/infrastructure/db/tarifsSupabase';
 import { Ecart } from '../../_composants/ecart';
 import { ActionsLigne, PanneauEnvoi } from './actions-tarifs';
+import { PanneauReponse } from './panneau-reponse';
 import { CarteMail } from '../../_composants/carte-mail';
 import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
 import { lienMailto, mailProposition, MailImpossibleErreur } from '@/src/domain/mails';
@@ -173,6 +174,8 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
       )}
 
       {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} />}
+
+      <PanneauReponse propositionId={proposition.id} statut={proposition.statut} />
 
       {mail && (
         <section className="mt-8">

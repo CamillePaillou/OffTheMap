@@ -701,6 +701,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      enregistrer_reponse_client: {
+        Args: { p_proposition: string; p_nouveau: Database["public"]["Enums"]["statut_proposition"]; p_conseiller: string };
+        Returns: number;
+      };
       marquer_mail_envoye: {
         Args: { p_dossier: string; p_proposition: string | null; p_modele: string; p_conseiller: string };
         Returns: number;
