@@ -1,14 +1,19 @@
-/** Tarifs et envoi en mémoire, pour les tests. Mêmes règles que changer_ligne et envoyer_proposition (E5.1). */
+/** Tarifs, envoi et remplacement en mémoire, pour les tests. Mêmes règles que changer_ligne, envoyer_proposition (E5.1) et remplacer_ligne (E5.2). */
 import { ALERTES_BLOQUANTES, type Alerte, type SourcePrix, type StatutProposition, type StatutVerification } from '../../../types';
 import type { EntreeChiffrage, LigneAChiffrer } from '../../domain/chiffrage/chiffrer';
 import { StatutModifieErreur } from '../../ports/statuts';
 import {
   EnvoiRefuseErreur,
   LigneModifieeErreur,
+  MemePrestationErreur,
+  PrestationRefuseeErreur,
   PropositionFigeeErreur,
   type ChangementLigne,
+  type PrestationRemplacante,
+  type RemplacementLigne,
   type TarifsRepository,
 } from '../../ports/tarifs';
+import { ordonnerRemplacantes } from './ordonnerRemplacantes';
 
 export interface LigneEnMemoire extends LigneAChiffrer {
   id: string;
@@ -26,9 +31,17 @@ export interface PropositionEnMemoire extends Omit<EntreeChiffrage, 'lignes'> {
   envoyee_par: string | null;
 }
 
+export interface PrestationEnMemoire extends PrestationRemplacante {
+  destination: string;
+  actif: boolean;
+}
+
 export class TarifsEnMemoire implements TarifsRepository {
   readonly propositions = new Map<string, PropositionEnMemoire>();
+  /** Catalogue (table prestations), pour le remplacement (E5.2). */
+  readonly catalogue = new Map<string, PrestationEnMemoire>();
   readonly journal: string[] = [];
+  private lignesCreees = 0;
 
   private trouver(ligneId: string) {
     for (const p of this.propositions.values()) {
@@ -51,6 +64,40 @@ export class TarifsEnMemoire implements TarifsRepository {
     l.prix_confirme_cents = c.nouveau === 'confirme' ? c.prixCents : null;
     l.source = c.nouveau === 'confirme' ? c.source : null;
     l.confirme_par = c.nouveau === 'confirme' ? c.conseillerId : null;
+    return this.recalculer(p);
+  }
+
+  async remplacerLigne(r: RemplacementLigne) {
+    const { p, l } = this.trouver(r.ligneId)!;
+    if (!['a_verifier', 'prete'].includes(p.statut)) throw new PropositionFigeeErreur(p.statut);
+    if (l.statut !== 'indisponible') throw new LigneModifieeErreur(l.statut);
+    if (r.prestationId === l.prestation_id && (r.date ?? l.date) === l.date) throw new MemePrestationErreur(r.prestationId);
+    const presta = this.catalogue.get(r.prestationId);
+    if (!presta?.actif) throw new PrestationRefuseeErreur(r.prestationId);
+    l.statut = 'remplacee';
+    const nouvelle: LigneEnMemoire = {
+      id: `${r.ligneId}-remplacement-${++this.lignesCreees}`,
+      prestation_id: presta.id, type: presta.type, capacite: presta.capacite, actif: true,
+      date: r.date ?? l.date, participants: r.participants ?? l.participants,
+      prix_unitaire_catalogue_cents: presta.prix_unitaire_cents, prix_confirme_cents: null,
+      statut: 'a_verifier', source: null, confirme_par: null, verification: null,
+    };
+    p.lignes.push(nouvelle);
+    return { ligneId: nouvelle.id, statutProposition: this.recalculer(p) };
+  }
+
+  async prestationsRemplacantes(ligneId: string) {
+    const t = this.trouver(ligneId);
+    const actuelle = t && this.catalogue.get(t.l.prestation_id);
+    if (!actuelle) return [];
+    return ordonnerRemplacantes(
+      [...this.catalogue.values()].filter((x) => x.actif && x.destination === actuelle.destination),
+      actuelle,
+    ).map(({ id, nom, type, prix_unitaire_cents, capacite }) => ({ id, nom, type, prix_unitaire_cents, capacite }));
+  }
+
+  /** Total hors remplacee et indisponible ; la proposition suit (a_verifier ↔ prete). */
+  private recalculer(p: PropositionEnMemoire): StatutProposition {
     p.total_cents = p.lignes
       .filter((x) => x.statut !== 'remplacee' && x.statut !== 'indisponible')
       .reduce((s, x) => s + (x.prix_confirme_cents ?? x.prix_unitaire_catalogue_cents) * x.participants, 0);

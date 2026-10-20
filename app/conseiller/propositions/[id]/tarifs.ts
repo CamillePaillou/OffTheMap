@@ -7,6 +7,7 @@ import {
   confirmerTarif,
   envoyerProposition,
   marquerIndisponible,
+  remplacerLigne,
   revoirLigne,
   type RefusLigne,
   type ResultatLigne,
@@ -28,6 +29,8 @@ const REFUS: Record<RefusLigne, string> = {
   ligne_modifiee: 'La ligne a changé entre-temps : rechargez la page.',
   proposition_figee: 'La proposition est envoyée : ses tarifs ne se modifient plus.',
   pas_de_prix_verifie: 'Aucun prix revérifié à accepter : vérifiez la ligne ou saisissez un tarif.',
+  prestation_refusee: 'Cette prestation n’est plus au catalogue : choisissez-en une autre.',
+  meme_prestation: 'Même prestation à la même date : choisissez une autre prestation ou une autre date.',
 };
 
 function versEtat(r: ResultatLigne, valeurs?: Record<string, string>): EtatAction {
@@ -60,6 +63,15 @@ export async function indisponible(propositionId: string, ligneId: string): Prom
 export async function revoir(propositionId: string, ligneId: string): Promise<EtatAction> {
   const { id } = await exigerConseiller(chemin(propositionId));
   return versEtat(await revoirLigne(new TarifsSupabase(), { ligneId, conseillerId: id }));
+}
+
+/** Remplace une ligne indisponible par une autre prestation du catalogue (E5.2). */
+export async function remplacer(propositionId: string, ligneId: string, _e: EtatAction, f: FormData): Promise<EtatAction> {
+  const { id } = await exigerConseiller(chemin(propositionId));
+  const prestationId = f.get('prestation')?.toString() ?? '';
+  const date = f.get('date')?.toString() ?? '';
+  const r = await remplacerLigne(new TarifsSupabase(), { ligneId, conseillerId: id, prestationId, date });
+  return versEtat(r, { prestation: prestationId, date });
 }
 
 /** Envoi : marque la proposition envoyée. Le mail lui-même part de la messagerie du conseiller (E5.4). */

@@ -304,6 +304,37 @@ select doit_valoir($$select count(*) from propositions p join historique_dossier
   and h.auteur_id = '00000000-0000-0000-0000-00000000000a' and h.nouveau_statut in ('acceptee', 'depot_recu')$$, 2, 'acceptation et dépôt journalisés au nom du conseiller');
 select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fa', 'depot_recu', '00000000-0000-0000-0000-00000000000a')$$, 'dépôt enregistré deux fois');
 
+-- remplacer une ligne indisponible (E5.2) : nouvelle ligne à vérifier au prix du catalogue, les autres lignes intactes
+insert into prestations (id, type, nom, destination, prix_unitaire_cents, capacite, actif) values
+  ('test-remplacante-01', 'activite', 'Balade de test', 'Nantes', 2900, 12, true),
+  ('test-retiree-01', 'activite', 'Atelier retiré', 'Nantes', 2000, 10, false);
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-00000000d052', 'en_proposition');
+insert into propositions (id, dossier_id, statut, total_cents) values ('00000000-0000-0000-0000-00000000f052', '00000000-0000-0000-0000-00000000d052', 'a_verifier', 8000);
+insert into proposition_lignes (id, proposition_id, prestation_id, date, participants, prix_unitaire_catalogue_cents, statut,
+    prix_confirme_cents, source, confirme_le, confirme_par) values
+  ('00000000-0000-0000-0000-00000000b0b1', '00000000-0000-0000-0000-00000000f052', 'activite-nantes-01', '2026-11-07', 2, 3500, 'indisponible',
+    null, null, null, null),
+  ('00000000-0000-0000-0000-00000000b0b2', '00000000-0000-0000-0000-00000000f052', 'activite-nantes-01', '2026-11-08', 2, 3500, 'confirme',
+    4000, 'telephone', '2026-10-20 10:00+00', '00000000-0000-0000-0000-00000000000a');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b2', 'test-remplacante-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacer une ligne confirmée');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-retiree-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacer par une prestation retirée');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-remplacante-01', null)$$, 'remplacer sans conseiller identifié');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'activite-nantes-01', '00000000-0000-0000-0000-00000000000a')$$, 'même prestation, même date');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'activite-nantes-01', '00000000-0000-0000-0000-00000000000a', '2026-11-07')$$, 'même prestation, même date donnée');
+select doit_valoir($$select count(*) from proposition_lignes where proposition_id = '00000000-0000-0000-0000-00000000f052'$$, 2, 'refus : aucune ligne créée');
+create temp table remplacement as
+  select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-remplacante-01', '00000000-0000-0000-0000-00000000000a') as id;
+select doit_valoir($$select count(*) from proposition_lignes l join remplacement r on l.id = r.id
+  where l.statut = 'a_verifier' and l.prestation_id = 'test-remplacante-01' and l.prix_unitaire_catalogue_cents = 2900
+    and l.date = '2026-11-07' and l.participants = 2 and l.prix_confirme_cents is null$$, 1, 'nouvelle ligne à vérifier, prix du catalogue, même date et participants');
+select doit_valoir($$select count(*) from proposition_lignes where id = '00000000-0000-0000-0000-00000000b0b1' and statut = 'remplacee'$$, 1, 'ancienne ligne remplacée');
+select doit_valoir($$select count(*) from proposition_lignes where id = '00000000-0000-0000-0000-00000000b0b2' and statut = 'confirme'
+  and prix_confirme_cents = 4000 and source = 'telephone' and confirme_par = '00000000-0000-0000-0000-00000000000a'$$, 1, 'autre ligne et son tarif confirmé intacts');
+select doit_valoir($$select total_cents from propositions where id = '00000000-0000-0000-0000-00000000f052'$$, 13800, 'total recalculé sans la ligne remplacée (80 + 58 €)');
+select doit_valoir($$select count(*) from propositions where id = '00000000-0000-0000-0000-00000000f052' and statut = 'a_verifier'$$, 1, 'proposition à vérifier');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-remplacante-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacer deux fois la même ligne');
+select doit_echouer($$select remplacer_ligne((select id from remplacement), 'activite-nantes-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacer une ligne à vérifier');
+
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');
@@ -317,6 +348,7 @@ select doit_echouer($$select deposer_demande('{}')$$, 'dépôt direct en base pa
 select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fb', 'acceptee', '00000000-0000-0000-0000-00000000000a')$$, 'acceptation enregistrée par un visiteur');
 select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', null, 'rendez_vous', '00000000-0000-0000-0000-00000000000a')$$, 'mail marqué par un visiteur');
 select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi appelé par un visiteur');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-remplacante-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacement appelé par un visiteur');
 select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b5', '00000000-0000-0000-0000-00000000000a')$$, 'brouillon démarré par un visiteur');
 select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d9', 'fiche_prete', 'validee', '00000000-0000-0000-0000-00000000000a')$$, 'tri appelé par un visiteur');
 select doit_valoir($$select count(*) from corrections$$, 0, 'un visiteur ne lit pas les liens de correction');
