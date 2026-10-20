@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import * as E from './enums';
@@ -6,11 +6,14 @@ import { ConclusionVerification, FicheIA, schemaBrouillon } from './ia';
 import { versDemandePourLLM, type DemandeLue, type DemandePourLLM } from './llm';
 import { DisponibiliteSimulateur } from './simulateur';
 
-const migration = readFileSync(join(__dirname, '../supabase/migrations/20261019120000_schema_initial.sql'), 'utf8');
+const dossierMigrations = join(__dirname, '../supabase/migrations');
+const migration = readdirSync(dossierMigrations).filter((f) => f.endsWith('.sql')).sort()
+  .map((f) => readFileSync(join(dossierMigrations, f), 'utf8')).join('\n');
 const enumSql = (nom: string) => {
   const m = migration.match(new RegExp(`create type ${nom} as enum \\(([^)]*)\\)`));
-  if (!m) throw new Error(`enum ${nom} absent de la migration`);
-  return [...(m[1] ?? '').matchAll(/'([^']+)'/g)].map((x) => x[1]);
+  if (!m) throw new Error(`enum ${nom} absent des migrations`);
+  const ajouts = [...migration.matchAll(new RegExp(`alter type ${nom} add value (?:if not exists )?'([^']+)'`, 'g'))].map((x) => x[1]!);
+  return [...[...(m[1] ?? '').matchAll(/'([^']+)'/g)].map((x) => x[1]), ...ajouts];
 };
 
 describe('énumérations identiques à la migration', () => {
@@ -54,15 +57,15 @@ describe('contrats IA', () => {
 
 describe('minimisation vers le LLM', () => {
   const demande: DemandeLue = {
-    nom: 'Inès', email: 'ines@example.org', tel: null, destination: 'Nantes', date_debut: '2026-11-07', date_fin: '2026-11-08',
-    dates_flexibles: false, nb_nuits: 1, voyageurs: ['adulte', 'adulte'], budget_annonce_cents: 40000, budget_ferme: false,
-    envies: 'créatif, sans voiture', contraintes: null, niveau_physique: 'faible', regimes: ['vegetarien'],
-    regime_precision: 'allergie sévère aux noix', mobilite: null, sante_precision: 'asthme',
+    nom: 'Inès', email: 'ines@example.org', destination: 'Nantes', date_debut: '2026-11-07', date_fin: '2026-11-08',
+    nb_nuits: 1, voyageurs: ['adulte', 'adulte', 'enfant'], budget_annonce_cents: 40000,
+    envies: 'créatif, sans voiture', contraintes: null, regimes: ['vegetarien'], mobilite: null,
   };
-  it('ne transmet ni identité ni précision sensible', () => {
+  it('ne transmet pas l’identité, mais les catégories et la présence d’un enfant', () => {
     const texte = JSON.stringify(versDemandePourLLM(demande));
-    for (const interdit of ['Inès', 'ines@example.org', 'noix', 'asthme']) expect(texte).not.toContain(interdit);
+    for (const interdit of ['Inès', 'ines@example.org']) expect(texte).not.toContain(interdit);
     expect(texte).toContain('vegetarien');
+    expect(texte).toContain('enfant');
   });
   it('refuse à la compilation une demande brute vers le LLM', () => {
     const envoyer = (d: DemandePourLLM) => d !== undefined;

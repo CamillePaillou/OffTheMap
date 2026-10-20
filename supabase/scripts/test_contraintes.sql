@@ -91,6 +91,19 @@ select doit_valoir($$select count(*) from historique_dossier where proposition_i
   and dossier_id = '00000000-0000-0000-0000-0000000000d1' and nouveau_statut = 'brouillon_pret'$$, 1, 'transition de proposition rattachée au dossier');
 select doit_valoir($$select count(*) from historique_dossier where dossier_id = '00000000-0000-0000-0000-0000000000d1' and type = 'statut'$$, 2, 'une ligne d''historique par transition, aucune pour les refus');
 
+-- dépôt d'une demande (E1.1) : dossier nouvelle, demande v1 et journal écrits ensemble, ou rien
+select doit_valoir($$select count(*) from deposer_demande('{"consentement_rgpd": true, "consentement_ia": true, "nom": "Dépôt Test",
+  "email": "depot-test@example.invalid", "date_debut": "2026-11-07", "date_fin": "2026-11-08", "nb_nuits": 1,
+  "voyageurs": ["adulte", "adulte"], "budget_annonce_cents": 40000, "regimes": ["vegetarien"]}')$$, 1, 'demande valide déposée');
+select doit_valoir($$select count(*) from demandes d join dossiers o on o.id = d.dossier_id
+  where d.email = 'depot-test@example.invalid' and d.version = 1 and o.statut = 'nouvelle' and d.voyageurs = '{adulte,adulte}' and d.regimes = '{vegetarien}'$$, 1, 'demande en version 1, dossier au statut nouvelle');
+select doit_valoir($$select count(*) from historique_dossier h join demandes d on d.dossier_id = h.dossier_id
+  where d.email = 'depot-test@example.invalid' and h.nouveau_statut = 'nouvelle' and h.auteur = 'systeme'$$, 1, 'le dépôt écrit la première ligne du journal');
+create temp table avant_depot as select count(*) as n from dossiers;
+select doit_echouer($$select deposer_demande('{"consentement_rgpd": false, "consentement_ia": true, "nom": "Sans Accord",
+  "email": "sans@example.org", "date_debut": "2026-11-07", "date_fin": "2026-11-08", "nb_nuits": 1, "voyageurs": ["adulte"]}')$$, 'demande sans consentement RGPD');
+select doit_valoir($$select count(*) - (select n from avant_depot) from dossiers$$, 0, 'refus du dépôt : aucun dossier orphelin');
+
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');
@@ -100,6 +113,7 @@ select doit_valoir($$select count(*) from options$$, 0, 'un visiteur ne lit pas 
 select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, modele, nb_tours, arret)
   values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un visiteur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un visiteur');
+select doit_echouer($$select deposer_demande('{}')$$, 'dépôt direct en base par un visiteur');
 reset role;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000ff', false);

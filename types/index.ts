@@ -4,6 +4,7 @@ export * from './ia';
 export * from './llm';
 export * from './permissions';
 export * from './chiffrage';
+export * from './demande';
 export * from './dashboard';
 export * from './simulateur';
 export * from './trace';

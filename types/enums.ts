@@ -51,7 +51,10 @@ export type AuteurEvenement = (typeof AUTEURS_EVENEMENT)[number];
 export const NIVEAUX_PHYSIQUES = ['faible', 'modere', 'soutenu', 'intense'] as const;
 export type NiveauPhysique = (typeof NIVEAUX_PHYSIQUES)[number];
 
-export const TRANCHES_AGE = ['0_2', '3_11', '12_17', 'adulte'] as const;
+// Le formulaire saisit des adultes et des enfants ('enfant', ajoutée par 20261020090000_formulaire_demande.sql).
+// Les tranches détaillées restent dans l'énumération SQL (une valeur ne s'y retire pas) mais ne sont plus saisies.
+export const TRANCHES_AGE = ['0_2', '3_11', '12_17', 'adulte', 'enfant'] as const;
+export const TRANCHES_SAISIES = ['adulte', 'enfant'] as const;
 export type TrancheAge = (typeof TRANCHES_AGE)[number];
 
 export const REGIMES = ['vegetarien', 'vegetalien', 'sans_gluten', 'allergie', 'autre'] as const;
