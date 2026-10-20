@@ -2,6 +2,7 @@
 
 import { refresh } from 'next/cache';
 import { exigerConseiller } from '@/lib/auth/conseiller';
+import { genererEnArrierePlan } from '@/lib/fiche/generation';
 import { corrigerFiche, type ErreursChamps } from '@/src/application/corrigerFiche';
 import { relancerFiche } from '@/src/application/relancerFiche';
 import { FichesSupabase } from '@/src/infrastructure/db/fichesSupabase';
@@ -50,6 +51,7 @@ export async function relancer(dossierId: string): Promise<{ erreur?: string }> 
   if (!resultat.ok) {
     return { erreur: resultat.raison === 'statut_modifie' ? 'Le dossier a changé entre-temps : rechargez la page.' : 'Cette fiche ne peut pas être relancée.' };
   }
+  genererEnArrierePlan(dossierId, 'deja_en_cours'); // E2.2 : le dossier est en fiche_en_cours, la génération repart
   refresh();
   return {};
 }

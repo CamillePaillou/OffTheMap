@@ -61,6 +61,10 @@ export class CorrectionsSupabase implements CorrectionsRepository {
     if (error) throw traduire('corriger_demande', error);
     const ligne = data?.[0];
     if (!ligne) throw new Error('corriger_demande : aucune ligne renvoyée');
-    return { demandeId: ligne.demande_id, version: ligne.version };
+    // le dossier de la nouvelle version, pour relancer la génération de la fiche (E2.2)
+    const { data: version, error: erreurLecture } = await clientService()
+      .from('demandes').select('dossier_id').eq('id', ligne.demande_id).single();
+    if (erreurLecture) throw new Error(`dossier de la demande corrigée : ${erreurLecture.message}`);
+    return { demandeId: ligne.demande_id, version: ligne.version, dossierId: version.dossier_id };
   }
 }

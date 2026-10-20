@@ -160,6 +160,33 @@ select doit_echouer($$select corriger_demande((select h from jetons where n = 4)
   "nom": "Paul", "email": "paul@example.org", "date_debut": "2026-11-07", "date_fin": "2026-11-08", "nb_nuits": 1, "voyageurs": ["adulte"]}')$$, 'renvoi par un lien expiré');
 select doit_valoir($$select count(*) from demandes where dossier_id = '00000000-0000-0000-0000-0000000000d3'$$, 1, 'refus du renvoi : aucune version créée');
 select doit_echouer($$select corriger_demande((select h from jetons where n = 5), '{}')$$, 'renvoi par un lien inconnu');
+-- génération de la fiche (E2.2) : fiche, statut et journal écrits ensemble ; seul un dossier en fiche_en_cours peut finir
+insert into dossiers (id) values ('00000000-0000-0000-0000-0000000000d6'), ('00000000-0000-0000-0000-0000000000d7');
+insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs)
+  values ('00000000-0000-0000-0000-0000000000e6', '00000000-0000-0000-0000-0000000000d6', true, true, 'Léa', 'lea@example.org', '2026-11-07', '2026-11-08', 1, '{adulte}'),
+         ('00000000-0000-0000-0000-0000000000e7', '00000000-0000-0000-0000-0000000000d7', true, true, 'Tom', 'tom@example.org', '2026-11-07', '2026-11-08', 1, '{adulte}');
+select doit_echouer($$select terminer_generation_fiche('00000000-0000-0000-0000-0000000000d6', 'm',
+  '{"envies": [], "contraintes": [], "points_flous": [], "regimes": [], "mobilite": null, "niveau_physique": null}')$$, 'génération terminée sur un dossier qui n''est pas en cours');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000e6'$$, 0, 'refus : aucune fiche écrite');
+select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d6', 'nouvelle', 'fiche_en_cours', 'systeme', null);
+select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d6', 'nouvelle', 'fiche_en_cours', 'systeme', null)$$, 'second lancement simultané refusé');
+select doit_valoir($$select count(*) from terminer_generation_fiche('00000000-0000-0000-0000-0000000000d6', 'modele-test',
+  '{"envies": ["atelier"], "contraintes": [], "points_flous": [], "regimes": ["sans_gluten"], "mobilite": null, "niveau_physique": null}') s
+  where s = 'fiche_prete'$$, 1, 'génération réussie : fiche_prete');
+select doit_valoir($$select count(*) from fiches f join dossiers d on d.id = '00000000-0000-0000-0000-0000000000d6'
+  where f.demande_id = '00000000-0000-0000-0000-0000000000e6' and f.envies = '{atelier}' and f.regimes = '{sans_gluten}'
+  and f.modele = 'modele-test' and d.statut = 'fiche_prete'$$, 1, 'fiche écrite et dossier fiche_prete ensemble');
+select doit_valoir($$select count(*) from historique_dossier where dossier_id = '00000000-0000-0000-0000-0000000000d6'
+  and ancien_statut = 'fiche_en_cours' and nouveau_statut = 'fiche_prete' and auteur = 'systeme'$$, 1, 'fin de génération journalisée');
+select doit_echouer($$select terminer_generation_fiche('00000000-0000-0000-0000-0000000000d6', 'm',
+  '{"envies": ["autre"], "contraintes": [], "points_flous": [], "regimes": [], "mobilite": null, "niveau_physique": null}')$$, 'seconde fin de génération refusée');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000e6' and envies = '{atelier}'$$, 1, 'une seule fiche, inchangée');
+select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d7', 'nouvelle', 'fiche_en_cours', 'systeme', null);
+select doit_valoir($$select count(*) from terminer_generation_fiche('00000000-0000-0000-0000-0000000000d7', 'modele-test',
+  '{"erreur": "le modèle n’a pas répondu à temps"}') s where s = 'erreur'$$, 1, 'échec après le nouvel essai : statut erreur');
+select doit_valoir($$select count(*) from fiches f join dossiers d on d.id = '00000000-0000-0000-0000-0000000000d7'
+  where f.demande_id = '00000000-0000-0000-0000-0000000000e7' and f.erreur_generation is not null and d.statut = 'erreur'$$, 1, 'erreur notée sur la fiche, dossier en erreur');
+
 -- fiche (E2.1) : la correction du conseiller et la génération (E2.2) n'écrivent pas les mêmes champs
 select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'modele-1',
   '{"envies": ["atelier"], "contraintes": ["sans voiture"], "points_flous": ["une nuit ?"], "regimes": [], "mobilite": null, "niveau_physique": "faible"}');
@@ -192,6 +219,7 @@ select doit_echouer($$select deposer_demande('{}')$$, 'dépôt direct en base pa
 select doit_valoir($$select count(*) from corrections$$, 0, 'un visiteur ne lit pas les liens de correction');
 select doit_echouer($$select lire_correction(repeat('0', 64))$$, 'lecture d’un lien en base par un visiteur');
 select doit_echouer($$select corriger_demande(repeat('0', 64), '{}')$$, 'correction directe en base par un visiteur');
+select doit_echouer($$select terminer_generation_fiche('00000000-0000-0000-0000-0000000000d7', 'm', '{}')$$, 'fin de génération appelée par un visiteur');
 select doit_echouer($$select corriger_fiche('00000000-0000-0000-0000-0000000000f9', 38000, null, null, null, null)$$, 'correction de fiche par un visiteur');
 reset role;
 set role authenticated;

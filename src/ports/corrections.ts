@@ -42,5 +42,5 @@ export class LienInvalideErreur extends Error {}
 export interface CorrectionsRepository {
   demander(c: NouvelleCorrection): Promise<{ correctionId: string; boucle: number }>;
   lire(jetonHash: string): Promise<LectureCorrection>;
-  corriger(jetonHash: string, demande: NouvelleDemande): Promise<{ demandeId: string; version: number }>;
+  corriger(jetonHash: string, demande: NouvelleDemande): Promise<{ demandeId: string; version: number; dossierId: string }>;
 }
