@@ -68,6 +68,7 @@ export const EvenementHistorique = z.object({
   nouveau_statut: z.string().nullable(),
   auteur: z.enum(AUTEURS_EVENEMENT),
   auteur_nom: z.string().nullable(), // nom affiché du conseiller ; null pour le système
+  resume: z.string().min(1).optional(), // libellé d'un événement autre qu'un statut (mail envoyé, lien de correction) ; E5.4
 }).strict().refine((e) => (e.type === 'statut') === (e.cible !== null && e.nouveau_statut !== null), {
   message: 'un changement de statut a une cible et un nouveau statut ; les autres événements n’en ont pas',
 })
