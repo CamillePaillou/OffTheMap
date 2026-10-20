@@ -52,9 +52,9 @@ Source de vérité : `types/transitions.ts`, utilisée par la fonction de transi
 | prete | envoyee | conseiller | envoi au client | aucune ligne a_verifier ni indisponible | must |
 | envoyee | acceptee | conseiller | acceptation du client enregistrée | — | must |
 | envoyee | changement_demande | conseiller | le client demande un changement | — | must (E6.1) |
-| envoyee | sans_reponse | systeme | rappel à J+3 | — | should |
-| sans_reponse | acceptee | conseiller | acceptation du client enregistrée | — | should |
-| sans_reponse | changement_demande | conseiller | le client demande un changement | — | should |
+| envoyee | sans_reponse | systeme | rappel à J+3 | — | must (E6.4) |
+| sans_reponse | acceptee | conseiller | acceptation du client enregistrée | — | must (E6.4) |
+| sans_reponse | changement_demande | conseiller | le client demande un changement | — | must (E6.4) |
 | changement_demande | remplacee | systeme | version suivante créée | version suivante en brouillon_en_cours | must (E6.1) |
 | acceptee | depot_recu | conseiller | dépôt de garantie reçu | — | must |
 | depot_recu | reservee | systeme | dernière ligne réservée | toutes les lignes sont reservee | must |

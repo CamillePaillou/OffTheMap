@@ -59,9 +59,9 @@ export const TRANSITIONS_PROPOSITION: Transition<StatutProposition>[] = [
   t('prete', 'envoyee', 'conseiller', 'envoi au client', 'aucune ligne a_verifier ni indisponible'),
   t('envoyee', 'acceptee', 'conseiller', 'acceptation du client enregistrée'),
   t('envoyee', 'changement_demande', 'conseiller', 'le client demande un changement'), // livrée par E6.1
-  t('envoyee', 'sans_reponse', 'systeme', 'rappel à J+3', undefined, 'should'),
-  t('sans_reponse', 'acceptee', 'conseiller', 'acceptation du client enregistrée', undefined, 'should'),
-  t('sans_reponse', 'changement_demande', 'conseiller', 'le client demande un changement', undefined, 'should'),
+  t('envoyee', 'sans_reponse', 'systeme', 'rappel à J+3'), // livrée par E6.4
+  t('sans_reponse', 'acceptee', 'conseiller', 'acceptation du client enregistrée'), // livrée par E6.4
+  t('sans_reponse', 'changement_demande', 'conseiller', 'le client demande un changement'), // livrée par E6.4
   t('changement_demande', 'remplacee', 'systeme', 'version suivante créée', 'version suivante en brouillon_en_cours'), // livrée par E6.1
   t('acceptee', 'depot_recu', 'conseiller', 'dépôt de garantie reçu'),
   t('depot_recu', 'reservee', 'systeme', 'dernière ligne réservée', 'toutes les lignes sont reservee'),

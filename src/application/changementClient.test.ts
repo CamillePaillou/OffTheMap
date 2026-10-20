@@ -70,6 +70,11 @@ describe('changement demandé par le client (E6.1)', () => {
     expect(repo.creee).toBeNull();
   });
 
+  it('accepte une proposition restée sans réponse (E6.4)', async () => {
+    const repo = new VersionsEnMemoire(envoyee({ statut: 'sans_reponse' }));
+    expect(await demanderChangement(repo, demande)).toEqual({ ok: true, versionSuivanteId: 'v2' });
+  });
+
   it.each(['prete', 'acceptee', 'remplacee', 'a_verifier'] as const)('refuse depuis le statut %s', async (statut) => {
     const repo = new VersionsEnMemoire(envoyee({ statut }));
     expect(await demanderChangement(repo, demande)).toEqual({ ok: false, raison: 'transition_interdite' });

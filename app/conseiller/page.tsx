@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
+import { rappelerSansReponse } from '@/src/application/rappels';
+import { joursDepuis } from '@/src/domain/rappels';
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
+import { RappelsSupabase } from '@/src/infrastructure/db/rappelsSupabase';
 import { deconnecter } from '../connexion/actions';
-import { ETAT_FICHE, STATUT_DOSSIER, euros, jour } from './_composants/libelles';
+import { ETAT_FICHE, STATUT_DOSSIER, euros, instantParis, jour } from './_composants/libelles';
 
 const PAR_PAGE = 50;
 
@@ -21,7 +24,11 @@ export default function ConseillerPage() {
 
 async function Contenu() {
   const conseiller = await exigerConseiller();
-  const dossiers = await new DossiersSupabase().liste({ limit: PAR_PAGE, offset: 0 });
+  // E6.4 : sans tâche planifiée, les rappels dus (J+3, J+7) sont posés à l'ouverture de l'espace conseiller
+  const rappels = new RappelsSupabase();
+  const maintenant = new Date();
+  await rappelerSansReponse(rappels, maintenant);
+  const [dossiers, aRelancer] = await Promise.all([new DossiersSupabase().liste({ limit: PAR_PAGE, offset: 0 }), rappels.aRelancer()]);
   return (
     <>
       <div className="mt-4 flex items-center justify-between gap-4">
@@ -32,6 +39,23 @@ async function Contenu() {
           </button>
         </form>
       </div>
+
+      {aRelancer.length > 0 && (
+        <section className="mt-10 rounded border border-amber-200 bg-amber-50 p-4 text-amber-950">
+          <h2 className="text-lg font-semibold">Clients à relancer ({aRelancer.length})</h2>
+          <p className="mt-1 text-sm">Propositions envoyées restées sans réponse : relancez le client, puis enregistrez sa réponse.</p>
+          <ul className="mt-3 flex flex-col gap-1 text-sm">
+            {aRelancer.map((p) => (
+              <li key={p.proposition_id}>
+                <Link href={`/conseiller/propositions/${p.proposition_id}`} className="font-medium underline underline-offset-4">
+                  {p.client_nom} · proposition v{p.version}
+                </Link>{' '}
+                · envoyée le {instantParis(p.envoyee_le)}, il y a {joursDepuis(p.envoyee_le, maintenant)} jours · rappel J+{p.dernier_rappel}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <h2 className="mt-10 text-lg font-semibold">Dossiers ({dossiers.total})</h2>
       {dossiers.items.length === 0 ? (
