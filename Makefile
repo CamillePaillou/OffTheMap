@@ -5,7 +5,7 @@ DB_CONTAINER := supabase_db_off-the-map
 APP_PORT ?= 3000
 
 .DEFAULT_GOAL := help
-.PHONY: help up down restart logs status migrate seed reset test-db lint typecheck build
+.PHONY: help up down restart logs status migrate seed reset test-db lint typecheck build essai-llm
 
 help: ## Liste les commandes
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
@@ -51,6 +51,9 @@ reset: ## Recrée la base : migrations puis seed (efface les données locales)
 test-db: ## Vérifie le schéma (transaction annulée) et les données de démonstration
 	docker exec -i $(DB_CONTAINER) psql -q -U postgres -d postgres < supabase/scripts/test_contraintes.sql
 	docker exec -i $(DB_CONTAINER) psql -q -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/scripts/test_seed.sql
+
+essai-llm: .env node_modules ## Appel réel à OpenRouter avec les modèles de .env (E0.19)
+	LLM_ESSAI_REEL=1 node --env-file=.env node_modules/vitest/vitest.mjs run src/infrastructure/llm/openrouter.essai-reel.test.ts
 
 lint: node_modules ## Lint
 	npm run lint

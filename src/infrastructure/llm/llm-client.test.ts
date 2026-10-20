@@ -5,6 +5,7 @@ import { LlmError } from '../../ports/llm-client';
 import type { EntreeBrouillon } from '../../ports/llm-client';
 import { FauxLlmClient } from './fake-llm-client';
 import { creerLlmClient } from './index';
+import { OpenRouterLlmClient } from './openrouter-llm-client';
 
 const sophie: DemandeLue = {
   nom: 'Sophie Marchand',
@@ -109,7 +110,11 @@ describe('creerLlmClient', () => {
     expect(creerLlmClient({})).toBeInstanceOf(FauxLlmClient);
     expect(creerLlmClient({ LLM_PROVIDER: 'fake' })).toBeInstanceOf(FauxLlmClient);
   });
-  it('refuse un fournisseur pas encore branché', () => {
-    expect(() => creerLlmClient({ LLM_PROVIDER: 'openrouter' })).toThrowError(/E0\.19/);
+  it('branche OpenRouter avec une clé et un modèle gratuit', () => {
+    const env = { LLM_PROVIDER: 'openrouter', LLM_API_KEY: 'cle-de-test', LLM_MODEL: 'editeur/modele:free' };
+    expect(creerLlmClient(env)).toBeInstanceOf(OpenRouterLlmClient);
+  });
+  it('refuse un fournisseur inconnu', () => {
+    expect(() => creerLlmClient({ LLM_PROVIDER: 'anthropic' })).toThrowError(/inconnu/);
   });
 });
