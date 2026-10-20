@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
+import { PROPOSITION_DEMO_ID } from '@/src/infrastructure/fixtures/propositionsFixtures';
 import { deconnecter } from '../connexion/actions';
 
 // Back-office des conseillers (P2). Sans connexion, le proxy et exigerConseiller() renvoient vers /connexion.
@@ -27,6 +29,11 @@ async function Contenu() {
         </form>
       </div>
       <p className="mt-4 text-zinc-600">Liste des dossiers à venir.</p>
+      <p className="mt-2">
+        <Link href={`/conseiller/propositions/${PROPOSITION_DEMO_ID}`} className="underline underline-offset-4">
+          Proposition de démonstration (Sophie, Nantes)
+        </Link>
+      </p>
     </>
   );
 }

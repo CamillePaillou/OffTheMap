@@ -8,6 +8,7 @@ Les fixtures de `fixtures/dashboard/` les suivent et sont validées par `types/d
 | `GET /api/dossiers?limit&offset` | `ListeDossiers` | `liste-dossiers.json` (5 dossiers, statuts variés) | E2.1 |
 | `GET /api/dossiers/{id}` | `DetailDossier` | `detail-dossier.json` (Sophie, Nantes, en proposition) | E2.1, E3.1 |
 | `GET /api/propositions/{id}` | `Proposition` | `proposition.json` (exemple B des règles de chiffrage) | E4.5, E8.4, E9.3 |
+| `GET /api/lignes/{id}/verification` | `VerificationLigne` | `verifications.json` (atelier revérifié à 40 €, hôtel en échec) | E8.4, E9.3 |
 
 Principes (plan, section 5.2) : montants en centimes ; valeur indisponible = `null`, jamais `0` ; pagination par `limit` et `offset` ; dates en UTC ISO-8601 ; aucun champ en trop (schémas stricts).
 
@@ -26,3 +27,9 @@ Alignés sur le schéma de la base et les types partagés ; à valider par P3.
 | — | `client.nom` (liste), `client` complet (détail) | le conseiller doit savoir qui il rappelle ; jamais envoyé au LLM. |
 | — | `budget_reference_cents`, `derniere_verification` par ligne | budget utilisé pour les alertes ; résultat de l'agent pour E8.4. |
 | — | `historique[].cible`, `auteur_nom` | savoir quelle machine (dossier ou proposition) a changé, et quel conseiller. |
+
+## Vérification d'une ligne (E8.4)
+
+`VerificationLigne` reprend une ligne de `verifications` : prix revérifié (unitaire et total), places, résumé de l'agent, `reponse_serveur` (JSON brut du simulateur, montants en euros, affiché tel quel), `trace` (format `TraceVerification` de E8.5, `types/trace.ts`) et raison d'arrêt.
+L'écart avec le prix proposé n'est pas dans le payload : il est calculé par le code (`src/domain/ecartPrix.ts`), jamais par le modèle.
+Écrans : `/conseiller/propositions/{id}` (prix proposé, revérifié et écart par ligne) et `/conseiller/propositions/{id}/lignes/{ligneId}` (réponse brute et trace). Ils lisent les fixtures tant que l'agent (E8.3) n'écrit pas de vérifications.
