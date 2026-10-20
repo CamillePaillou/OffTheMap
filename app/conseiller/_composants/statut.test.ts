@@ -23,6 +23,7 @@ describe('prochaine étape', () => {
   it('compte les prix à vérifier d’une proposition', () => {
     expect(prochaineEtape('en_proposition', { statut: 'a_verifier', lignes_a_verifier: 2 }).texte).toBe('Vérifier 2 prix');
     expect(prochaineEtape('en_proposition', { statut: 'envoyee' }).acteur).toBe('client');
+    expect(prochaineEtape('en_proposition', { statut: 'sans_reponse' })).toEqual({ texte: 'Relancer le client', acteur: 'conseiller' });
   });
 });
 

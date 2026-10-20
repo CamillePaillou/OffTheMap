@@ -133,8 +133,9 @@ function etapeProposition(p?: { statut: StatutProposition; lignes_a_verifier?: n
     case 'prete':
       return { texte: 'Envoyer la proposition', acteur: 'conseiller' };
     case 'envoyee':
-    case 'sans_reponse':
       return { texte: 'Attendre la réponse', acteur: 'client' };
+    case 'sans_reponse':
+      return { texte: 'Relancer le client', acteur: 'conseiller' }; // E6.4 : sans réponse depuis 3 jours
     case 'changement_demande':
       return { texte: 'Nouvelle version en préparation', acteur: 'systeme' }; // E6.1 : la version suivante est créée aussitôt
     case 'acceptee':
