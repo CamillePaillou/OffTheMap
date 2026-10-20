@@ -16,7 +16,7 @@ Le cas de Nantes (deux voyageurs, week-end créatif sans voiture) se déroule de
 
 ## Confirmé au planning
 
-- Date : …
-- Équipe présente : …
-- Estimations revues par les développeurs : oui / non
+- Date : 19/10/2026 (J1) ; estimations relues avec les livraisons le 20/10/2026 (J2)
+- Équipe présente : Callista Loré (PO), Camille Paillou, Tabitha, Océane Gohier-Tallon, Ainouche Mustapha Islam
+- Estimations revues par les développeurs : oui (voir [`sprint-planning.md`](sprint-planning.md))
 - Durée de l’option : 72 h (règle métier de l’agence). Le simulateur du cours pose 30 minutes : en démonstration, l’option expire au bout de 30 minutes et la confirmation se fait dans la foulée. Écart annoncé dans les limites.

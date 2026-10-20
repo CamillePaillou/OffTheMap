@@ -17,14 +17,16 @@ export const metadata: Metadata = {
 // Page publique de correction (E1.2) : ouverte depuis le lien envoyé par le conseiller, sans compte.
 export default function CorrigerPage({ params }: PageProps<'/demande/corriger/[jeton]'>) {
   return (
-    <main className="mx-auto w-full max-w-2xl px-6 py-16">
-      <h1 className="text-2xl font-semibold">Corriger ma demande</h1>
-      <Suspense fallback={<p className="mt-4 text-zinc-600">Chargement…</p>}>
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
+      <h1 className="text-4xl">Corriger ma demande</h1>
+      <Suspense fallback={<p className="mt-4 text-doux">Chargement…</p>}>
         <Contenu params={params} />
       </Suspense>
     </main>
   );
 }
+
+const COMMENTAIRE_PAR_DEFAUT = 'Merci de vérifier ce point.';
 
 const MESSAGES = {
   inconnu: 'Ce lien n’est pas valable. Vérifiez qu’il est complet, ou contactez votre conseiller.',
@@ -37,15 +39,20 @@ async function Contenu({ params }: { params: PageProps<'/demande/corriger/[jeton
   await connection(); // lu à chaque requête : jamais mis en cache ni prérendu
   const { jeton } = await params;
   const lecture = await lireCorrection(new CorrectionsSupabase(), jeton);
-  if (lecture.etat !== 'valide') return <p className="mt-4 text-zinc-600">{MESSAGES[lecture.etat]}</p>;
+  if (lecture.etat !== 'valide') return <p className="panneau mt-6 max-w-2xl p-5 text-lg">{MESSAGES[lecture.etat]}</p>;
 
   const surlignes = lecture.champs.flatMap((c) => CHAMPS_FORMULAIRE[c]);
+  // E3.3 : chaque champ surligné a une explication ; sans commentaire du conseiller, une phrase par défaut
+  const commentaires = Object.fromEntries(lecture.champs.map((c) => [c, lecture.commentaires[c] ?? COMMENTAIRE_PAR_DEFAUT]));
   const expire = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(new Date(lecture.expireLe));
   return (
     <>
-      <section id="points-a-revoir" className="mt-6 rounded border border-amber-400 bg-amber-50 px-4 py-3 text-amber-900">
-        <h2 className="font-medium">Votre conseiller vous demande de revoir :</h2>
-        <ul className="mt-2 list-inside list-disc text-sm">
+      <div className="mt-6 grid max-w-6xl gap-6 md:grid-cols-[3fr_2fr]">
+      <section id="points-a-revoir" className="rounded-xl border border-amber-300 border-l-[6px] border-l-amber-500 bg-amber-50 px-5 py-5 text-amber-950">
+        <h2 className="text-xl text-amber-950!">Pourquoi votre conseiller vous recontacte</h2>
+        <p className="mt-2 whitespace-pre-line text-sm">{lecture.motif}</p>
+        <h3 className="mt-4 text-base text-amber-950!">Les points à revoir</h3>
+        <ul className="mt-1 list-inside list-disc text-sm">
           {lecture.champs.map((c) => (
             <li key={c}>
               {LIBELLES_CHAMPS[c]}
@@ -53,17 +60,22 @@ async function Contenu({ params }: { params: PageProps<'/demande/corriger/[jeton
             </li>
           ))}
         </ul>
-        <p className="mt-3 whitespace-pre-line text-sm">{lecture.motif}</p>
       </section>
-      <p className="mt-4 text-sm text-zinc-600">
-        Les champs concernés sont surlignés, avec l’explication de votre conseiller. Vous pouvez aussi modifier le reste. Ce lien ne sert qu’une fois et reste valable
-        jusqu’au {expire}.
-      </p>
+      <section aria-labelledby="comment-faire" className="panneau p-5 text-sm">
+        <h2 id="comment-faire" className="text-xl">Comment faire</h2>
+        <ol className="mt-2 flex list-inside list-decimal flex-col gap-1.5">
+          <li>Modifiez les champs surlignés : l’explication de votre conseiller est juste en dessous. Vous pouvez aussi changer le reste.</li>
+          <li>Si une information signalée est exacte telle quelle, vous pourrez le confirmer au moment de l’envoi.</li>
+          <li>Envoyez : votre conseiller reprend votre demande et vous répond par e-mail.</li>
+        </ol>
+        <p className="mt-3 text-doux">Ce lien ne sert qu’une fois et reste valable jusqu’au {expire}.</p>
+      </section>
+      </div>
       <FormulaireDemande
         action={envoyerCorrection.bind(null, jeton)}
         initiales={versValeursFormulaire(lecture.demande)}
         surlignes={surlignes}
-        commentaires={lecture.commentaires}
+        commentaires={commentaires}
         libelleEnvoi="Envoyer ma correction"
       />
     </>

@@ -17,8 +17,9 @@ begin
   where not exists (select 1 from dossiers d where d.statut::text = s and d.id::text like 'd0551e00-%');
   if manquants is not null then raise exception 'étapes du dossier sans exemple : %', manquants; end if;
 
+  -- la proposition envoyée passe en sans_reponse à l'ouverture de l'espace conseiller, 3 jours après l'envoi (E6.4)
   select string_agg(s, ', ') into manquants from unnest(array['a_verifier','prete','envoyee','depot_recu','reservee']) s
-  where not exists (select 1 from propositions p where p.statut::text = s);
+  where not exists (select 1 from propositions p where p.statut::text = s or (s = 'envoyee' and p.statut = 'sans_reponse'));
   if manquants is not null then raise exception 'étapes de la proposition sans exemple : %', manquants; end if;
 
   if not exists (select 1 from verifications where statut = 'echec') then raise exception 'aucune vérification en échec'; end if;

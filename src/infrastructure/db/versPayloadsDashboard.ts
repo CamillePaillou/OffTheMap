@@ -3,6 +3,7 @@
  * Fonctions pures : testées sans base (versPayloadsDashboard.test.ts).
  */
 import { DetailDossier, DossierResume, EvenementHistorique } from '../../../types/dashboard';
+import { resumeEvenement } from '../../domain/resumeEvenement';
 import type { Database } from '../../../types/database';
 import { etatFiche } from '../../domain/etatFiche';
 
@@ -13,7 +14,7 @@ type Ligne<T extends keyof Tables, K extends keyof Tables[T]['Row']> = Pick<Tabl
 const utc = (instant: string) => new Date(instant).toISOString();
 
 /** Version en cours : celle qui n'a pas été remplacée, sinon la plus récente. */
-function versionEnCours<D extends { version: number; remplacee_le: string | null }>(demandes: D[]): D | undefined {
+export function versionEnCours<D extends { version: number; remplacee_le: string | null }>(demandes: D[]): D | undefined {
   return [...demandes].sort((a, b) => Number(a.remplacee_le !== null) - Number(b.remplacee_le !== null) || b.version - a.version)[0];
 }
 
@@ -73,8 +74,14 @@ export type LigneDossierDetail = Ligne<'dossiers', 'id' | 'statut' | 'cree_le'> 
 };
 
 export type LigneHistorique = Ligne<'historique_dossier', 'cree_le' | 'type' | 'proposition_id' | 'ancien_statut' | 'nouveau_statut' | 'auteur'> & {
+  detail?: Ligne<'historique_dossier', 'detail'>['detail'];
   profils: Ligne<'profils', 'nom_affiche'> | null;
 };
+
+function resume(h: LigneHistorique) {
+  const r = resumeEvenement(h.type, h.detail);
+  return r ? { resume: r } : {};
+}
 
 export function versEvenement(h: LigneHistorique): EvenementHistorique {
   return EvenementHistorique.parse({
@@ -85,6 +92,7 @@ export function versEvenement(h: LigneHistorique): EvenementHistorique {
     nouveau_statut: h.nouveau_statut,
     auteur: h.auteur,
     auteur_nom: h.auteur === 'conseiller' ? (h.profils?.nom_affiche ?? 'Conseiller') : null,
+    ...resume(h),
   });
 }
 

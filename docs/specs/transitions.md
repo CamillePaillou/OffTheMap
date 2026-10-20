@@ -51,11 +51,11 @@ Source de vérité : `types/transitions.ts`, utilisée par la fonction de transi
 | prete | a_verifier | systeme | une ligne ajoutée ou repassée à vérifier | — | must |
 | prete | envoyee | conseiller | envoi au client | aucune ligne a_verifier ni indisponible | must |
 | envoyee | acceptee | conseiller | acceptation du client enregistrée | — | must |
-| envoyee | changement_demande | conseiller | le client demande un changement | — | should |
-| envoyee | sans_reponse | systeme | rappel à J+3 | — | should |
-| sans_reponse | acceptee | conseiller | acceptation du client enregistrée | — | should |
-| sans_reponse | changement_demande | conseiller | le client demande un changement | — | should |
-| changement_demande | remplacee | systeme | version suivante créée | version suivante en brouillon_en_cours | should |
+| envoyee | changement_demande | conseiller | le client demande un changement | — | must (E6.1) |
+| envoyee | sans_reponse | systeme | rappel à J+3 | — | must (E6.4) |
+| sans_reponse | acceptee | conseiller | acceptation du client enregistrée | — | must (E6.4) |
+| sans_reponse | changement_demande | conseiller | le client demande un changement | — | must (E6.4) |
+| changement_demande | remplacee | systeme | version suivante créée | version suivante en brouillon_en_cours | must (E6.1) |
 | acceptee | depot_recu | conseiller | dépôt de garantie reçu | — | must |
 | depot_recu | reservee | systeme | dernière ligne réservée | toutes les lignes sont reservee | must |
 
@@ -110,5 +110,5 @@ Le détail de la ligne d'historique suit `DetailEvenement` (`types/historique.ts
 
 ## Limites connues du MVP
 
-- Une ligne restée `indisponible` bloque l'envoi tant que son remplacement (Should E5.2) n'est pas livré : le conseiller peut seulement la revérifier.
+- Une ligne `indisponible` bloque l'envoi : le conseiller la revérifie, ou la remplace (E5.2, `remplacer_ligne` : la ligne passe à `remplacee` et une nouvelle ligne naît `a_verifier`).
 - La durée de l'option n'est pas codée : l'expiration vient de `expire_le` renvoyé par le simulateur.

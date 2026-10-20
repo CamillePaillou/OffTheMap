@@ -701,6 +701,32 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      enregistrer_reponse_client: {
+        Args: { p_proposition: string; p_nouveau: Database["public"]["Enums"]["statut_proposition"]; p_conseiller: string };
+        Returns: number;
+      };
+      marquer_mail_envoye: {
+        Args: { p_dossier: string; p_proposition: string | null; p_modele: string; p_conseiller: string };
+        Returns: number;
+      };
+      enregistrer_rappel: { Args: { p_proposition: string; p_jour: number }; Returns: number };
+      changer_ligne: {
+        Args: {
+          p_ligne: string;
+          p_ancien: Database["public"]["Enums"]["statut_ligne"];
+          p_nouveau: Database["public"]["Enums"]["statut_ligne"];
+          p_prix_cents: number;
+          p_source: Database["public"]["Enums"]["source_prix"];
+          p_conseiller: string;
+        };
+        Returns: Database["public"]["Enums"]["statut_proposition"];
+      };
+      enregistrer_alertes: { Args: { p_proposition: string; p_alertes: Json }; Returns: undefined };
+      envoyer_proposition: { Args: { p_proposition: string; p_conseiller: string }; Returns: number };
+      remplacer_ligne: {
+        Args: { p_ligne: string; p_prestation: string; p_conseiller: string; p_date?: string; p_participants?: number };
+        Returns: string;
+      };
       trier_dossier: {
         Args: {
           p_dossier: string;
@@ -714,6 +740,12 @@ export type Database = {
       terminer_generation_fiche: {
         Args: { p_dossier: string; p_modele: string; p_generation: Json };
         Returns: Database["public"]["Enums"]["statut_dossier"];
+      };
+      demarrer_brouillon: { Args: { p_dossier: string; p_conseiller: string }; Returns: string };
+      creer_version_suivante: { Args: { p_proposition: string; p_conseiller: string; p_motif: string; p_resultat: Json }; Returns: string };
+      terminer_brouillon: {
+        Args: { p_proposition: string; p_resultat: Json };
+        Returns: Database["public"]["Enums"]["statut_proposition"];
       };
       est_conseiller: { Args: Record<PropertyKey, never>; Returns: boolean };
       deposer_demande: { Args: { p_demande: Json }; Returns: { dossier_id: string; demande_id: string }[] };

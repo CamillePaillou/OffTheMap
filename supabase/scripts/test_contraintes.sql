@@ -226,6 +226,165 @@ select doit_valoir($$select count(*) from dossiers where id = '00000000-0000-000
 select doit_valoir($$select count(*) from historique_dossier where dossier_id = '00000000-0000-0000-0000-0000000000d9'$$, 0, 'sans fiche : rien au journal');
 select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d8', 'validee', 'validee', null)$$, 'tri sans conseiller identifié');
 
+-- tarifs et envoi (E5.1) : tarif daté et sourcé, total recalculé, envoi refusé tant qu'un prix n'est pas vérifié
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000000da', 'en_proposition');
+insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs)
+  values ('00000000-0000-0000-0000-0000000000ea', '00000000-0000-0000-0000-0000000000da', true, true, 'Léo', 'leo@example.org', '2026-11-07', '2026-11-08', 1, '{adulte,adulte}');
+insert into propositions (id, dossier_id, statut, total_cents) values ('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-0000000000da', 'a_verifier', 14000);
+insert into proposition_lignes (id, proposition_id, prestation_id, date, participants, prix_unitaire_catalogue_cents) values
+  ('00000000-0000-0000-0000-00000000a0a1', '00000000-0000-0000-0000-0000000000fa', 'activite-nantes-01', '2026-11-07', 2, 3500),
+  ('00000000-0000-0000-0000-00000000a0a2', '00000000-0000-0000-0000-0000000000fa', 'activite-nantes-01', '2026-11-08', 2, 3500);
+select doit_valoir($$select count(*) from changer_ligne('00000000-0000-0000-0000-00000000a0a1', 'a_verifier', 'confirme', 4000, 'telephone',
+  '00000000-0000-0000-0000-00000000000a') s where s = 'a_verifier'$$, 1, 'tarif confirmé, une ligne reste à vérifier');
+select doit_valoir($$select count(*) from proposition_lignes where id = '00000000-0000-0000-0000-00000000a0a1' and statut = 'confirme'
+  and prix_confirme_cents = 4000 and source = 'telephone' and confirme_le is not null and confirme_par = '00000000-0000-0000-0000-00000000000a'$$, 1, 'tarif saisi avec sa date, sa source et son auteur');
+select doit_valoir($$select total_cents from propositions where id = '00000000-0000-0000-0000-0000000000fa'$$, 15000, 'total recalculé (80 + 70 €)');
+select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi refusé : une ligne à vérifier');
+select doit_valoir($$select count(*) from propositions where id = '00000000-0000-0000-0000-0000000000fa' and statut = 'a_verifier' and envoyee_le is null$$, 1, 'envoi refusé : statut inchangé');
+select doit_echouer($$select changer_ligne('00000000-0000-0000-0000-00000000a0a1', 'a_verifier', 'confirme', 4000, 'mail', '00000000-0000-0000-0000-00000000000a')$$, 'ligne modifiée entre-temps');
+select doit_echouer($$select changer_ligne('00000000-0000-0000-0000-00000000a0a2', 'a_verifier', 'confirme', null, null, '00000000-0000-0000-0000-00000000000a')$$, 'tarif confirmé sans prix ni source');
+select doit_valoir($$select count(*) from changer_ligne('00000000-0000-0000-0000-00000000a0a2', 'a_verifier', 'confirme', 3500, 'agent',
+  '00000000-0000-0000-0000-00000000000a') s where s = 'prete'$$, 1, 'dernière ligne confirmée : proposition prete');
+select doit_valoir($$select count(*) from historique_dossier where proposition_id = '00000000-0000-0000-0000-0000000000fa'
+  and ancien_statut = 'a_verifier' and nouveau_statut = 'prete' and auteur = 'systeme'$$, 1, 'passage à prete journalisé');
+select enregistrer_alertes('00000000-0000-0000-0000-0000000000fa', '[{"code": "date_hors_sejour", "message": "nuit du départ"}]');
+select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi refusé : alerte bloquante');
+select enregistrer_alertes('00000000-0000-0000-0000-0000000000fa', '[{"code": "budget_proche", "message": "92 %"}]');
+select doit_valoir($$select (envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'envoi accepté, alerte non bloquante');
+select doit_valoir($$select count(*) from propositions p join historique_dossier h on h.proposition_id = p.id
+  where p.id = '00000000-0000-0000-0000-0000000000fa' and p.statut = 'envoyee' and p.envoyee_le is not null
+  and p.envoyee_par = '00000000-0000-0000-0000-00000000000a' and h.nouveau_statut = 'envoyee' and h.auteur = 'conseiller'$$, 1, 'statut envoyee, au nom du conseiller, journalisé');
+select doit_echouer($$select changer_ligne('00000000-0000-0000-0000-00000000a0a1', 'confirme', 'a_verifier', null, null, '00000000-0000-0000-0000-00000000000a')$$, 'tarif modifié après l''envoi');
+select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'second envoi');
+-- brouillon de proposition (E4.4) : démarrage (fiche validée, dossier en_proposition) puis fin, tout ou rien
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000000b5', 'entretien_fait'), ('00000000-0000-0000-0000-0000000000b6', 'entretien_fait');
+insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents) values
+  ('00000000-0000-0000-0000-0000000000c5', '00000000-0000-0000-0000-0000000000b5', true, true, 'Brouillon', 'b@example.org', '2026-11-07', '2026-11-08', 1, '{adulte,adulte}', 40000),
+  ('00000000-0000-0000-0000-0000000000c6', '00000000-0000-0000-0000-0000000000b6', true, true, 'Sans budget', 's@example.org', '2026-11-07', '2026-11-08', 1, '{adulte}', 40000);
+insert into fiches (demande_id, budget_reel_cents, date_debut_fixe, date_fin_fixe, nb_nuits_fixe) values
+  ('00000000-0000-0000-0000-0000000000c5', 38000, '2026-11-07', '2026-11-08', 1),
+  ('00000000-0000-0000-0000-0000000000c6', null, null, null, null);
+select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b6', '00000000-0000-0000-0000-00000000000a')$$, 'brouillon sans budget réel ni dates fixes');
+select doit_valoir($$select count(*) from propositions where dossier_id = '00000000-0000-0000-0000-0000000000b6'$$, 0, 'refus du brouillon : aucune proposition créée');
+create temp table brouillon as select demarrer_brouillon('00000000-0000-0000-0000-0000000000b5', '00000000-0000-0000-0000-00000000000a') as id;
+select doit_valoir($$select count(*) from dossiers where id = '00000000-0000-0000-0000-0000000000b5' and statut = 'en_proposition'$$, 1, 'fiche validée : dossier en_proposition');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000c5' and validee_par = '00000000-0000-0000-0000-00000000000a' and validee_le is not null$$, 1, 'fiche validée par le conseiller');
+select doit_valoir($$select count(*) from propositions p join brouillon b on b.id = p.id where p.statut = 'brouillon_en_cours' and p.version = 1$$, 1, 'proposition v1 en brouillon_en_cours');
+select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b5', '00000000-0000-0000-0000-00000000000a')$$, 'second brouillon pour le même dossier');
+select terminer_brouillon((select id from brouillon), '{"programme": [{"date": "2026-11-07", "titre": "Atelier", "texte": "Atelier l''après-midi."}],
+  "total_cents": 7000, "alertes": [], "lignes": [{"id": "00000000-0000-0000-0000-0000000000a5", "prestation_id": "activite-nantes-01", "date": "2026-11-07", "participants": 2, "prix_unitaire_catalogue_cents": 3500}]}');
+select doit_valoir($$select count(*) from propositions p join brouillon b on b.id = p.id where p.statut = 'a_verifier' and p.total_cents = 7000 and jsonb_array_length(p.programme) = 1$$, 1, 'brouillon écrit : a_verifier, total et programme');
+select doit_valoir($$select count(*) from proposition_lignes l join brouillon b on b.id = l.proposition_id where l.statut = 'a_verifier' and l.prix_confirme_cents is null and l.total_ligne_cents = 7000$$, 1, 'lignes créées à a_verifier, prix catalogue figé');
+select doit_valoir($$select count(*) from historique_dossier h join brouillon b on b.id = h.proposition_id where h.type = 'statut'$$, 3, 'journal : brouillon_en_cours, brouillon_pret, a_verifier');
+select doit_echouer($$select terminer_brouillon((select id from brouillon), '{"erreur": "trop tard"}')$$, 'fin d''un brouillon déjà terminé');
+update dossiers set statut = 'en_proposition' where id = '00000000-0000-0000-0000-0000000000b6';
+create temp table brouillon_ko as select demarrer_brouillon('00000000-0000-0000-0000-0000000000b6', '00000000-0000-0000-0000-00000000000a') as id;
+select doit_valoir($$select (terminer_brouillon((select id from brouillon_ko), '{"erreur": "le modèle n''a pas répondu à temps"}') = 'erreur')::int$$, 1, 'échec de génération : proposition en erreur');
+select doit_valoir($$select count(*) from proposition_lignes l join brouillon_ko b on b.id = l.proposition_id$$, 0, 'échec de génération : aucune ligne');
+
+-- mails modèles (E5.4) : « marquer envoyé » journalise le modèle ; un mail sans objet à cette étape est refusé
+select doit_valoir($$select (marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', null, 'rendez_vous', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'mail de rendez-vous marqué envoyé');
+select doit_valoir($$select count(*) from dossiers d join historique_dossier h on h.dossier_id = d.id
+  where d.id = '00000000-0000-0000-0000-0000000000d8' and d.statut = 'rdv_propose'
+  and h.type = 'mail' and h.detail = '{"type": "mail", "modele": "rendez_vous"}' and h.auteur_id = '00000000-0000-0000-0000-00000000000a'$$, 1, 'journalisé, et le dossier validé passe en rendez-vous proposé');
+select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', null, 'a_corriger', '00000000-0000-0000-0000-00000000000a')$$, 'mail « à corriger » sur un dossier qui ne l''est pas');
+select doit_valoir($$select (marquer_mail_envoye('00000000-0000-0000-0000-0000000000da', '00000000-0000-0000-0000-0000000000fa', 'proposition', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'mail de la proposition envoyée marqué');
+select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000da', '00000000-0000-0000-0000-0000000000fa', 'confirmation', '00000000-0000-0000-0000-00000000000a')$$, 'confirmation d''une proposition non réservée');
+select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', '00000000-0000-0000-0000-0000000000fa', 'proposition', '00000000-0000-0000-0000-00000000000a')$$, 'proposition d''un autre dossier');
+select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000da', null, 'relance', '00000000-0000-0000-0000-00000000000a')$$, 'modèle inconnu');
+
+-- acceptation et dépôt (E7.1) : deux clics journalisés ; une seule proposition acceptée par dossier
+insert into propositions (id, dossier_id, version, statut) values ('00000000-0000-0000-0000-0000000000fb', '00000000-0000-0000-0000-0000000000da', 2, 'envoyee');
+select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fa', 'depot_recu', '00000000-0000-0000-0000-00000000000a')$$, 'dépôt avant l''acceptation');
+select doit_valoir($$select (enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fa', 'acceptee', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'acceptation enregistrée');
+select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fb', 'acceptee', '00000000-0000-0000-0000-00000000000a')$$, 'seconde proposition acceptée sur le même dossier');
+select doit_valoir($$select (enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fa', 'depot_recu', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'dépôt reçu enregistré');
+select doit_valoir($$select count(*) from propositions p join historique_dossier h on h.proposition_id = p.id
+  where p.id = '00000000-0000-0000-0000-0000000000fa' and p.statut = 'depot_recu' and h.auteur = 'conseiller'
+  and h.auteur_id = '00000000-0000-0000-0000-00000000000a' and h.nouveau_statut in ('acceptee', 'depot_recu')$$, 2, 'acceptation et dépôt journalisés au nom du conseiller');
+select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fa', 'depot_recu', '00000000-0000-0000-0000-00000000000a')$$, 'dépôt enregistré deux fois');
+
+-- nouvelle version après un changement (E6.1) : la version envoyée reste intacte, la suivante porte le numéro suivant
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000006d1', 'en_proposition');
+insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents)
+  values ('00000000-0000-0000-0000-0000000006e1', '00000000-0000-0000-0000-0000000006d1', true, true, 'Changement', 'c@example.org', '2026-11-07', '2026-11-08', 1, '{adulte,adulte}', 40000);
+insert into propositions (id, dossier_id, version, statut, programme, total_cents, envoyee_le, envoyee_par) values
+  ('00000000-0000-0000-0000-0000000006f1', '00000000-0000-0000-0000-0000000006d1', 1, 'envoyee', '[{"date": "2026-11-07", "titre": "Atelier", "texte": "Atelier."}]', 8000, now(), '00000000-0000-0000-0000-00000000000a');
+insert into proposition_lignes (id, proposition_id, prestation_id, date, participants, prix_unitaire_catalogue_cents, prix_confirme_cents, source, confirme_le, confirme_par, statut)
+  values ('00000000-0000-0000-0000-0000000006a1', '00000000-0000-0000-0000-0000000006f1', 'activite-nantes-01', '2026-11-07', 2, 3500, 4000, 'agent', now(), '00000000-0000-0000-0000-00000000000a', 'confirme');
+create temp table v1_avant as select l.*, p.programme, p.total_cents as p_total, p.envoyee_le from proposition_lignes l join propositions p on p.id = l.proposition_id
+  where p.id = '00000000-0000-0000-0000-0000000006f1';
+select doit_echouer($$select creer_version_suivante('00000000-0000-0000-0000-0000000006f1', '00000000-0000-0000-0000-00000000000a', '  ', '{"erreur": "x"}')$$, 'changement sans motif');
+create temp table v2 as select creer_version_suivante('00000000-0000-0000-0000-0000000006f1', '00000000-0000-0000-0000-00000000000a', 'Deux nuits au lieu d''une',
+  '{"programme": [{"date": "2026-11-07", "titre": "Atelier", "texte": "Atelier."}], "total_cents": 7000, "alertes": [],
+    "lignes": [{"id": "00000000-0000-0000-0000-0000000006a2", "prestation_id": "activite-nantes-01", "date": "2026-11-07", "participants": 2, "prix_unitaire_catalogue_cents": 3500}]}') as id;
+select doit_valoir($$select count(*) from propositions where id = '00000000-0000-0000-0000-0000000006f1' and statut = 'remplacee'$$, 1, 'version envoyée remplacée');
+select doit_valoir($$select count(*) from proposition_lignes l join v1_avant a using (id) join propositions p on p.id = l.proposition_id
+  where l.statut = a.statut and l.prix_confirme_cents = a.prix_confirme_cents and l.total_ligne_cents = a.total_ligne_cents
+    and p.programme = a.programme and p.total_cents = a.p_total and p.envoyee_le = a.envoyee_le$$, 1, 'version envoyée intacte (lignes, programme, total, envoi)');
+select doit_valoir($$select count(*) from propositions p join v2 using (id) where p.version = 2 and p.statut = 'a_verifier'
+  and p.motif_changement = 'Deux nuits au lieu d''une' and p.total_cents = 7000$$, 1, 'version 2 à vérifier, avec le motif');
+select doit_valoir($$select count(*) from proposition_lignes l join v2 on v2.id = l.proposition_id where l.statut = 'a_verifier' and l.prix_confirme_cents is null$$, 1, 'lignes de la v2 à vérifier, sans prix confirmé repris');
+select doit_valoir($$select count(*) from historique_dossier where dossier_id = '00000000-0000-0000-0000-0000000006d1'
+  and nouveau_statut in ('changement_demande', 'remplacee', 'brouillon_en_cours', 'brouillon_pret', 'a_verifier')$$, 5, 'journal du changement complet');
+select doit_echouer($$select creer_version_suivante('00000000-0000-0000-0000-0000000006f1', '00000000-0000-0000-0000-00000000000a', 'encore', '{"erreur": "x"}')$$, 'second changement sur une version déjà remplacée');
+
+-- rappels quand le client ne répond pas (E6.4) : J+3 passe la proposition en sans_reponse, J+7 ajoute un rappel
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000064d1', 'en_proposition'), ('00000000-0000-0000-0000-0000000064d2', 'en_proposition');
+insert into propositions (id, dossier_id, version, statut, total_cents, envoyee_le, envoyee_par) values
+  ('00000000-0000-0000-0000-0000000064f1', '00000000-0000-0000-0000-0000000064d1', 1, 'envoyee', 8000, now() - interval '2 days', '00000000-0000-0000-0000-00000000000a'),
+  ('00000000-0000-0000-0000-0000000064f2', '00000000-0000-0000-0000-0000000064d2', 1, 'acceptee', 8000, now() - interval '10 days', '00000000-0000-0000-0000-00000000000a');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel J+3 avant son jour');
+update propositions set envoyee_le = now() - interval '3 days' where id = '00000000-0000-0000-0000-0000000064f1';
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 7)$$, 'rappel J+7 avant son jour');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 5)$$, 'jour de rappel inconnu');
+select doit_valoir($$select (enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3) is not null)::int$$, 1, 'rappel J+3 enregistré');
+select doit_valoir($$select count(*) from propositions where id = '00000000-0000-0000-0000-0000000064f1' and statut = 'sans_reponse'$$, 1, 'proposition sans réponse à J+3');
+select doit_valoir($$select count(*) from historique_dossier where proposition_id = '00000000-0000-0000-0000-0000000064f1' and auteur = 'systeme'
+  and ((type = 'statut' and ancien_statut = 'envoyee' and nouveau_statut = 'sans_reponse') or (type = 'rappel' and detail = '{"type": "rappel", "jour": 3}'))$$,
+  2, 'passage en sans_reponse et rappel J+3 journalisés par le système');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel J+3 fait deux fois');
+update propositions set envoyee_le = now() - interval '7 days' where id = '00000000-0000-0000-0000-0000000064f1';
+select doit_valoir($$select (enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 7) is not null)::int$$, 1, 'rappel J+7 enregistré');
+select doit_valoir($$select count(*) from historique_dossier where proposition_id = '00000000-0000-0000-0000-0000000064f1' and type = 'statut'$$, 1, 'J+7 ne change pas le statut');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel J+3 après le J+7');
+select doit_echouer($$insert into historique_dossier (dossier_id, proposition_id, type, auteur, detail) values ('00000000-0000-0000-0000-0000000064d1',
+  '00000000-0000-0000-0000-0000000064f1', 'rappel', 'systeme', '{"type": "rappel", "jour": 7}')$$, 'même rappel écrit deux fois');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f2', 7)$$, 'rappel sur une proposition acceptée');
+select doit_valoir($$select (enregistrer_reponse_client('00000000-0000-0000-0000-0000000064f1', 'acceptee', '00000000-0000-0000-0000-00000000000a') is not null)::int$$,
+  1, 'acceptation d''une proposition sans réponse');
+
+-- remplacer une ligne indisponible (E5.2) : nouvelle ligne à vérifier au prix du catalogue, les autres lignes intactes
+insert into prestations (id, type, nom, destination, prix_unitaire_cents, capacite, actif) values
+  ('test-remplacante-01', 'activite', 'Balade de test', 'Nantes', 2900, 12, true),
+  ('test-retiree-01', 'activite', 'Atelier retiré', 'Nantes', 2000, 10, false);
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-00000000d052', 'en_proposition');
+insert into propositions (id, dossier_id, statut, total_cents) values ('00000000-0000-0000-0000-00000000f052', '00000000-0000-0000-0000-00000000d052', 'a_verifier', 8000);
+insert into proposition_lignes (id, proposition_id, prestation_id, date, participants, prix_unitaire_catalogue_cents, statut,
+    prix_confirme_cents, source, confirme_le, confirme_par) values
+  ('00000000-0000-0000-0000-00000000b0b1', '00000000-0000-0000-0000-00000000f052', 'activite-nantes-01', '2026-11-07', 2, 3500, 'indisponible',
+    null, null, null, null),
+  ('00000000-0000-0000-0000-00000000b0b2', '00000000-0000-0000-0000-00000000f052', 'activite-nantes-01', '2026-11-08', 2, 3500, 'confirme',
+    4000, 'telephone', '2026-10-20 10:00+00', '00000000-0000-0000-0000-00000000000a');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b2', 'test-remplacante-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacer une ligne confirmée');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-retiree-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacer par une prestation retirée');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-remplacante-01', null)$$, 'remplacer sans conseiller identifié');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'activite-nantes-01', '00000000-0000-0000-0000-00000000000a')$$, 'même prestation, même date');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'activite-nantes-01', '00000000-0000-0000-0000-00000000000a', '2026-11-07')$$, 'même prestation, même date donnée');
+select doit_valoir($$select count(*) from proposition_lignes where proposition_id = '00000000-0000-0000-0000-00000000f052'$$, 2, 'refus : aucune ligne créée');
+create temp table remplacement as
+  select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-remplacante-01', '00000000-0000-0000-0000-00000000000a') as id;
+select doit_valoir($$select count(*) from proposition_lignes l join remplacement r on l.id = r.id
+  where l.statut = 'a_verifier' and l.prestation_id = 'test-remplacante-01' and l.prix_unitaire_catalogue_cents = 2900
+    and l.date = '2026-11-07' and l.participants = 2 and l.prix_confirme_cents is null$$, 1, 'nouvelle ligne à vérifier, prix du catalogue, même date et participants');
+select doit_valoir($$select count(*) from proposition_lignes where id = '00000000-0000-0000-0000-00000000b0b1' and statut = 'remplacee'$$, 1, 'ancienne ligne remplacée');
+select doit_valoir($$select count(*) from proposition_lignes where id = '00000000-0000-0000-0000-00000000b0b2' and statut = 'confirme'
+  and prix_confirme_cents = 4000 and source = 'telephone' and confirme_par = '00000000-0000-0000-0000-00000000000a'$$, 1, 'autre ligne et son tarif confirmé intacts');
+select doit_valoir($$select total_cents from propositions where id = '00000000-0000-0000-0000-00000000f052'$$, 13800, 'total recalculé sans la ligne remplacée (80 + 58 €)');
+select doit_valoir($$select count(*) from propositions where id = '00000000-0000-0000-0000-00000000f052' and statut = 'a_verifier'$$, 1, 'proposition à vérifier');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-remplacante-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacer deux fois la même ligne');
+select doit_echouer($$select remplacer_ligne((select id from remplacement), 'activite-nantes-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacer une ligne à vérifier');
+
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');
@@ -236,6 +395,13 @@ select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, 
   values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un visiteur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un visiteur');
 select doit_echouer($$select deposer_demande('{}')$$, 'dépôt direct en base par un visiteur');
+select doit_echouer($$select creer_version_suivante('00000000-0000-0000-0000-0000000006f1', '00000000-0000-0000-0000-00000000000a', 'x', '{}')$$, 'nouvelle version créée par un visiteur');
+select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000-0000000000fb', 'acceptee', '00000000-0000-0000-0000-00000000000a')$$, 'acceptation enregistrée par un visiteur');
+select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', null, 'rendez_vous', '00000000-0000-0000-0000-00000000000a')$$, 'mail marqué par un visiteur');
+select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi appelé par un visiteur');
+select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-remplacante-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacement appelé par un visiteur');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel appelé par un visiteur');
+select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b5', '00000000-0000-0000-0000-00000000000a')$$, 'brouillon démarré par un visiteur');
 select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d9', 'fiche_prete', 'validee', '00000000-0000-0000-0000-00000000000a')$$, 'tri appelé par un visiteur');
 select doit_valoir($$select count(*) from corrections$$, 0, 'un visiteur ne lit pas les liens de correction');
 select doit_echouer($$select lire_correction(repeat('0', 64))$$, 'lecture d’un lien en base par un visiteur');
@@ -258,6 +424,8 @@ select doit_valoir($$select count(*) from corrections where dossier_id = '000000
 select doit_echouer($$select demander_correction('00000000-0000-0000-0000-0000000000d3', '{budget}', 'x', repeat('1', 64),
   '00000000-0000-0000-0000-00000000000a', now() + interval '1 day')$$, 'correction demandée en base sans passer par le serveur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un conseiller');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel appelé par un conseiller');
+select doit_echouer($$select terminer_brouillon('00000000-0000-0000-0000-0000000000f1', '{"erreur": "x"}')$$, 'brouillon écrit en base directe par un conseiller');
 select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 1, null, null, null, null)$$, 'correction en base directe par un conseiller (passe par le serveur)');
 select doit_echouer($$select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'm', '{}')$$, 'génération écrite par un conseiller');
 -- tables de l'agent (E0.5) : seul le serveur écrit ; un conseiller connecté ne crée, ne modifie ni ne supprime rien

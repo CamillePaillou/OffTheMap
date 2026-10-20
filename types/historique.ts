@@ -8,6 +8,7 @@ export type DetailEvenement =
   | { type: 'statut'; cible: 'dossier'; ancien: StatutDossier | null; nouveau: StatutDossier; decision?: DecisionTri }
   | { type: 'statut'; cible: 'proposition'; ancien: StatutProposition | null; nouveau: StatutProposition }
   | { type: 'mail'; modele: 'rendez_vous' | 'a_corriger' | 'proposition' | 'confirmation' }
+  | { type: 'correction_demandee'; boucle: number; champs: string[] } // événement « mail » : lien de correction créé (E1.2)
   | { type: 'rappel'; jour: 3 | 7 | 14 }
   | { type: 'depot' }
   | { type: 'changement'; version_remplacee: number; nouvelle_version: number }

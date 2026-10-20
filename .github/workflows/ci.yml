@@ -100,3 +100,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_seed.sql
       - name: Tests du schéma avec le seed chargé
         run: psql -q -f supabase/scripts/test_contraintes.sql
+      - name: Rejeu du cas de Sophie, du formulaire au dépôt (E7.3)
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_bout_en_bout.sql

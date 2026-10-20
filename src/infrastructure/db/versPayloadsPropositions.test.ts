@@ -11,8 +11,8 @@ const ligne = (surcharge: Partial<PropositionBase['proposition_lignes'][number]>
 });
 
 const proposition = (surcharge: Partial<PropositionBase> = {}): PropositionBase => ({
-  id: 'b0b05100-0000-4000-8000-000009000000', dossier_id: 'd0551e00-0000-4000-8000-000009000000', version: 1, statut: 'a_verifier',
-  total_cents: 7000, alertes: [], ecarts: null,
+  id: 'b0b05100-0000-4000-8000-000009000000', dossier_id: 'd0551e00-0000-4000-8000-000009000000', version: 1, statut: 'a_verifier', programme: null,
+  total_cents: 7000, alertes: [], ecarts: null, motif_changement: null,
   proposition_lignes: [ligne()],
   dossiers: { demandes: [{ version: 1, remplacee_le: null, budget_annonce_cents: 40000, fiches: { budget_reel_cents: null } }] },
   ...surcharge,

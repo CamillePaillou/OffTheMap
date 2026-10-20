@@ -52,8 +52,8 @@ describe('changerStatut', () => {
   });
 
   it('refuse une transition de la matrice pas encore livrée (should)', async () => {
-    repo.propositions.set('p1', { statut: 'envoyee', dossier_id: 'd1' });
-    const r = await changerStatut(repo, { cible: 'proposition', id: 'p1', vers: 'changement_demande', auteur: ALICE });
+    repo.dossiers.set('d2', { statut: 'a_corriger' });
+    const r = await changerStatut(repo, { cible: 'dossier', id: 'd2', vers: 'fiche_en_cours', auteur: SYSTEME });
     expect(r).toEqual({ ok: false, raison: 'transition_non_livree' });
     expect(repo.historique).toHaveLength(0);
   });
@@ -76,6 +76,7 @@ describe('verifierTransition', () => {
     expect(v.ok && v.detail).toEqual({ type: 'statut', cible: 'dossier', ancien: 'a_corriger', nouveau: 'validee' });
   });
   it('accepte une priorité livrée quand on la fournit', () => {
-    expect(verifierTransition('proposition', 'envoyee', 'changement_demande', ALICE, ['must', 'should']).ok).toBe(true);
+    expect(verifierTransition('dossier', 'a_corriger', 'fiche_en_cours', SYSTEME).ok).toBe(false);
+    expect(verifierTransition('dossier', 'a_corriger', 'fiche_en_cours', SYSTEME, ['must', 'should']).ok).toBe(true);
   });
 });

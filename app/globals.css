@@ -1,26 +1,220 @@
 @import "tailwindcss";
 
+/*
+ * DÉTOUR : logo et couleurs du site de l'agence (dépôt PANDORMedia/detour), nuancés ; typographie et agencement
+ * repensés. Fil conducteur : « la ligne », un plan de ligne de train qui montre où l'on en est.
+ * Contrastes vérifiés par lib/design.test.ts (texte ≥ 4,5:1).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --detour-nuit: #0e4a6e; /* titres, texte fort, boutons secondaires */
+  --detour-bleu: #1a7fb5; /* bleu du logo : liens, état actif, ligne parcourue */
+  --detour-lien: #136a99; /* liens sur blanc */
+  --detour-orange: #ff8a1e; /* orange du logo, nuancé : ligne, repères, jamais sous du texte */
+  --detour-orange-fonce: #ad4d00; /* bouton principal, texte blanc */
+  --detour-fond: #f4f7fa; /* fond froid très clair */
+  --detour-filet: #d9e4ec;
+  --detour-texte: #22313c;
+  --detour-doux: #556673; /* texte secondaire */
+  --detour-ciel: #e8f2f9; /* aplats légers */
+}
+
+/*
+ * Espace conseiller : son propre design system, clair et calme (docs/specs/design.md, « Back-office »).
+ * Une seule couleur d'action (pervenche) ; la couleur vient des photos des destinations.
+ */
+:root {
+  --bo-encre: #1f2430; /* texte */
+  --bo-ardoise: #5b6270; /* texte secondaire */
+  --bo-trait: #e7e9ec; /* bordures */
+  --bo-brume: #f5f6f7; /* fond */
+  --bo-pervenche: #4f5fd6; /* action */
+  --bo-pervenche-fonce: #3a48b8; /* texte d'action, survol */
+  --bo-pervenche-pale: #eef0fb; /* sélection */
+  --bo-miel: #e3a34b; /* jauges (jamais du texte) */
+  --bo-miel-fonce: #8a5a12; /* attente, texte */
+  --bo-miel-pale: #fbf4e6;
+  --bo-sauge: #2f7a52; /* confirmé */
+  --bo-sauge-pale: #e8f3ec;
+  --bo-grenade: #b03a33; /* bloquant */
+  --bo-grenade-pale: #fbedec;
+  --bo-courbe: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-encre: var(--bo-encre);
+  --color-ardoise: var(--bo-ardoise);
+  --color-trait: var(--bo-trait);
+  --color-brume: var(--bo-brume);
+  --color-pervenche: var(--bo-pervenche);
+  --color-pervenche-fonce: var(--bo-pervenche-fonce);
+  --color-pervenche-pale: var(--bo-pervenche-pale);
+  --color-miel: var(--bo-miel);
+  --color-miel-fonce: var(--bo-miel-fonce);
+  --color-miel-pale: var(--bo-miel-pale);
+  --color-sauge: var(--bo-sauge);
+  --color-sauge-pale: var(--bo-sauge-pale);
+  --color-grenade: var(--bo-grenade);
+  --color-grenade-pale: var(--bo-grenade-pale);
+  --font-bo: var(--font-instrument), system-ui, sans-serif;
+  --ease-bo: var(--bo-courbe);
+
+  --color-nuit: var(--detour-nuit);
+  --color-bleu: var(--detour-bleu);
+  --color-lien: var(--detour-lien);
+  --color-orange: var(--detour-orange);
+  --color-orange-fonce: var(--detour-orange-fonce);
+  --color-fond: var(--detour-fond);
+  --color-filet: var(--detour-filet);
+  --color-texte: var(--detour-texte);
+  --color-doux: var(--detour-doux);
+  --color-ciel: var(--detour-ciel);
+  --font-sans: var(--font-atkinson), "Segoe UI", Arial, sans-serif;
+  --font-titre: var(--font-bricolage), "Segoe UI", Arial, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    color: var(--detour-texte);
+    background: var(--detour-fond);
+    font-feature-settings: "tnum" 1; /* chiffres alignés : dates, montants */
+  }
+  h1, h2, h3 {
+    font-family: var(--font-titre);
+    color: var(--detour-nuit);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  h1 { font-weight: 700; line-height: 1.1; }
+  h2, h3 { font-weight: 650; line-height: 1.25; }
+  a { color: var(--detour-lien); }
+  :focus-visible {
+    outline: 3px solid var(--detour-orange);
+    outline-offset: 2px;
+  }
+  @media print {
+    body { background: #fff; }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* bouton principal : une seule action par écran */
+  .btn-principal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    padding: 0.7rem 1.4rem;
+    background: var(--detour-orange-fonce);
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.18);
+  }
+  .btn-principal:hover { background: #8f3f00; color: #fff; }
+  .btn-principal:disabled { opacity: 0.6; }
+
+  /* surface : un panneau blanc posé sur le fond */
+  .panneau {
+    background: #fff;
+    border: 1px solid var(--detour-filet);
+    border-radius: 0.75rem;
+  }
+
+  /* formulaire en ligne de train : chaque bloc est une station, la station se colore quand elle est remplie */
+  .ligne-formulaire fieldset {
+    position: relative;
+    padding-left: 2rem;
+    padding-bottom: 0.5rem;
+  }
+  .ligne-formulaire fieldset::before {
+    content: "";
+    position: absolute;
+    left: 0.45rem;
+    top: 0.9rem;
+    bottom: -2rem;
+    width: 3px;
+    background: var(--detour-filet);
+  }
+  .ligne-formulaire fieldset:last-of-type::before { display: none; }
+  .ligne-formulaire fieldset > legend::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.35rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 999px;
+    background: #fff;
+    border: 3px solid var(--detour-filet);
+  }
+  .ligne-formulaire fieldset[data-rempli="true"]::before { background: var(--detour-bleu); }
+  .ligne-formulaire fieldset[data-rempli="true"] > legend::before {
+    border-color: var(--detour-bleu);
+    background: var(--detour-bleu);
+    box-shadow: inset 0 0 0 3px #fff;
+  }
+  .ligne-formulaire legend {
+    font-family: var(--font-titre);
+    font-weight: 650;
+    color: var(--detour-nuit);
+  }
+}
+
+/* ---------------------------------------------------------------- espace conseiller */
+@layer base {
+  .bo {
+    font-family: var(--font-instrument), system-ui, sans-serif;
+    font-size: 15px;
+    color: var(--bo-encre);
+    background: var(--bo-brume);
+  }
+  .bo h1, .bo h2, .bo h3 {
+    font-family: inherit;
+    color: var(--bo-encre);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .bo a { color: var(--bo-pervenche-fonce); }
+  .bo :focus-visible { outline: 2px solid var(--bo-pervenche); outline-offset: 2px; }
+}
+
+@layer components {
+  /* surfaces : plus un élément est grand, plus il est arrondi (10 bouton, 14 ligne, 18 tuile, 22 bloc principal) */
+  .bo-carte { background: #fff; border-radius: 18px; }
+  .bo-bloc { background: #fff; border-radius: 22px; }
+  .bo-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    border-radius: 10px; padding: 0.6rem 1.1rem; font-weight: 600; text-decoration: none;
+    background: var(--bo-pervenche); color: #fff;
+    transition: background-color 150ms var(--bo-courbe), transform 150ms var(--bo-courbe);
+  }
+  .bo-btn:hover { background: var(--bo-pervenche-fonce); color: #fff; }
+  .bo-btn:active { transform: scale(0.98); }
+  .bo-btn:disabled { background: #b7bdcc; cursor: not-allowed; transform: none; }
+  .bo-btn-2 {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    border-radius: 10px; padding: 0.55rem 1rem; text-decoration: none;
+    background: #fff; color: var(--bo-encre); border: 1px solid var(--bo-trait);
+    transition: background-color 150ms var(--bo-courbe);
+  }
+  .bo-btn-2:hover { background: var(--bo-brume); color: var(--bo-encre); }
+  .bo-btn-2:disabled { opacity: 0.55; }
+  .bo-champ {
+    border-radius: 10px; border: 1px solid #d5d9df; background: #fff; padding: 0.55rem 0.75rem;
+    transition: border-color 150ms var(--bo-courbe);
+  }
+  .bo-champ:hover { border-color: var(--bo-ardoise); }
+  .bo-puce { display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .bo-entre { animation: bo-entre 450ms var(--bo-courbe) both; }
+  .bo-glisse { transition: width 600ms var(--bo-courbe), background-color 300ms var(--bo-courbe), border-color 300ms var(--bo-courbe); }
+}
+
+@keyframes bo-entre {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bo *, .bo { animation: none !important; transition: none !important; }
 }
