@@ -34,5 +34,5 @@ Scénario : simulateur en échec
 
 ## Relue au planning
 
-- Date : …
-- Équipe présente : …
+- Date : 19/10/2026 (J1)
+- Équipe présente : Callista Loré (PO), Camille Paillou, Tabitha, Océane Gohier-Tallon, Ainouche Mustapha Islam

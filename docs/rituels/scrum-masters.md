@@ -4,6 +4,6 @@ Rotation : le Scrum Master anime le daily, écrit la note, relève les blocages,
 
 | Jour | J1 | J2 | J3 | J4 | J5 | J6 | J7 | J8 | J9 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Scrum Master | P1 | P2 | P3 | P4 | P1 | P2 | P3 | P4 | P1 |
+| Scrum Master | Callista | Camille | Tabitha | Océane | Mustapha | Callista | Camille | Tabitha | Océane |
 
-Remplacer P1 à P4 par les prénoms une fois l’équipe constituée.
+J1 à J5 décidés au Sprint Planning ; à partir du J6, la rotation reprend dans le même ordre (à confirmer en daily).
