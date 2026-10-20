@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { CHAMPS_CORRIGEABLES, LIBELLES_CHAMPS, REGLES_CORRECTION } from '@/types/correction';
+import { CHAMPS_CORRIGEABLES, LIBELLES_CHAMPS, MOTIFS_TYPES, REGLES_CORRECTION } from '@/types/correction';
 import { CarteMail } from '../../_composants/carte-mail';
 import { demanderUneCorrection, trier, type EtatTri } from './tri';
 
@@ -107,12 +107,19 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
                   </label>
                   <input
                     name={`commentaire_${c}`}
+                    list={`motifs-${c}`}
                     maxLength={REGLES_CORRECTION.commentaireMax}
                     defaultValue={v[`commentaire_${c}`]}
-                    placeholder="Petit commentaire pour le client (facultatif)"
+                    placeholder="Pourquoi ce point ne va pas (facultatif) : choisissez un motif ou écrivez"
                     aria-label={`Commentaire sur : ${LIBELLES_CHAMPS[c]}`}
                     className={`${champ} text-sm`}
                   />
+                  {/* motifs types (E3.3) : proposés à la saisie, modifiables */}
+                  <datalist id={`motifs-${c}`}>
+                    {MOTIFS_TYPES[c].map((m) => (
+                      <option key={m} value={m} />
+                    ))}
+                  </datalist>
                 </div>
               ))}
               {alerte(e.champs)}

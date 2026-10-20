@@ -37,6 +37,42 @@ export const LIBELLES_CHAMPS: Record<ChampCorrigeable, string> = {
   mobilite: 'Mobilité',
 };
 
+/**
+ * Motifs types par point (E3.3) : suggestions proposées au conseiller pour le petit commentaire, qu'il peut garder,
+ * compléter ou remplacer. Formulés pour le client : ils disent pourquoi le champ ne va pas et quoi faire.
+ */
+export const MOTIFS_TYPES: Record<ChampCorrigeable, readonly string[]> = {
+  email: ['Notre message est revenu : pouvez-vous vérifier votre adresse ?'],
+  destination: [
+    'Nous ne proposons pas encore cette destination : pouvez-vous en indiquer une autre ?',
+    'Indiquez une ville ou une région : nous construisons le séjour autour.',
+  ],
+  dates: [
+    'Ces dates sont trop proches pour organiser le séjour : pouvez-vous les décaler ?',
+    'Les dates de départ et de retour ne correspondent pas au nombre de nuits.',
+    'Ces dates tombent sur une période complète : avez-vous d’autres dates possibles ?',
+  ],
+  nb_nuits: [
+    'Le nombre de nuits ne correspond pas aux dates indiquées.',
+    'Une nuit de plus permettrait un programme moins serré : est-ce possible ?',
+  ],
+  voyageurs: [
+    'Pouvez-vous confirmer le nombre d’adultes et d’enfants ?',
+    'Au-delà de 20 voyageurs, nous organisons le séjour autrement : contactez-nous.',
+  ],
+  budget: [
+    'Le budget est trop court pour le transport et l’hébergement de tout le groupe : pouvez-vous le revoir ?',
+    'Le budget indiqué est-il pour tout le groupe ou par personne ? Nous attendons le total pour le groupe.',
+  ],
+  envies: [
+    'Pouvez-vous préciser ce qui vous ferait plaisir : visites, ateliers, nature, gastronomie… ?',
+    'Ces envies sont difficiles à réunir en un seul séjour : lesquelles comptent le plus ?',
+  ],
+  contraintes: ['Pouvez-vous préciser cette contrainte, pour que nous en tenions compte ?'],
+  regimes: ['Pouvez-vous préciser le régime alimentaire concerné ?'],
+  mobilite: ['Pouvez-vous nous dire si un voyageur a besoin d’un accès adapté ?'],
+};
+
 /** Champs du formulaire (attribut name) surlignés pour chaque point. */
 export const CHAMPS_FORMULAIRE: Record<ChampCorrigeable, readonly string[]> = {
   email: ['email'],
