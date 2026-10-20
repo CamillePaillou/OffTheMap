@@ -118,7 +118,7 @@ describe('corriger ma demande depuis le lien (E1.2)', () => {
   it('crée la version suivante et repasse le dossier en fiche_en_cours', async () => {
     const { repo, jeton } = await lien();
     const r = await corrigerDemande(repo, jeton, renvoi({ budget_euros: '450' }), AUJOURDHUI, { confirmeInchanges: false });
-    expect(r).toEqual({ ok: true, version: 2 });
+    expect(r).toEqual({ ok: true, version: 2, dossierId: DOSSIER });
     const dossier = repo.dossiers.get(DOSSIER)!;
     expect(dossier.statut).toBe('fiche_en_cours');
     expect(dossier.versions.map((v) => [v.version, v.remplacee, v.valeurs.budget_annonce_cents])).toEqual([[1, true, 15000], [2, false, 45000]]);
@@ -133,7 +133,7 @@ describe('corriger ma demande depuis le lien (E1.2)', () => {
     const saisie = renvoi({ date_fin: '2026-11-09', nb_nuits: '2' });
     expect(await corrigerDemande(repo, jeton, saisie, AUJOURDHUI, { confirmeInchanges: false })).toEqual({ ok: false, inchanges: ['budget'] });
     expect(repo.dossiers.get(DOSSIER)!.versions).toHaveLength(1);
-    expect(await corrigerDemande(repo, jeton, saisie, AUJOURDHUI, { confirmeInchanges: true })).toEqual({ ok: true, version: 2 });
+    expect(await corrigerDemande(repo, jeton, saisie, AUJOURDHUI, { confirmeInchanges: true })).toEqual({ ok: true, version: 2, dossierId: DOSSIER });
   });
   it('ne sert qu’une fois', async () => {
     const { repo, jeton } = await lien();

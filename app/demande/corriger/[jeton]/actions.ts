@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { genererEnArrierePlan } from '@/lib/fiche/generation';
 import { corrigerDemande } from '@/src/application/corrigerDemande';
 import { CorrectionsSupabase } from '@/src/infrastructure/db/correctionsSupabase';
 import { LIBELLES_CHAMPS } from '@/types/correction';
@@ -24,7 +25,10 @@ export async function envoyerCorrection(jeton: string, _etat: EtatDemande, formu
   } catch {
     return { erreurs: { formulaire: 'Votre correction n’a pas pu être enregistrée. Réessayez dans un instant.' }, valeurs };
   }
-  if (resultat.ok) redirect('/demande/corriger/merci');
+  if (resultat.ok) {
+    genererEnArrierePlan(resultat.dossierId, 'deja_en_cours'); // E2.2 : fiche de la nouvelle version
+    redirect('/demande/corriger/merci');
+  }
   if ('lien' in resultat) return { erreurs: { formulaire: LIEN_INVALIDE }, valeurs };
   if ('inchanges' in resultat) return { inchanges: resultat.inchanges.map((c) => LIBELLES_CHAMPS[c]), valeurs };
   return { erreurs: resultat.erreurs, valeurs };

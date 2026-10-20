@@ -1,7 +1,7 @@
 /**
  * Déposer une demande (E1.1). Valide la saisie ; si elle est invalide, rien n'est écrit et chaque erreur est
  * rattachée à son champ. Sinon, le dossier est créé au statut nouvelle avec la version 1 de la demande.
- * La génération de la fiche (E2.2) sera lancée ici, après le dépôt.
+ * La génération de la fiche (E2.2) est lancée ensuite par l'action serveur (genererEnArrierePlan), après la réponse.
  */
 import { schemaSaisieDemande, versNouvelleDemande, type NouvelleDemande } from '../../types/demande';
 import type { DemandeDeposee, DemandesRepository } from '../ports/demandes';

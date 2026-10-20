@@ -80,7 +80,7 @@ export async function lireCorrection(repo: CorrectionsRepository, jeton: string)
 }
 
 export type ResultatCorrection =
-  | { ok: true; version: number }
+  | { ok: true; version: number; dossierId: string }
   | { ok: false; erreurs: ErreursChamps }
   | { ok: false; inchanges: ChampCorrigeable[] }
   | { ok: false; lien: Exclude<EtatLien, 'valide'> };
@@ -102,8 +102,8 @@ export async function corrigerDemande(
   if (inchanges.length > 0 && !options.confirmeInchanges) return { ok: false, inchanges };
 
   try {
-    const { version } = await repo.corriger(empreinteJeton(jeton), v.demande);
-    return { ok: true, version };
+    const { version, dossierId } = await repo.corriger(empreinteJeton(jeton), v.demande);
+    return { ok: true, version, dossierId }; // dossierId : pour relancer la fiche (E2.2)
   } catch (e) {
     // utilisé ou clos entre la lecture et l'écriture (double envoi, conseiller qui a trié entre-temps)
     if (e instanceof LienInvalideErreur) return { ok: false, lien: 'clos' };

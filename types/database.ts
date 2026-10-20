@@ -701,6 +701,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      terminer_generation_fiche: {
+        Args: { p_dossier: string; p_modele: string; p_generation: Json };
+        Returns: Database["public"]["Enums"]["statut_dossier"];
+      };
       est_conseiller: { Args: Record<PropertyKey, never>; Returns: boolean };
       deposer_demande: { Args: { p_demande: Json }; Returns: { dossier_id: string; demande_id: string }[] };
       demander_correction: {

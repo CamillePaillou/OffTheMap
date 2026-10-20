@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { genererEnArrierePlan } from '@/lib/fiche/generation';
 import { deposerDemande, type ErreursChamps } from '@/src/application/deposerDemande';
 import { DemandesSupabase } from '@/src/infrastructure/db/demandesSupabase';
 import { lireSaisie, valeursSaisies } from './lecture';
@@ -28,5 +29,6 @@ export async function envoyerDemande(_etat: EtatDemande, formulaire: FormData): 
     };
   }
   if (!resultat.ok) return { erreurs: resultat.erreurs, valeurs: valeursSaisies(formulaire) };
+  genererEnArrierePlan(resultat.depot.dossierId, 'apres_depot'); // E2.2 : la fiche se prépare sans faire attendre le client
   redirect('/demande/merci');
 }

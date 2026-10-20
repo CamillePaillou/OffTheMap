@@ -70,6 +70,6 @@ export class CorrectionsEnMemoire implements CorrectionsRepository {
     lien.utilisee = true;
     this.journal.push({ dossierId: lien.dossierId, ancien: dossier.statut, nouveau: 'fiche_en_cours' });
     dossier.statut = 'fiche_en_cours';
-    return { demandeId: nouvelle.id, version: nouvelle.version };
+    return { demandeId: nouvelle.id, version: nouvelle.version, dossierId: lien.dossierId };
   }
 }
