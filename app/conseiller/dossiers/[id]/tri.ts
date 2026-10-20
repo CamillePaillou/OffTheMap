@@ -27,12 +27,12 @@ const MESSAGES: Record<RefusTri | 'boucles_epuisees' | 'lien_non_cree', string> 
   auteur_non_identifie: 'Votre compte n’est pas reconnu : reconnectez-vous.',
   statut_modifie: 'Le dossier a changé entre-temps : rechargez la page.',
   sans_fiche: 'La fiche n’est pas encore prête.',
-  boucles_epuisees: 'Deux corrections ont déjà été demandées : appelez le client, ou passez le dossier en go ou en refus.',
+  boucles_epuisees: 'Deux corrections ont déjà été demandées : appelez le client, ou validez ou refusez la demande.',
   lien_non_cree: 'Le dossier est à corriger, mais le lien n’a pas pu être créé : réessayez avec « Envoyer un lien ».',
 };
 
-/** Go ou refus. Le refus est définitif : il demande une case de confirmation (pas de fenêtre du navigateur). */
-export async function trier(dossierId: string, decision: 'go' | 'refusee', _etat: EtatTri, f: FormData): Promise<EtatTri> {
+/** Validation ou refus. Le refus est définitif : il demande une case de confirmation (pas de fenêtre du navigateur). */
+export async function trier(dossierId: string, decision: 'validee' | 'refusee', _etat: EtatTri, f: FormData): Promise<EtatTri> {
   const conseiller = await exigerConseiller(`/conseiller/dossiers/${dossierId}`);
   if (decision === 'refusee' && f.get('confirmer_refus') !== 'on') {
     return { erreurs: { confirmer_refus: 'Cochez la case pour confirmer : un refus est définitif.' } };

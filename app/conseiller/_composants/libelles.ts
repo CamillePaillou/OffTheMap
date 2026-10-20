@@ -7,7 +7,7 @@ export const STATUT_DOSSIER: Record<StatutDossier, string> = {
   fiche_en_cours: 'Fiche en cours',
   fiche_prete: 'Fiche prête',
   erreur: 'Fiche en erreur',
-  go: 'Go',
+  validee: 'Validée',
   a_corriger: 'À corriger',
   refusee: 'Refusée',
   rdv_propose: 'Rendez-vous proposé',
@@ -24,7 +24,7 @@ export const ETAT_FICHE: Record<EtatFiche, string> = {
   validee: 'validée',
 };
 
-export const DECISION: Record<DecisionTri, string> = { go: 'Go', a_corriger: 'À corriger', refusee: 'Refusée' };
+export const DECISION: Record<DecisionTri, string> = { validee: 'Validée', a_corriger: 'À corriger', refusee: 'Refusée' };
 
 export const STATUT_PROPOSITION: Record<StatutProposition, string> = {
   brouillon_en_cours: 'Brouillon en cours',

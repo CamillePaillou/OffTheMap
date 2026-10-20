@@ -36,7 +36,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   if (!dossier) notFound();
   const { demande, fiche } = dossier;
   const enErreur = dossier.statut === 'erreur' || fiche?.etat === 'erreur';
-  // tri (E3.1) : sur une fiche prête, ou sur un dossier à corriger (go, refus, nouveau lien)
+  // tri (E3.1) : sur une fiche prête, ou sur un dossier à corriger (valider, refuser, nouveau lien)
   const aTrier = (dossier.statut === 'fiche_prete' || dossier.statut === 'a_corriger') && fiche !== null && fiche.etat !== 'erreur';
   const boucles = aTrier ? await new CorrectionsSupabase().boucles(dossier.dossier_id) : null;
 

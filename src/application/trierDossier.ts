@@ -1,8 +1,8 @@
 /**
- * Trier une demande : go, à corriger ou refusée (E3.1). Spécification : docs/specs/tri.md.
+ * Trier une demande : validée, à corriger ou refusée (E3.1). Spécification : docs/specs/tri.md.
  *
- * - trierDossier : la décision du conseiller passe par la matrice des transitions (fiche_prete → go | a_corriger |
- *   refusee ; a_corriger → go | refusee), puis la fonction SQL trier_dossier écrit ensemble le statut, le journal
+ * - trierDossier : la décision du conseiller passe par la matrice des transitions (fiche_prete → validee | a_corriger |
+ *   refusee ; a_corriger → validee | refusee), puis la fonction SQL trier_dossier écrit ensemble le statut, le journal
  *   (avec la décision) et fiches.decision.
  * - trierACorriger : « à corriger » sert à quelque chose seulement si le client reçoit le lien de correction (E1.2).
  *   Les points à revoir sont validés AVANT le tri ; après le tri, le lien est créé. S'il ne peut pas l'être,

@@ -17,9 +17,9 @@ interface Props {
 
 const date = (iso: string) => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(new Date(iso));
 
-/** Tri d'une demande (E3.1) : go, à corriger (avec le lien de correction pour le client) ou refusée. */
+/** Tri d'une demande (E3.1) : validée, à corriger (avec le lien de correction pour le client) ou refusée. */
 export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
-  const [etatGo, go, goEnCours] = useActionState<EtatTri, FormData>(trier.bind(null, dossierId, 'go'), {});
+  const [etatValider, valider, validationEnCours] = useActionState<EtatTri, FormData>(trier.bind(null, dossierId, 'validee'), {});
   const [etatRefus, refuser, refusEnCours] = useActionState<EtatTri, FormData>(trier.bind(null, dossierId, 'refusee'), {});
   const [etatLien, corriger, lienEnCours] = useActionState<EtatTri, FormData>(demanderUneCorrection.bind(null, dossierId), {});
 
@@ -40,17 +40,17 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
       {statut === 'a_corriger' && (
         <p className="mt-1 text-sm text-zinc-600">
           {boucles.lienOuvertJusquau
-            ? `Lien de correction envoyé, valable jusqu’au ${date(boucles.lienOuvertJusquau)}. Si le client répond autrement (téléphone, mail), reportez sa réponse dans la fiche puis passez en go.`
+            ? `Lien de correction envoyé, valable jusqu’au ${date(boucles.lienOuvertJusquau)}. Si le client répond autrement (téléphone, mail), reportez sa réponse dans la fiche puis validez la demande.`
             : 'Aucun lien de correction en cours.'}
         </p>
       )}
 
       <div className="mt-4 flex flex-wrap items-start gap-6">
-        <form action={go} className="flex flex-col gap-2">
-          <button type="submit" disabled={goEnCours} className="rounded bg-green-700 px-4 py-2 text-white disabled:opacity-50">
-            {goEnCours ? 'Enregistrement…' : 'Go'}
+        <form action={valider} className="flex flex-col gap-2">
+          <button type="submit" disabled={validationEnCours} className="rounded bg-green-700 px-4 py-2 text-white disabled:opacity-50">
+            {validationEnCours ? 'Enregistrement…' : 'Valider'}
           </button>
-          {alerte(etatGo.erreurs?.formulaire)}
+          {alerte(etatValider.erreurs?.formulaire)}
         </form>
 
         <form action={refuser} className="flex flex-col gap-2">
@@ -130,7 +130,7 @@ export function PanneauTri({ dossierId, statut, boucles, pointsFlous }: Props) {
       ) : (
         bouclesRestantes <= 0 && (
           <p className="mt-6 text-sm text-zinc-600">
-            Deux corrections ont déjà été demandées : appelez le client, ou passez le dossier en go ou en refus.
+            Deux corrections ont déjà été demandées : appelez le client, ou validez ou refusez la demande.
           </p>
         )
       )}

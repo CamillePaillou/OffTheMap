@@ -1,10 +1,10 @@
-# Trier une demande : go, à corriger ou refusée (E3.1)
+# Trier une demande : validée, à corriger ou refusée (E3.1)
 
 Cas d'usage : `src/application/trierDossier.ts`. Base : `supabase/migrations/20261020170000_tri_dossier.sql`. Écran : panneau « Trier la demande » de la fiche (`app/conseiller/dossiers/[id]`).
 
 ## Décisions possibles
 
-| Statut du dossier | Go | À corriger | Refusée |
+| Statut du dossier | Validée | À corriger | Refusée |
 | --- | --- | --- | --- |
 | `fiche_prete` | oui | oui, avec un lien de correction pour le client (E1.2) | oui, avec confirmation |
 | `a_corriger` | oui (réponse du client reportée dans la fiche) | nouveau lien seulement (pas une nouvelle décision) | oui, avec confirmation |

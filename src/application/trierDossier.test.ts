@@ -43,7 +43,7 @@ async function aCorriger(entree: Record<string, unknown> = entreeCorrection) {
 }
 
 describe('trier une demande (E3.1)', () => {
-  it.each(['go', 'refusee'] as const)('enregistre « %s » : statut, décision sur la fiche, journal avec la décision et le conseiller', async (decision) => {
+  it.each(['validee', 'refusee'] as const)('enregistre « %s » : statut, décision sur la fiche, journal avec la décision et le conseiller', async (decision) => {
     expect(await trierDossier(tri, { dossierId: D, decision, conseillerId: ALICE })).toEqual({ ok: true });
     expect(statuts.dossiers.get(D)!.statut).toBe(decision);
     expect(tri.fiches.get(D)!.decision).toBe(decision);
@@ -55,21 +55,21 @@ describe('trier une demande (E3.1)', () => {
 
   it('refuse un tri avant que la fiche soit prête, sans rien écrire', async () => {
     statuts.dossiers.set(D, { statut: 'fiche_en_cours' });
-    expect(await trierDossier(tri, { dossierId: D, decision: 'go', conseillerId: ALICE })).toEqual({ ok: false, raison: 'transition_interdite' });
+    expect(await trierDossier(tri, { dossierId: D, decision: 'validee', conseillerId: ALICE })).toEqual({ ok: false, raison: 'transition_interdite' });
     expect(statuts.historique).toHaveLength(0);
     expect(tri.fiches.get(D)!.decision).toBeNull();
   });
 
-  it('permet go ou refus après une correction, pas un second « à corriger » par le tri', async () => {
+  it('permet la validation ou le refus après une correction, pas un second « à corriger » par le tri', async () => {
     statuts.dossiers.set(D, { statut: 'a_corriger' });
     expect(await trierDossier(tri, { dossierId: D, decision: 'a_corriger', conseillerId: ALICE })).toEqual({ ok: false, raison: 'transition_interdite' });
-    expect(await trierDossier(tri, { dossierId: D, decision: 'go', conseillerId: ALICE })).toEqual({ ok: true });
-    expect(statuts.historique[0]!.detail).toMatchObject({ ancien: 'a_corriger', decision: 'go' });
+    expect(await trierDossier(tri, { dossierId: D, decision: 'validee', conseillerId: ALICE })).toEqual({ ok: true });
+    expect(statuts.historique[0]!.detail).toMatchObject({ ancien: 'a_corriger', decision: 'validee' });
   });
 
   it('deux conseillers en même temps : un seul tri passe', async () => {
     const [a, b] = await Promise.all([
-      trierDossier(tri, { dossierId: D, decision: 'go', conseillerId: ALICE }),
+      trierDossier(tri, { dossierId: D, decision: 'validee', conseillerId: ALICE }),
       trierDossier(tri, { dossierId: D, decision: 'refusee', conseillerId: 'bob' }),
     ]);
     expect([a, b]).toContainEqual({ ok: true });
@@ -78,10 +78,10 @@ describe('trier une demande (E3.1)', () => {
   });
 
   it('refuse un dossier inconnu, un dossier sans fiche, un conseiller non identifié', async () => {
-    expect(await trierDossier(tri, { dossierId: 'x', decision: 'go', conseillerId: ALICE })).toEqual({ ok: false, raison: 'introuvable' });
-    expect(await trierDossier(tri, { dossierId: D, decision: 'go', conseillerId: ' ' })).toEqual({ ok: false, raison: 'auteur_non_identifie' });
+    expect(await trierDossier(tri, { dossierId: 'x', decision: 'validee', conseillerId: ALICE })).toEqual({ ok: false, raison: 'introuvable' });
+    expect(await trierDossier(tri, { dossierId: D, decision: 'validee', conseillerId: ' ' })).toEqual({ ok: false, raison: 'auteur_non_identifie' });
     tri.fiches.delete(D);
-    expect(await trierDossier(tri, { dossierId: D, decision: 'go', conseillerId: ALICE })).toEqual({ ok: false, raison: 'sans_fiche' });
+    expect(await trierDossier(tri, { dossierId: D, decision: 'validee', conseillerId: ALICE })).toEqual({ ok: false, raison: 'sans_fiche' });
     expect(statuts.dossiers.get(D)!.statut).toBe('fiche_prete');
   });
 });

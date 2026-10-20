@@ -1,11 +1,11 @@
--- Tri d'un dossier (E3.1) : go, à corriger ou refusée. La décision est écrite sur la fiche de la version courante
+-- Tri d'un dossier (E3.1) : validée, à corriger ou refusée. La décision est écrite sur la fiche de la version courante
 -- ET le statut du dossier change, journal compris, dans la même transaction.
 --
 -- trier_dossier(dossier, ancien statut, décision, conseiller, détail) :
 --   - passe le dossier de p_ancien à la décision par changer_statut (E0.7) : ligne verrouillée, OT002 si le statut
 --     a changé entre-temps (deux conseillers qui trient en même temps : le second est refusé) ;
 --   - écrit fiches.decision sur la fiche de la version courante de la demande ; sans fiche, rien n'est écrit (OT001).
--- La matrice (fiche_prete → go | a_corriger | refusee ; a_corriger → go | refusee) est vérifiée avant l'appel par le
+-- La matrice (fiche_prete → validee | a_corriger | refusee ; a_corriger → validee | refusee) est vérifiée avant l'appel par le
 -- cas d'usage (types/transitions.ts). Réservée au serveur (service_role).
 
 create function trier_dossier(

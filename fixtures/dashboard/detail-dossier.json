@@ -24,7 +24,7 @@
     "budget_reel_cents": 40000,
     "dates_fixes": { "debut": "2026-11-07", "fin": "2026-11-08", "nb_nuits": 1 },
     "notes_conseiller": "Préfère un hôtel proche de la gare.",
-    "decision": "go",
+    "decision": "validee",
     "validee_le": "2026-10-21T14:20:00Z"
   },
   "propositions": [
@@ -34,8 +34,8 @@
     { "date": "2026-10-19T09:12:00Z", "type": "statut", "cible": "dossier", "ancien_statut": null, "nouveau_statut": "nouvelle", "auteur": "systeme", "auteur_nom": null },
     { "date": "2026-10-19T09:12:02Z", "type": "statut", "cible": "dossier", "ancien_statut": "nouvelle", "nouveau_statut": "fiche_en_cours", "auteur": "systeme", "auteur_nom": null },
     { "date": "2026-10-19T09:12:40Z", "type": "statut", "cible": "dossier", "ancien_statut": "fiche_en_cours", "nouveau_statut": "fiche_prete", "auteur": "systeme", "auteur_nom": null },
-    { "date": "2026-10-19T10:30:00Z", "type": "statut", "cible": "dossier", "ancien_statut": "fiche_prete", "nouveau_statut": "go", "auteur": "conseiller", "auteur_nom": "Camille (démo)" },
-    { "date": "2026-10-19T10:32:00Z", "type": "statut", "cible": "dossier", "ancien_statut": "go", "nouveau_statut": "rdv_propose", "auteur": "conseiller", "auteur_nom": "Camille (démo)" },
+    { "date": "2026-10-19T10:30:00Z", "type": "statut", "cible": "dossier", "ancien_statut": "fiche_prete", "nouveau_statut": "validee", "auteur": "conseiller", "auteur_nom": "Camille (démo)" },
+    { "date": "2026-10-19T10:32:00Z", "type": "statut", "cible": "dossier", "ancien_statut": "validee", "nouveau_statut": "rdv_propose", "auteur": "conseiller", "auteur_nom": "Camille (démo)" },
     { "date": "2026-10-19T10:32:01Z", "type": "mail", "cible": null, "ancien_statut": null, "nouveau_statut": null, "auteur": "systeme", "auteur_nom": null },
     { "date": "2026-10-21T14:00:00Z", "type": "statut", "cible": "dossier", "ancien_statut": "rdv_propose", "nouveau_statut": "entretien_fait", "auteur": "conseiller", "auteur_nom": "Camille (démo)" },
     { "date": "2026-10-21T14:20:00Z", "type": "statut", "cible": "dossier", "ancien_statut": "entretien_fait", "nouveau_statut": "en_proposition", "auteur": "conseiller", "auteur_nom": "Camille (démo)" },

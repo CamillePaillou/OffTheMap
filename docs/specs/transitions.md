@@ -20,18 +20,18 @@ Source de vérité : `types/transitions.ts`, utilisée par la fonction de transi
 | fiche_en_cours | fiche_prete | systeme | fiche écrite | JSON conforme à FicheIA | must |
 | fiche_en_cours | erreur | systeme | génération échouée après un nouvel essai | — | must |
 | erreur | fiche_en_cours | conseiller | bouton « relancer » | — | must |
-| fiche_prete | go | conseiller | tri : go | — | must |
+| fiche_prete | validee | conseiller | tri : validée | — | must |
 | fiche_prete | a_corriger | conseiller | tri : à corriger | — | must |
 | fiche_prete | refusee | conseiller | tri : refus définitif | — | must |
-| a_corriger | go | conseiller | réponse du client reportée dans la fiche | — | must |
+| a_corriger | validee | conseiller | réponse du client reportée dans la fiche | — | must |
 | a_corriger | refusee | conseiller | pas de correction possible | — | must |
 | a_corriger | fiche_en_cours | systeme | nouvelle version de la demande reçue | version précédente marquée remplacee_le | should |
-| go | rdv_propose | conseiller | rendez-vous proposé au client | — | must |
+| validee | rdv_propose | conseiller | rendez-vous proposé au client | — | must |
 | rdv_propose | entretien_fait | conseiller | entretien de cadrage terminé | — | must |
 | entretien_fait | en_proposition | conseiller | fiche corrigée et validée | budget_reel_cents, dates fixes et validee_par renseignés | must |
 | en_proposition | gagnee | systeme | dernière ligne réservée | toutes les lignes de la proposition acceptée sont reservee | must |
 | a_corriger | abandonnee | conseiller | abandon confirmé | — | could |
-| go | abandonnee | conseiller | abandon confirmé | — | could |
+| validee | abandonnee | conseiller | abandon confirmé | — | could |
 | rdv_propose | abandonnee | conseiller | abandon confirmé | — | could |
 | entretien_fait | abandonnee | conseiller | abandon confirmé | — | could |
 | en_proposition | abandonnee | conseiller | abandon confirmé (proposition sans réponse) | — | could |

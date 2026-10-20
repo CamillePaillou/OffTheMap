@@ -16,22 +16,22 @@ beforeEach(() => {
 
 describe('changerStatut', () => {
   it('écrit le statut et une ligne d’historique', async () => {
-    const r = await changerStatut(repo, { cible: 'dossier', id: 'd1', vers: 'go', auteur: ALICE });
-    expect(r).toEqual({ ok: true, ancien: 'fiche_prete', nouveau: 'go', historiqueId: '1' });
-    expect(repo.dossiers.get('d1')!.statut).toBe('go');
+    const r = await changerStatut(repo, { cible: 'dossier', id: 'd1', vers: 'validee', auteur: ALICE });
+    expect(r).toEqual({ ok: true, ancien: 'fiche_prete', nouveau: 'validee', historiqueId: '1' });
+    expect(repo.dossiers.get('d1')!.statut).toBe('validee');
     expect(repo.historique).toEqual([{
-      id: '1', dossier_id: 'd1', proposition_id: null, type: 'statut', ancien_statut: 'fiche_prete', nouveau_statut: 'go',
+      id: '1', dossier_id: 'd1', proposition_id: null, type: 'statut', ancien_statut: 'fiche_prete', nouveau_statut: 'validee',
       auteur: 'conseiller', auteur_id: 'alice',
-      detail: { type: 'statut', cible: 'dossier', ancien: 'fiche_prete', nouveau: 'go', decision: 'go' },
+      detail: { type: 'statut', cible: 'dossier', ancien: 'fiche_prete', nouveau: 'validee', decision: 'validee' },
     }]);
   });
 
   it('crée une ligne d’historique par transition', async () => {
-    await changerStatut(repo, { cible: 'dossier', id: 'd1', vers: 'go', auteur: ALICE });
+    await changerStatut(repo, { cible: 'dossier', id: 'd1', vers: 'validee', auteur: ALICE });
     await changerStatut(repo, { cible: 'dossier', id: 'd1', vers: 'rdv_propose', auteur: ALICE });
     await changerStatut(repo, { cible: 'dossier', id: 'd1', vers: 'entretien_fait', auteur: ALICE });
     expect(repo.historique.map((h) => `${h.ancien_statut}>${h.nouveau_statut}`))
-      .toEqual(['fiche_prete>go', 'go>rdv_propose', 'rdv_propose>entretien_fait']);
+      .toEqual(['fiche_prete>validee', 'validee>rdv_propose', 'rdv_propose>entretien_fait']);
   });
 
   it('rattache la transition d’une proposition à son dossier', async () => {
@@ -42,9 +42,9 @@ describe('changerStatut', () => {
 
   it.each([
     ['absente de la matrice', { cible: 'dossier', id: 'd1', vers: 'gagnee', auteur: ALICE }, 'transition_interdite'],
-    ['faite par le mauvais auteur', { cible: 'dossier', id: 'd1', vers: 'go', auteur: SYSTEME }, 'transition_interdite'],
-    ['faite par un conseiller sans identifiant', { cible: 'dossier', id: 'd1', vers: 'go', auteur: { type: 'conseiller', id: ' ' } }, 'auteur_non_identifie'],
-    ['sur un dossier inexistant', { cible: 'dossier', id: 'd9', vers: 'go', auteur: ALICE }, 'introuvable'],
+    ['faite par le mauvais auteur', { cible: 'dossier', id: 'd1', vers: 'validee', auteur: SYSTEME }, 'transition_interdite'],
+    ['faite par un conseiller sans identifiant', { cible: 'dossier', id: 'd1', vers: 'validee', auteur: { type: 'conseiller', id: ' ' } }, 'auteur_non_identifie'],
+    ['sur un dossier inexistant', { cible: 'dossier', id: 'd9', vers: 'validee', auteur: ALICE }, 'introuvable'],
   ] as const)('refuse une transition %s, sans rien écrire', async (_, demande, raison) => {
     expect(await changerStatut(repo, demande)).toEqual({ ok: false, raison });
     expect(repo.dossiers.get('d1')!.statut).toBe('fiche_prete');
@@ -65,15 +65,15 @@ describe('changerStatut', () => {
       }
     })();
     concurrent.dossiers.set('d1', { statut: 'fiche_prete' });
-    expect(await changerStatut(concurrent, { cible: 'dossier', id: 'd1', vers: 'go', auteur: ALICE }))
+    expect(await changerStatut(concurrent, { cible: 'dossier', id: 'd1', vers: 'validee', auteur: ALICE }))
       .toEqual({ ok: false, raison: 'statut_modifie' });
   });
 });
 
 describe('verifierTransition', () => {
   it('ne note une décision de tri que depuis une fiche prête', () => {
-    const v = verifierTransition('dossier', 'a_corriger', 'go', ALICE);
-    expect(v.ok && v.detail).toEqual({ type: 'statut', cible: 'dossier', ancien: 'a_corriger', nouveau: 'go' });
+    const v = verifierTransition('dossier', 'a_corriger', 'validee', ALICE);
+    expect(v.ok && v.detail).toEqual({ type: 'statut', cible: 'dossier', ancien: 'a_corriger', nouveau: 'validee' });
   });
   it('accepte une priorité livrée quand on la fournit', () => {
     expect(verifierTransition('proposition', 'envoyee', 'changement_demande', ALICE, ['must', 'should']).ok).toBe(true);

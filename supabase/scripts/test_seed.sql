@@ -13,7 +13,7 @@ begin
 
   -- un dossier de démonstration à chaque étape clé
   select string_agg(s, ', ') into manquants from unnest(array[
-    'nouvelle','erreur','fiche_prete','a_corriger','refusee','go','rdv_propose','entretien_fait','en_proposition','gagnee']) s
+    'nouvelle','erreur','fiche_prete','a_corriger','refusee','validee','rdv_propose','entretien_fait','en_proposition','gagnee']) s
   where not exists (select 1 from dossiers d where d.statut::text = s and d.id::text like 'd0551e00-%');
   if manquants is not null then raise exception 'étapes du dossier sans exemple : %', manquants; end if;
 
