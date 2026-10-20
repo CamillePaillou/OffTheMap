@@ -162,7 +162,7 @@ Dossier `/types` : la forme exacte de chaque table (champs, types, obligatoire o
 
 ### 5.2 Payloads du dashboard (proposition à valider par P2 et P3)
 
-Principes : montants en centimes ; valeur indisponible = `null`, jamais `0` ; pagination par `limit` et `offset` ; dates en UTC ISO-8601. Issue : E0.12. Ces formats sont des fixtures construites sur les types TypeScript partagés : pas de spécification séparée.
+Principes : montants en centimes ; valeur indisponible = `null`, jamais `0` ; pagination par `limit` et `offset` ; dates en UTC ISO-8601. Issue : E0.12. Ces formats sont des fixtures construites sur les types TypeScript partagés : pas de spécification séparée. Version retenue et écarts avec les exemples ci-dessous : `docs/specs/dashboard.md` et `types/dashboard.ts`.
 
 **Liste des dossiers : `GET /api/dossiers`**
 

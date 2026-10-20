@@ -4,6 +4,7 @@ export * from './ia';
 export * from './llm';
 export * from './permissions';
 export * from './chiffrage';
+export * from './dashboard';
 export * from './simulateur';
 export * from './transitions';
 // types/database.ts : à générer, jamais à écrire à la main
