@@ -6,7 +6,7 @@ import { CorrectionsSupabase } from '@/src/infrastructure/db/correctionsSupabase
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import type { DetailDossier } from '@/types/dashboard';
 import { DECISION, ETAT_FICHE, STATUT_DOSSIER, STATUT_PROPOSITION, euros, instantParis, jour } from '../../_composants/libelles';
-import { BoutonRelancer, FormulaireCorrection } from './formulaires';
+import { BoutonBrouillon, BoutonRelancer, FormulaireCorrection } from './formulaires';
 import { PanneauTri } from './panneauTri';
 
 type Props = PageProps<'/conseiller/dossiers/[id]'>;
@@ -37,6 +37,9 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   const { demande, fiche } = dossier;
   const enErreur = dossier.statut === 'erreur' || fiche?.etat === 'erreur';
   // tri (E3.1) : sur une fiche prête, ou sur un dossier à corriger (valider, refuser, nouveau lien)
+  // brouillon (E4.4) : après l'entretien, fiche corrigée (budget réel et dates fixes), aucune proposition encore
+  const ficheComplete = fiche !== null && fiche.budget_reel_cents !== null && fiche.dates_fixes.debut !== null && fiche.dates_fixes.fin !== null;
+  const peutDemanderBrouillon = (dossier.statut === 'entretien_fait' || dossier.statut === 'en_proposition') && dossier.propositions.length === 0;
   const aTrier = (dossier.statut === 'fiche_prete' || dossier.statut === 'a_corriger') && fiche !== null && fiche.etat !== 'erreur';
   const boucles = aTrier ? await new CorrectionsSupabase().boucles(dossier.dossier_id) : null;
 
@@ -135,6 +138,19 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
           boucles={boucles}
           pointsFlous={fiche.points_flous}
         />
+      )}
+
+      {peutDemanderBrouillon && (
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold">Proposition</h2>
+          {ficheComplete ? (
+            <div className="mt-3">
+              <BoutonBrouillon dossierId={dossier.dossier_id} valideFiche={dossier.statut === 'entretien_fait'} />
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-zinc-600">Renseignez le budget réel et les dates fixes pour générer le brouillon.</p>
+          )}
+        </section>
       )}
 
       {dossier.propositions.length > 0 && (
