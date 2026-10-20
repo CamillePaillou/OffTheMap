@@ -57,6 +57,7 @@ export async function poserOption(repo: AccordsRepository, prestataires: Prestat
 
   await repo.terminerPoseOption(candidat.option_id, {
     ok: true, option_id_simulateur: option.option_id, expire_le: option.expire_le, reponse_serveur: option,
+    ligne_snapshot: { prestation_id: ligne.prestation.id, date: ligne.date, participants: ligne.participants },
   });
   return { ok: true, option_id: option.option_id, prix_total_cents: option.prix_total_cents, expire_le: option.expire_le, reponse_serveur: option };
 }
