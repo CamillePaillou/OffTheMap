@@ -329,6 +329,31 @@ select doit_valoir($$select count(*) from historique_dossier where dossier_id = 
   and nouveau_statut in ('changement_demande', 'remplacee', 'brouillon_en_cours', 'brouillon_pret', 'a_verifier')$$, 5, 'journal du changement complet');
 select doit_echouer($$select creer_version_suivante('00000000-0000-0000-0000-0000000006f1', '00000000-0000-0000-0000-00000000000a', 'encore', '{"erreur": "x"}')$$, 'second changement sur une version déjà remplacée');
 
+-- rappels quand le client ne répond pas (E6.4) : J+3 passe la proposition en sans_reponse, J+7 ajoute un rappel
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000064d1', 'en_proposition'), ('00000000-0000-0000-0000-0000000064d2', 'en_proposition');
+insert into propositions (id, dossier_id, version, statut, total_cents, envoyee_le, envoyee_par) values
+  ('00000000-0000-0000-0000-0000000064f1', '00000000-0000-0000-0000-0000000064d1', 1, 'envoyee', 8000, now() - interval '2 days', '00000000-0000-0000-0000-00000000000a'),
+  ('00000000-0000-0000-0000-0000000064f2', '00000000-0000-0000-0000-0000000064d2', 1, 'acceptee', 8000, now() - interval '10 days', '00000000-0000-0000-0000-00000000000a');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel J+3 avant son jour');
+update propositions set envoyee_le = now() - interval '3 days' where id = '00000000-0000-0000-0000-0000000064f1';
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 7)$$, 'rappel J+7 avant son jour');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 5)$$, 'jour de rappel inconnu');
+select doit_valoir($$select (enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3) is not null)::int$$, 1, 'rappel J+3 enregistré');
+select doit_valoir($$select count(*) from propositions where id = '00000000-0000-0000-0000-0000000064f1' and statut = 'sans_reponse'$$, 1, 'proposition sans réponse à J+3');
+select doit_valoir($$select count(*) from historique_dossier where proposition_id = '00000000-0000-0000-0000-0000000064f1' and auteur = 'systeme'
+  and ((type = 'statut' and ancien_statut = 'envoyee' and nouveau_statut = 'sans_reponse') or (type = 'rappel' and detail = '{"type": "rappel", "jour": 3}'))$$,
+  2, 'passage en sans_reponse et rappel J+3 journalisés par le système');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel J+3 fait deux fois');
+update propositions set envoyee_le = now() - interval '7 days' where id = '00000000-0000-0000-0000-0000000064f1';
+select doit_valoir($$select (enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 7) is not null)::int$$, 1, 'rappel J+7 enregistré');
+select doit_valoir($$select count(*) from historique_dossier where proposition_id = '00000000-0000-0000-0000-0000000064f1' and type = 'statut'$$, 1, 'J+7 ne change pas le statut');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel J+3 après le J+7');
+select doit_echouer($$insert into historique_dossier (dossier_id, proposition_id, type, auteur, detail) values ('00000000-0000-0000-0000-0000000064d1',
+  '00000000-0000-0000-0000-0000000064f1', 'rappel', 'systeme', '{"type": "rappel", "jour": 7}')$$, 'même rappel écrit deux fois');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f2', 7)$$, 'rappel sur une proposition acceptée');
+select doit_valoir($$select (enregistrer_reponse_client('00000000-0000-0000-0000-0000000064f1', 'acceptee', '00000000-0000-0000-0000-00000000000a') is not null)::int$$,
+  1, 'acceptation d''une proposition sans réponse');
+
 -- remplacer une ligne indisponible (E5.2) : nouvelle ligne à vérifier au prix du catalogue, les autres lignes intactes
 insert into prestations (id, type, nom, destination, prix_unitaire_cents, capacite, actif) values
   ('test-remplacante-01', 'activite', 'Balade de test', 'Nantes', 2900, 12, true),
@@ -375,6 +400,7 @@ select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000
 select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', null, 'rendez_vous', '00000000-0000-0000-0000-00000000000a')$$, 'mail marqué par un visiteur');
 select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi appelé par un visiteur');
 select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-remplacante-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacement appelé par un visiteur');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel appelé par un visiteur');
 select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b5', '00000000-0000-0000-0000-00000000000a')$$, 'brouillon démarré par un visiteur');
 select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d9', 'fiche_prete', 'validee', '00000000-0000-0000-0000-00000000000a')$$, 'tri appelé par un visiteur');
 select doit_valoir($$select count(*) from corrections$$, 0, 'un visiteur ne lit pas les liens de correction');
@@ -398,6 +424,7 @@ select doit_valoir($$select count(*) from corrections where dossier_id = '000000
 select doit_echouer($$select demander_correction('00000000-0000-0000-0000-0000000000d3', '{budget}', 'x', repeat('1', 64),
   '00000000-0000-0000-0000-00000000000a', now() + interval '1 day')$$, 'correction demandée en base sans passer par le serveur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un conseiller');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel appelé par un conseiller');
 select doit_echouer($$select terminer_brouillon('00000000-0000-0000-0000-0000000000f1', '{"erreur": "x"}')$$, 'brouillon écrit en base directe par un conseiller');
 select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 1, null, null, null, null)$$, 'correction en base directe par un conseiller (passe par le serveur)');
 select doit_echouer($$select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'm', '{}')$$, 'génération écrite par un conseiller');

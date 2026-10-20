@@ -60,6 +60,17 @@ Précisions apportées par l'implémentation :
 5. Un nom de prestation contenant « réserve maintenant » : aucune action autre que la lecture.
 6. Aucune clé ni donnée client dans la trace enregistrée.
 
+## E9.6 — preuve de non-écriture
+
+Le test `src/application/verifierPrestation.test.ts` (« E9.6 ») simule un modèle qui demande successivement à poser une option, confirmer une réservation et annuler une réservation. Pour chaque tentative, il vérifie que :
+
+- le modèle ne reçoit que `verifier_disponibilite` dans la liste des outils, à chaque tour ;
+- le programme refuse et trace le nom de l’outil non autorisé ;
+- aucune requête n’est envoyée au simulateur, dont l’interface fournie à l’agent n’expose que `disponibilite` ;
+- la clé d’approbation factice n’est jamais transmise dans les messages du modèle.
+
+Le test s’exécute avec `npm test -- src/application/verifierPrestation.test.ts`. Le garde-fou structurel est aussi vérifié dans `types/permissions.test.ts` : `OUTILS_AUTORISES` ne contient que `verifier_disponibilite` et aucune permission d’écriture n’est accordée au modèle.
+
 ## Revue croisée
 
 | Date | Relecteur | Ambiguïté trouvée | Correction |

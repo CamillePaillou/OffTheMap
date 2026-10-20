@@ -107,6 +107,12 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
           .
         </p>
       )}
+      {proposition.statut === 'sans_reponse' && (
+        <p role="status" className="mt-6 rounded border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <span className="font-medium">Sans réponse du client</span> depuis au moins 3 jours après l’envoi. Relancez-le avec le mail de la
+          proposition ci-dessous, puis enregistrez son acceptation ou le changement qu’il demande.
+        </p>
+      )}
       {proposition.motif_changement && (
         <p className="mt-6 rounded-[18px] bg-miel-pale p-4 text-sm text-[#5c3d0c]">
           <span className="font-semibold">Changement demandé par le client :</span> {proposition.motif_changement}
@@ -291,6 +297,10 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
             </ol>
           </section>
         )}
+      {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} />}
+
+      <PanneauReponse propositionId={proposition.id} statut={proposition.statut} />
+      {(proposition.statut === 'envoyee' || proposition.statut === 'sans_reponse') && <PanneauChangement propositionId={proposition.id} version={proposition.version} />}
 
         {mail && (
           <section aria-labelledby="titre-mail" className="flex flex-col gap-3">
@@ -304,7 +314,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
               corps={mail.corps}
               mailto={mail.mailto}
               imprimer={`/conseiller/propositions/${proposition.id}/imprimer`}
-              ouvert={proposition.statut === 'envoyee'}
+              ouvert={proposition.statut === 'envoyee' || proposition.statut === 'sans_reponse'}
             />
           </section>
         )}

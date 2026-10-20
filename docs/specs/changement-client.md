@@ -29,7 +29,7 @@ La v1 garde ses lignes (statuts et prix confirmés), son programme, son total, s
 
 ## Transitions livrées
 
-`envoyee → changement_demande` (conseiller) et `changement_demande → remplacee` (système) passent de *should* à *must* (`types/transitions.ts`, `docs/specs/transitions.md`). `sans_reponse → changement_demande` reste *should* : l'état `sans_reponse` (rappels, E6.4) n'est pas encore livré.
+`envoyee → changement_demande` (conseiller) et `changement_demande → remplacee` (système) passent de *should* à *must* (`types/transitions.ts`, `docs/specs/transitions.md`). `sans_reponse → changement_demande` est livrée avec les rappels (E6.4, `docs/specs/rappels.md`).
 
 ## Contrat du dashboard
 
