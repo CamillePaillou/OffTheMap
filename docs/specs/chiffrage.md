@@ -1,6 +1,6 @@
 # Règles de chiffrage (E4.1)
 
-**Contrat associé** : `types/chiffrage.ts`. Exemples chiffrés, à reprendre tels quels dans les tests d'E4.2 : `docs/specs/chiffrage-exemples.json`. Les choix faits sans le client sont listés en section 5 et inscrits au registre des décisions.
+**Contrat associé** : `types/chiffrage.ts`. Exemples chiffrés, à reprendre tels quels dans les tests d'E4.2 : `docs/specs/chiffrage-exemples.json`. **Fonction de chiffrage (E4.2)** : `chiffrer` dans `src/domain/chiffrage/chiffrer.ts`, avec `valeursDeReference` (section 3), `ecartVerification` et `formaterMontant` ; ses tests rejouent les huit exemples. Les choix faits sans le client sont listés en section 5 et inscrits au registre des décisions.
 
 ## 1. Principes
 
