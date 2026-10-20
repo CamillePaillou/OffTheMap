@@ -65,8 +65,9 @@ export const LIMITES = {
   participantsMax: 20, // limite du simulateur
   nuitsMax: 14,
   toursAgentMax: 3,
-  // Durée de l'option : jamais codée ici. Elle est lue dans `expire_le` renvoyé par le simulateur
-  // (30 minutes dans le simulateur du cours ; le plan vise 2 jours ouvrés).
+  dureeOptionMetierHeures: 72, // règle de l'agence, pour l'affichage et la documentation
+  // L'expiration réelle d'une option est TOUJOURS lue dans `expire_le` renvoyé par le simulateur,
+  // jamais calculée avec cette constante (le simulateur du cours pose 30 minutes : écart annoncé).
   dureeAccordMinutes: 10, // choix de l'équipe : un accord ancien ne sert plus
   nomConseillerMax: 80, // limite de `approuve_par` côté simulateur
 } as const;
