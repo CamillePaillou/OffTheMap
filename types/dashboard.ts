@@ -43,7 +43,7 @@ export const DossierResume = z.object({
     date_debut: dateJour,
     date_fin: dateJour,
     voyageurs: z.number().int().min(1).max(LIMITES.participantsMax),
-    budget_annonce: z.object({ montant_cents: centsPositif, ferme: z.boolean() }).strict().nullable(),
+    budget_annonce: z.object({ montant_cents: centsPositif }).strict().nullable(), // budget total du groupe
   }).strict(),
   fiche: z.object({ etat: z.enum(ETATS_FICHE) }).strict().nullable(),
   proposition: z.object({
@@ -80,11 +80,11 @@ export const DetailDossier = z.object({
   cree_le: instant,
   demande: z.object({
     version: z.number().int().min(1),
-    client: z.object({ nom: z.string().min(1).max(120), email: z.email(), tel: z.string().nullable() }).strict(),
+    client: z.object({ nom: z.string().min(1).max(120), email: z.email() }).strict(),
     destination: z.string().nullable(),
-    dates: z.object({ debut: dateJour, fin: dateJour, flexibles: z.boolean(), nb_nuits: z.number().int().min(0).max(LIMITES.nuitsMax) }).strict(),
+    dates: z.object({ debut: dateJour, fin: dateJour, nb_nuits: z.number().int().min(0).max(LIMITES.nuitsMax) }).strict(),
     voyageurs: z.array(z.enum(TRANCHES_AGE)).min(1).max(LIMITES.participantsMax),
-    budget_annonce: z.object({ montant_cents: centsPositif, ferme: z.boolean() }).strict().nullable(),
+    budget_annonce: z.object({ montant_cents: centsPositif }).strict().nullable(), // budget total du groupe
     envies: z.string().nullable(),
     contraintes: z.string().nullable(),
   }).strict(),

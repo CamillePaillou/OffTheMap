@@ -11,7 +11,7 @@
         "date_debut": "2026-11-07",
         "date_fin": "2026-11-08",
         "voyageurs": 2,
-        "budget_annonce": { "montant_cents": 40000, "ferme": false }
+        "budget_annonce": { "montant_cents": 40000 }
       },
       "fiche": { "etat": "validee" },
       "proposition": {
@@ -49,7 +49,7 @@
         "date_debut": "2027-03-13",
         "date_fin": "2027-03-15",
         "voyageurs": 3,
-        "budget_annonce": { "montant_cents": 90000, "ferme": true }
+        "budget_annonce": { "montant_cents": 90000 }
       },
       "fiche": { "etat": "erreur" },
       "proposition": null
@@ -65,7 +65,7 @@
         "date_debut": "2026-11-21",
         "date_fin": "2026-11-22",
         "voyageurs": 1,
-        "budget_annonce": { "montant_cents": 25000, "ferme": false }
+        "budget_annonce": { "montant_cents": 25000 }
       },
       "fiche": { "etat": "en_cours" },
       "proposition": null
@@ -81,7 +81,7 @@
         "date_debut": "2026-10-24",
         "date_fin": "2026-10-31",
         "voyageurs": 12,
-        "budget_annonce": { "montant_cents": 30000, "ferme": true }
+        "budget_annonce": { "montant_cents": 30000 }
       },
       "fiche": { "etat": "prete" },
       "proposition": null
