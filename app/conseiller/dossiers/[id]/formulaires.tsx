@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { demanderBrouillonAction, enregistrerCorrection, relancer, type EtatCorrection } from './actions';
+import { demanderBrouillonAction, enregistrerCorrection, entretienFait, relancer, type EtatCorrection } from './actions';
 
 const champ = 'bo-champ';
 
@@ -99,6 +99,23 @@ export function BoutonBrouillon({ dossierId, valideFiche }: { dossierId: string;
     <form action={action} className="flex flex-wrap items-center gap-4">
       <button type="submit" disabled={enCours} className="bo-btn">
         {enCours ? 'Lancement…' : valideFiche ? 'Valider la fiche et générer le brouillon' : 'Générer le brouillon'}
+      </button>
+      {etat.erreur && !enCours && (
+        <span role="alert" className="text-sm text-grenade">
+          {etat.erreur}
+        </span>
+      )}
+    </form>
+  );
+}
+
+/** « Entretien fait » (E7.3) : le rendez-vous a eu lieu, le dossier passe en entretien_fait. */
+export function BoutonEntretienFait({ dossierId }: { dossierId: string }) {
+  const [etat, action, enCours] = useActionState<{ erreur?: string }, FormData>(() => entretienFait(dossierId), {});
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-4">
+      <button type="submit" disabled={enCours} className="bo-btn">
+        {enCours ? 'Enregistrement…' : 'Entretien fait'}
       </button>
       {etat.erreur && !enCours && (
         <span role="alert" className="text-sm text-grenade">

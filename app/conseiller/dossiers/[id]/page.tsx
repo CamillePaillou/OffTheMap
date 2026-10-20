@@ -9,7 +9,7 @@ import type { DetailDossier } from '@/types/dashboard';
 import { DECISION, ETAT_FICHE, STATUT_DOSSIER, STATUT_PROPOSITION, euros, instantParis, jour } from '../../_composants/libelles';
 import { Fil } from '../../_composants/fil';
 import { Avancement, Depart, groupeDe, joursAvantDepart, PastilleActeur, PastilleStatut, photoDestination, prochaineEtape } from '../../_composants/statut';
-import { BoutonBrouillon, BoutonRelancer, FormulaireCorrection } from './formulaires';
+import { BoutonBrouillon, BoutonEntretienFait, BoutonRelancer, FormulaireCorrection } from './formulaires';
 import { PanneauTri } from './panneauTri';
 import { CarteMail } from '../../_composants/carte-mail';
 import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
@@ -160,8 +160,13 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
                     ? 'Préparation automatique en cours : le résultat s’affichera ici.'
                     : etape.acteur === null
                       ? 'Le dossier reste consultable.'
-                      : 'Ouvrez la fiche ci-dessous pour avancer.'}
+                      : dossier.statut === 'validee'
+                        ? 'Envoyez le mail de rendez-vous, puis marquez-le comme envoyé.'
+                        : dossier.statut === 'rdv_propose'
+                          ? 'Après l’entretien, confirmez-le ici, puis notez le budget réel et les dates fixes dans la fiche.'
+                          : 'Ouvrez la fiche ci-dessous pour avancer.'}
             </p>
+            {dossier.statut === 'rdv_propose' && <BoutonEntretienFait dossierId={dossier.dossier_id} />}
             {derniere && (
               <Link href={`/conseiller/propositions/${derniere.id}`} className="bo-btn">
                 Ouvrir la proposition
