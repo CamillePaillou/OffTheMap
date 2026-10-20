@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ALERTES_BLOQUANTES } from '../../types';
 import { TarifsEnMemoire, type LigneEnMemoire, type PropositionEnMemoire } from '../infrastructure/db/tarifsEnMemoire';
-import { accepterVerification, confirmerTarif, envoyerProposition, marquerIndisponible, revoirLigne, schemaTarif } from './tarifs';
+import { accepterVerification, confirmerTarif, envoyerProposition, marquerIndisponible, remplacerLigne, revoirLigne, schemaTarif } from './tarifs';
 
 const P = 'p1';
 const ALICE = 'alice';
@@ -137,5 +137,109 @@ describe('envoyer la proposition', () => {
     const sql = readFileSync(join(__dirname, '../../supabase/migrations/20261020190000_tarifs_envoi.sql'), 'utf8');
     const liste = sql.match(/a ->> 'code' in \(([^)]*)\)/)![1]!.match(/'([^']+)'/g)!.map((x) => x.slice(1, -1));
     expect(liste).toEqual([...ALERTES_BLOQUANTES]);
+  });
+});
+
+describe('remplacer une ligne indisponible (E5.2)', () => {
+  const presta = (id: string, nom: string, type: LigneEnMemoire['type'], destination: string, prix: number, capacite: number, actif = true) =>
+    repo.catalogue.set(id, { id, nom, type, destination, prix_unitaire_cents: prix, capacite, actif });
+
+  beforeEach(async () => {
+    presta('train-nantes-01', 'Train Paris-Nantes', 'transport', 'Nantes', 4800, 8);
+    presta('hotel-nantes-01', 'Hôtel des Machines', 'hebergement', 'Nantes', 9600, 6);
+    presta('activite-nantes-01', 'Atelier de sérigraphie', 'activite', 'Nantes', 3500, 10);
+    presta('activite-nantes-02', 'Balade sur l’Erdre', 'activite', 'Nantes', 2900, 12);
+    presta('activite-nantes-03', 'Atelier fermé', 'activite', 'Nantes', 2000, 10, false);
+    presta('activite-lyon-01', 'Jeu de piste à Lyon', 'activite', 'Lyon', 2900, 12);
+    // train et hôtel confirmés au téléphone ; l'atelier est indisponible
+    await confirmerTarif(repo, { ligneId: 'train', conseillerId: ALICE, montant: '50', source: 'telephone' });
+    await confirmerTarif(repo, { ligneId: 'hotel', conseillerId: ALICE, montant: '96', source: 'mail' });
+    await marquerIndisponible(repo, { ligneId: 'atelier', conseillerId: ALICE });
+  });
+
+  it('les autres lignes et leurs tarifs confirmés restent intacts', async () => {
+    const avant = structuredClone(p.lignes.filter((l) => l.id !== 'atelier'));
+    const r = await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: 'activite-nantes-02' });
+    expect(r.ok).toBe(true);
+    expect(p.lignes.filter((l) => l.id === 'train' || l.id === 'hotel')).toEqual(avant);
+  });
+
+  it('l’ancienne ligne passe à « remplacée », la nouvelle naît « à vérifier » au prix du catalogue, même date et mêmes participants', async () => {
+    const r = await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: 'activite-nantes-02' });
+    if (!r.ok || !('nouvelleLigneId' in r)) throw new Error('remplacement refusé');
+    expect(p.lignes.find((l) => l.id === 'atelier')!.statut).toBe('remplacee');
+    expect(p.lignes.find((l) => l.id === r.nouvelleLigneId)).toMatchObject({
+      prestation_id: 'activite-nantes-02', statut: 'a_verifier', date: '2026-11-07', participants: 2,
+      prix_unitaire_catalogue_cents: 2900, prix_confirme_cents: null,
+    });
+  });
+
+  it('recalcule le total (sans la ligne remplacée) et laisse la proposition à vérifier', async () => {
+    const r = await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: 'activite-nantes-02' });
+    expect(r).toMatchObject({ ok: true, statutProposition: 'a_verifier' });
+    expect(p.total_cents).toBe(5000 * 2 + 9600 * 2 + 2900 * 2); // 50 € et 96 € confirmés, balade au catalogue
+  });
+
+  it('recalcule les alertes avec la nouvelle ligne, et l’envoi reste bloqué tant qu’elle n’est pas vérifiée', async () => {
+    await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: 'activite-nantes-02', date: '2026-11-09' });
+    expect(p.alertes.map((a) => a.code)).toEqual(['date_hors_sejour']); // le 9 est après le séjour
+    const envoi = await envoyerProposition(repo, { propositionId: P, conseillerId: ALICE });
+    expect(envoi).toMatchObject({ ok: false, raison: 'bloque' });
+  });
+
+  it('une fois la nouvelle ligne confirmée, la proposition est prête et s’envoie', async () => {
+    const r = await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: 'activite-nantes-02' });
+    if (!r.ok || !('nouvelleLigneId' in r)) throw new Error('remplacement refusé');
+    await confirmerTarif(repo, { ligneId: r.nouvelleLigneId!, conseillerId: ALICE, montant: '29', source: 'lien' });
+    expect(p.statut).toBe('prete');
+    expect(await envoyerProposition(repo, { propositionId: P, conseillerId: ALICE })).toMatchObject({ ok: true });
+  });
+
+  it('ne remplace qu’une ligne indisponible', async () => {
+    expect(await remplacerLigne(repo, { ligneId: 'train', conseillerId: ALICE, prestationId: 'activite-nantes-02' }))
+      .toEqual({ ok: false, raison: 'transition_interdite' });
+    expect(p.lignes).toHaveLength(3);
+  });
+
+  it('refuse une prestation retirée ou inconnue, sans rien écrire', async () => {
+    for (const prestationId of ['activite-nantes-03', 'inconnue-99']) {
+      expect(await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId }))
+        .toEqual({ ok: false, raison: 'prestation_refusee' });
+    }
+    expect(p.lignes.find((l) => l.id === 'atelier')!.statut).toBe('indisponible');
+    expect(p.lignes).toHaveLength(3);
+  });
+
+  it('refuse une saisie invalide', async () => {
+    const r = await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: '', date: '7 novembre' });
+    expect(r).toEqual({ ok: false, erreurs: { prestationId: 'Choisissez une prestation du catalogue', date: 'Date au format AAAA-MM-JJ' } });
+  });
+
+  it('refuse après l’envoi, et sans conseiller identifié', async () => {
+    p.statut = 'envoyee';
+    expect(await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: 'activite-nantes-02' }))
+      .toEqual({ ok: false, raison: 'proposition_figee' });
+    p.statut = 'a_verifier';
+    expect(await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ' ', prestationId: 'activite-nantes-02' }))
+      .toEqual({ ok: false, raison: 'transition_interdite' });
+  });
+
+  it('reprend la même prestation à une autre date (complet ce jour-là)', async () => {
+    const r = await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: 'activite-nantes-01', date: '2026-11-08' });
+    if (!r.ok || !('nouvelleLigneId' in r)) throw new Error('remplacement refusé');
+    expect(p.lignes.find((l) => l.id === r.nouvelleLigneId)).toMatchObject({ prestation_id: 'activite-nantes-01', date: '2026-11-08', statut: 'a_verifier' });
+  });
+
+  it('refuse la même prestation à la même date : rien ne changerait', async () => {
+    expect(await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: 'activite-nantes-01' }))
+      .toEqual({ ok: false, raison: 'meme_prestation' });
+    expect(await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: 'activite-nantes-01', date: '2026-11-07' }))
+      .toEqual({ ok: false, raison: 'meme_prestation' });
+    expect(p.lignes).toHaveLength(3);
+  });
+
+  it('propose la même prestation d’abord, puis le même type, puis le reste de la destination, sans les prestations retirées', async () => {
+    expect((await repo.prestationsRemplacantes('atelier')).map((x) => x.id))
+      .toEqual(['activite-nantes-01', 'activite-nantes-02', 'hotel-nantes-01', 'train-nantes-01']);
   });
 });

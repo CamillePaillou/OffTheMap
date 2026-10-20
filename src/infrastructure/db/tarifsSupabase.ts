@@ -7,10 +7,14 @@ import { StatutModifieErreur } from '../../ports/statuts';
 import {
   EnvoiRefuseErreur,
   LigneModifieeErreur,
+  MemePrestationErreur,
+  PrestationRefuseeErreur,
   PropositionFigeeErreur,
   type ChangementLigne,
+  type RemplacementLigne,
   type TarifsRepository,
 } from '../../ports/tarifs';
+import { ordonnerRemplacantes } from './ordonnerRemplacantes';
 
 /** Tarifs et envoi avec la clé service_role, après exigerConseiller() dans l'action serveur. */
 export class TarifsSupabase implements TarifsRepository {
@@ -88,5 +92,39 @@ export class TarifsSupabase implements TarifsRepository {
     if (error?.code === 'OT009') throw new EnvoiRefuseErreur(error.message);
     if (error?.code === 'OT002') throw new StatutModifieErreur('prete', null);
     if (error) throw new Error(`envoyer_proposition : ${error.message}`);
+  }
+
+  async remplacerLigne(r: RemplacementLigne) {
+    const { data, error } = await clientService().rpc('remplacer_ligne', {
+      p_ligne: r.ligneId,
+      p_prestation: r.prestationId,
+      p_conseiller: r.conseillerId,
+      ...(r.date ? { p_date: r.date } : {}),
+      ...(r.participants ? { p_participants: r.participants } : {}),
+    });
+    if (error?.code === 'OT002') throw new LigneModifieeErreur(error.message);
+    if (error?.code === 'OT008') throw new PropositionFigeeErreur(error.message);
+    if (error?.code === 'OT010') throw new PrestationRefuseeErreur(error.message);
+    if (error?.code === 'OT011') throw new MemePrestationErreur(error.message);
+    if (error) throw new Error(`remplacer_ligne : ${error.message}`);
+    const ligneId = data as string;
+    const { data: p, error: e2 } = await clientService()
+      .from('proposition_lignes').select('propositions (statut)').eq('id', ligneId).single();
+    if (e2) throw new Error(`remplacer_ligne : ${e2.message}`);
+    return { ligneId, statutProposition: p.propositions!.statut as StatutProposition };
+  }
+
+  async prestationsRemplacantes(ligneId: string) {
+    const { data: ligne, error } = await clientService()
+      .from('proposition_lignes').select('prestations (id, type, destination)').eq('id', ligneId).maybeSingle();
+    if (error) throw new Error(`prestations de remplacement : ${error.message}`);
+    const actuelle = ligne?.prestations;
+    if (!actuelle) return [];
+    const { data, error: e2 } = await clientService()
+      .from('prestations')
+      .select('id, nom, type, prix_unitaire_cents, capacite')
+      .eq('destination', actuelle.destination).eq('actif', true);
+    if (e2) throw new Error(`prestations de remplacement : ${e2.message}`);
+    return ordonnerRemplacantes(data, actuelle);
   }
 }

@@ -1,4 +1,4 @@
-# Confirmer les tarifs et n'envoyer que des prix vérifiés (E5.1)
+# Confirmer les tarifs et n'envoyer que des prix vérifiés (E5.1), remplacer une ligne (E5.2)
 
 Cas d'usage : `src/application/tarifs.ts`. Base : `supabase/migrations/20261020190000_tarifs_envoi.sql`. Écran : page de la proposition (`app/conseiller/propositions/[id]`), colonne « Tarif » et panneau d'envoi.
 
@@ -24,6 +24,20 @@ Cas d'usage : `src/application/tarifs.ts`. Base : `supabase/migrations/202610201
 3. Le code recalcule les **alertes** avec `chiffrer` (E4.2) et les enregistre.
 
 La proposition est verrouillée pendant l'écriture : deux changements de lignes ne se croisent pas. Une proposition envoyée (ou au-delà) ne se modifie plus.
+
+## Remplacer une ligne indisponible (E5.2)
+
+Cas d'usage : `remplacerLigne` (`src/application/tarifs.ts`). Base : `remplacer_ligne` (`supabase/migrations/20261020200000_remplacer_ligne.sql`). Écran : « Remplacer la prestation » sur une ligne indisponible.
+
+| Étape | Effet |
+| --- | --- |
+| Le conseiller choisit une prestation et, s'il le veut, une autre date | La liste propose les prestations actives de la même destination : la même prestation d'abord (pour une autre date), puis celles du même type, puis les autres |
+| L'ancienne ligne | `indisponible → remplacee` (transition `TRANSITIONS_LIGNE`, Should) ; elle reste affichée, barrée, et sort du total |
+| La nouvelle ligne | Créée `a_verifier`, au prix du catalogue copié ; même date et mêmes participants sauf date choisie |
+| Les autres lignes | **Intactes**, tarifs confirmés compris |
+| Ensuite | Comme après tout changement : total et statut de la proposition recalculés par la base, alertes par le code. La nouvelle ligne se vérifie et se confirme comme les autres |
+
+Refus, sans rien écrire : ligne qui n'est pas indisponible ; proposition envoyée (OT008) ; prestation inconnue ou retirée du catalogue (OT010) ; même prestation à la même date (OT011) ; saisie invalide.
 
 ## Envoi
 

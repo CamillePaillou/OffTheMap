@@ -714,6 +714,10 @@ export type Database = {
       };
       enregistrer_alertes: { Args: { p_proposition: string; p_alertes: Json }; Returns: undefined };
       envoyer_proposition: { Args: { p_proposition: string; p_conseiller: string }; Returns: number };
+      remplacer_ligne: {
+        Args: { p_ligne: string; p_prestation: string; p_conseiller: string; p_date?: string; p_participants?: number };
+        Returns: string;
+      };
       trier_dossier: {
         Args: {
           p_dossier: string;
