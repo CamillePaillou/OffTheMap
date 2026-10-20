@@ -226,6 +226,37 @@ select doit_valoir($$select count(*) from dossiers where id = '00000000-0000-000
 select doit_valoir($$select count(*) from historique_dossier where dossier_id = '00000000-0000-0000-0000-0000000000d9'$$, 0, 'sans fiche : rien au journal');
 select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d8', 'validee', 'validee', null)$$, 'tri sans conseiller identifié');
 
+-- tarifs et envoi (E5.1) : tarif daté et sourcé, total recalculé, envoi refusé tant qu'un prix n'est pas vérifié
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000000da', 'en_proposition');
+insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs)
+  values ('00000000-0000-0000-0000-0000000000ea', '00000000-0000-0000-0000-0000000000da', true, true, 'Léo', 'leo@example.org', '2026-11-07', '2026-11-08', 1, '{adulte,adulte}');
+insert into propositions (id, dossier_id, statut, total_cents) values ('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-0000000000da', 'a_verifier', 14000);
+insert into proposition_lignes (id, proposition_id, prestation_id, date, participants, prix_unitaire_catalogue_cents) values
+  ('00000000-0000-0000-0000-00000000a0a1', '00000000-0000-0000-0000-0000000000fa', 'activite-nantes-01', '2026-11-07', 2, 3500),
+  ('00000000-0000-0000-0000-00000000a0a2', '00000000-0000-0000-0000-0000000000fa', 'activite-nantes-01', '2026-11-08', 2, 3500);
+select doit_valoir($$select count(*) from changer_ligne('00000000-0000-0000-0000-00000000a0a1', 'a_verifier', 'confirme', 4000, 'telephone',
+  '00000000-0000-0000-0000-00000000000a') s where s = 'a_verifier'$$, 1, 'tarif confirmé, une ligne reste à vérifier');
+select doit_valoir($$select count(*) from proposition_lignes where id = '00000000-0000-0000-0000-00000000a0a1' and statut = 'confirme'
+  and prix_confirme_cents = 4000 and source = 'telephone' and confirme_le is not null and confirme_par = '00000000-0000-0000-0000-00000000000a'$$, 1, 'tarif saisi avec sa date, sa source et son auteur');
+select doit_valoir($$select total_cents from propositions where id = '00000000-0000-0000-0000-0000000000fa'$$, 15000, 'total recalculé (80 + 70 €)');
+select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi refusé : une ligne à vérifier');
+select doit_valoir($$select count(*) from propositions where id = '00000000-0000-0000-0000-0000000000fa' and statut = 'a_verifier' and envoyee_le is null$$, 1, 'envoi refusé : statut inchangé');
+select doit_echouer($$select changer_ligne('00000000-0000-0000-0000-00000000a0a1', 'a_verifier', 'confirme', 4000, 'mail', '00000000-0000-0000-0000-00000000000a')$$, 'ligne modifiée entre-temps');
+select doit_echouer($$select changer_ligne('00000000-0000-0000-0000-00000000a0a2', 'a_verifier', 'confirme', null, null, '00000000-0000-0000-0000-00000000000a')$$, 'tarif confirmé sans prix ni source');
+select doit_valoir($$select count(*) from changer_ligne('00000000-0000-0000-0000-00000000a0a2', 'a_verifier', 'confirme', 3500, 'agent',
+  '00000000-0000-0000-0000-00000000000a') s where s = 'prete'$$, 1, 'dernière ligne confirmée : proposition prete');
+select doit_valoir($$select count(*) from historique_dossier where proposition_id = '00000000-0000-0000-0000-0000000000fa'
+  and ancien_statut = 'a_verifier' and nouveau_statut = 'prete' and auteur = 'systeme'$$, 1, 'passage à prete journalisé');
+select enregistrer_alertes('00000000-0000-0000-0000-0000000000fa', '[{"code": "date_hors_sejour", "message": "nuit du départ"}]');
+select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi refusé : alerte bloquante');
+select enregistrer_alertes('00000000-0000-0000-0000-0000000000fa', '[{"code": "budget_proche", "message": "92 %"}]');
+select doit_valoir($$select (envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'envoi accepté, alerte non bloquante');
+select doit_valoir($$select count(*) from propositions p join historique_dossier h on h.proposition_id = p.id
+  where p.id = '00000000-0000-0000-0000-0000000000fa' and p.statut = 'envoyee' and p.envoyee_le is not null
+  and p.envoyee_par = '00000000-0000-0000-0000-00000000000a' and h.nouveau_statut = 'envoyee' and h.auteur = 'conseiller'$$, 1, 'statut envoyee, au nom du conseiller, journalisé');
+select doit_echouer($$select changer_ligne('00000000-0000-0000-0000-00000000a0a1', 'confirme', 'a_verifier', null, null, '00000000-0000-0000-0000-00000000000a')$$, 'tarif modifié après l''envoi');
+select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'second envoi');
+
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');
@@ -236,6 +267,7 @@ select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, 
   values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un visiteur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un visiteur');
 select doit_echouer($$select deposer_demande('{}')$$, 'dépôt direct en base par un visiteur');
+select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi appelé par un visiteur');
 select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d9', 'fiche_prete', 'validee', '00000000-0000-0000-0000-00000000000a')$$, 'tri appelé par un visiteur');
 select doit_valoir($$select count(*) from corrections$$, 0, 'un visiteur ne lit pas les liens de correction');
 select doit_echouer($$select lire_correction(repeat('0', 64))$$, 'lecture d’un lien en base par un visiteur');
