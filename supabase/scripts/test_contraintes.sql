@@ -256,6 +256,31 @@ select doit_valoir($$select count(*) from propositions p join historique_dossier
   and p.envoyee_par = '00000000-0000-0000-0000-00000000000a' and h.nouveau_statut = 'envoyee' and h.auteur = 'conseiller'$$, 1, 'statut envoyee, au nom du conseiller, journalisé');
 select doit_echouer($$select changer_ligne('00000000-0000-0000-0000-00000000a0a1', 'confirme', 'a_verifier', null, null, '00000000-0000-0000-0000-00000000000a')$$, 'tarif modifié après l''envoi');
 select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'second envoi');
+-- brouillon de proposition (E4.4) : démarrage (fiche validée, dossier en_proposition) puis fin, tout ou rien
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000000b5', 'entretien_fait'), ('00000000-0000-0000-0000-0000000000b6', 'entretien_fait');
+insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents) values
+  ('00000000-0000-0000-0000-0000000000c5', '00000000-0000-0000-0000-0000000000b5', true, true, 'Brouillon', 'b@example.org', '2026-11-07', '2026-11-08', 1, '{adulte,adulte}', 40000),
+  ('00000000-0000-0000-0000-0000000000c6', '00000000-0000-0000-0000-0000000000b6', true, true, 'Sans budget', 's@example.org', '2026-11-07', '2026-11-08', 1, '{adulte}', 40000);
+insert into fiches (demande_id, budget_reel_cents, date_debut_fixe, date_fin_fixe, nb_nuits_fixe) values
+  ('00000000-0000-0000-0000-0000000000c5', 38000, '2026-11-07', '2026-11-08', 1),
+  ('00000000-0000-0000-0000-0000000000c6', null, null, null, null);
+select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b6', '00000000-0000-0000-0000-00000000000a')$$, 'brouillon sans budget réel ni dates fixes');
+select doit_valoir($$select count(*) from propositions where dossier_id = '00000000-0000-0000-0000-0000000000b6'$$, 0, 'refus du brouillon : aucune proposition créée');
+create temp table brouillon as select demarrer_brouillon('00000000-0000-0000-0000-0000000000b5', '00000000-0000-0000-0000-00000000000a') as id;
+select doit_valoir($$select count(*) from dossiers where id = '00000000-0000-0000-0000-0000000000b5' and statut = 'en_proposition'$$, 1, 'fiche validée : dossier en_proposition');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000c5' and validee_par = '00000000-0000-0000-0000-00000000000a' and validee_le is not null$$, 1, 'fiche validée par le conseiller');
+select doit_valoir($$select count(*) from propositions p join brouillon b on b.id = p.id where p.statut = 'brouillon_en_cours' and p.version = 1$$, 1, 'proposition v1 en brouillon_en_cours');
+select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b5', '00000000-0000-0000-0000-00000000000a')$$, 'second brouillon pour le même dossier');
+select terminer_brouillon((select id from brouillon), '{"programme": [{"date": "2026-11-07", "titre": "Atelier", "texte": "Atelier l''après-midi."}],
+  "total_cents": 7000, "alertes": [], "lignes": [{"id": "00000000-0000-0000-0000-0000000000a5", "prestation_id": "activite-nantes-01", "date": "2026-11-07", "participants": 2, "prix_unitaire_catalogue_cents": 3500}]}');
+select doit_valoir($$select count(*) from propositions p join brouillon b on b.id = p.id where p.statut = 'a_verifier' and p.total_cents = 7000 and jsonb_array_length(p.programme) = 1$$, 1, 'brouillon écrit : a_verifier, total et programme');
+select doit_valoir($$select count(*) from proposition_lignes l join brouillon b on b.id = l.proposition_id where l.statut = 'a_verifier' and l.prix_confirme_cents is null and l.total_ligne_cents = 7000$$, 1, 'lignes créées à a_verifier, prix catalogue figé');
+select doit_valoir($$select count(*) from historique_dossier h join brouillon b on b.id = h.proposition_id where h.type = 'statut'$$, 3, 'journal : brouillon_en_cours, brouillon_pret, a_verifier');
+select doit_echouer($$select terminer_brouillon((select id from brouillon), '{"erreur": "trop tard"}')$$, 'fin d''un brouillon déjà terminé');
+update dossiers set statut = 'en_proposition' where id = '00000000-0000-0000-0000-0000000000b6';
+create temp table brouillon_ko as select demarrer_brouillon('00000000-0000-0000-0000-0000000000b6', '00000000-0000-0000-0000-00000000000a') as id;
+select doit_valoir($$select (terminer_brouillon((select id from brouillon_ko), '{"erreur": "le modèle n''a pas répondu à temps"}') = 'erreur')::int$$, 1, 'échec de génération : proposition en erreur');
+select doit_valoir($$select count(*) from proposition_lignes l join brouillon_ko b on b.id = l.proposition_id$$, 0, 'échec de génération : aucune ligne');
 
 -- mails modèles (E5.4) : « marquer envoyé » journalise le modèle ; un mail sans objet à cette étape est refusé
 select doit_valoir($$select (marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', null, 'rendez_vous', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'mail de rendez-vous marqué envoyé');
@@ -280,6 +305,7 @@ select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-
 select doit_echouer($$select deposer_demande('{}')$$, 'dépôt direct en base par un visiteur');
 select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', null, 'rendez_vous', '00000000-0000-0000-0000-00000000000a')$$, 'mail marqué par un visiteur');
 select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi appelé par un visiteur');
+select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b5', '00000000-0000-0000-0000-00000000000a')$$, 'brouillon démarré par un visiteur');
 select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d9', 'fiche_prete', 'validee', '00000000-0000-0000-0000-00000000000a')$$, 'tri appelé par un visiteur');
 select doit_valoir($$select count(*) from corrections$$, 0, 'un visiteur ne lit pas les liens de correction');
 select doit_echouer($$select lire_correction(repeat('0', 64))$$, 'lecture d’un lien en base par un visiteur');
@@ -302,6 +328,7 @@ select doit_valoir($$select count(*) from corrections where dossier_id = '000000
 select doit_echouer($$select demander_correction('00000000-0000-0000-0000-0000000000d3', '{budget}', 'x', repeat('1', 64),
   '00000000-0000-0000-0000-00000000000a', now() + interval '1 day')$$, 'correction demandée en base sans passer par le serveur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un conseiller');
+select doit_echouer($$select terminer_brouillon('00000000-0000-0000-0000-0000000000f1', '{"erreur": "x"}')$$, 'brouillon écrit en base directe par un conseiller');
 select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 1, null, null, null, null)$$, 'correction en base directe par un conseiller (passe par le serveur)');
 select doit_echouer($$select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'm', '{}')$$, 'génération écrite par un conseiller');
 -- tables de l'agent (E0.5) : seul le serveur écrit ; un conseiller connecté ne crée, ne modifie ni ne supprime rien

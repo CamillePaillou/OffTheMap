@@ -732,6 +732,11 @@ export type Database = {
         Args: { p_dossier: string; p_modele: string; p_generation: Json };
         Returns: Database["public"]["Enums"]["statut_dossier"];
       };
+      demarrer_brouillon: { Args: { p_dossier: string; p_conseiller: string }; Returns: string };
+      terminer_brouillon: {
+        Args: { p_proposition: string; p_resultat: Json };
+        Returns: Database["public"]["Enums"]["statut_proposition"];
+      };
       est_conseiller: { Args: Record<PropertyKey, never>; Returns: boolean };
       deposer_demande: { Args: { p_demande: Json }; Returns: { dossier_id: string; demande_id: string }[] };
       demander_correction: {

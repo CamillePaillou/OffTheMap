@@ -153,6 +153,7 @@ export const Proposition = z.object({
   dossier_id: uuid,
   version: z.number().int().min(1),
   statut: z.enum(STATUTS_PROPOSITION),
+  programme: z.array(z.object({ date: dateJour, titre: z.string(), texte: z.string() }).strict()).nullable(), // texte du brouillon (E4.4), sans montant ; null tant qu'il n'est pas écrit
   lignes: z.array(LigneProposition),
   total_cents: cents.nullable(),
   marge_cents: cents, // 0 : décidé, pas de marge (REGLES_CHIFFRAGE)

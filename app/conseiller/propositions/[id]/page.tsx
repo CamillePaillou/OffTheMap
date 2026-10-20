@@ -12,6 +12,7 @@ import { CarteMail } from '../../_composants/carte-mail';
 import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
 import { lienMailto, mailProposition, MailImpossibleErreur } from '@/src/domain/mails';
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
+import { BoutonRelancerBrouillon, RafraichirPendantGeneration } from './suivi-brouillon';
 
 const STATUT_LIGNE = { a_verifier: 'à vérifier', confirme: 'confirmé', indisponible: 'indisponible', remplacee: 'remplacée', reservee: 'réservée' } as const;
 const SOURCE = { agent: 'agent', telephone: 'téléphone', mail: 'mail', lien: 'lien' } as const;
@@ -69,6 +70,35 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
       <p className="mt-1 text-zinc-600">
         Statut : {proposition.statut} · Total : {proposition.total_cents === null ? '—' : euros(proposition.total_cents)}
       </p>
+
+      {proposition.statut === 'brouillon_en_cours' && (
+        <p role="status" className="mt-6 text-zinc-600">
+          Brouillon en cours de génération…
+          <RafraichirPendantGeneration />
+        </p>
+      )}
+      {proposition.statut === 'erreur' && (
+        <section className="mt-6 rounded border border-red-200 bg-red-50 p-4">
+          <p className="font-medium text-red-800">La génération du brouillon a échoué.</p>
+          <div className="mt-3">
+            <BoutonRelancerBrouillon propositionId={proposition.id} />
+          </div>
+        </section>
+      )}
+
+      {proposition.programme && (
+        <section className="mt-8">
+          <h2 className="text-lg font-semibold">Programme</h2>
+          <ol className="mt-2 flex flex-col gap-3 text-sm">
+            {proposition.programme.map((jour, i) => (
+              <li key={i}>
+                <span className="font-medium">{jour.date} · {jour.titre}</span>
+                <p className="mt-1 whitespace-pre-line text-zinc-700 dark:text-zinc-300">{jour.texte}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       <div className="mt-8 overflow-x-auto">
         <table className="w-full text-left text-sm">

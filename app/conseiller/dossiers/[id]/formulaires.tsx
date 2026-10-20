@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { enregistrerCorrection, relancer, type EtatCorrection } from './actions';
+import { demanderBrouillonAction, enregistrerCorrection, relancer, type EtatCorrection } from './actions';
 
 const champ = 'rounded border border-zinc-300 px-3 py-2';
 
@@ -84,6 +84,23 @@ export function BoutonRelancer({ dossierId }: { dossierId: string }) {
         {enCours ? 'Relance…' : 'Relancer'}
       </button>
       {etat.erreur && (
+        <span role="alert" className="text-sm text-red-700">
+          {etat.erreur}
+        </span>
+      )}
+    </form>
+  );
+}
+
+/** « Générer le brouillon » (E4.4). En entretien_fait, le clic valide aussi la fiche (dossier en_proposition). */
+export function BoutonBrouillon({ dossierId, valideFiche }: { dossierId: string; valideFiche: boolean }) {
+  const [etat, action, enCours] = useActionState<{ erreur?: string }, FormData>(() => demanderBrouillonAction(dossierId), {});
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-4">
+      <button type="submit" disabled={enCours} className="rounded border border-zinc-400 px-4 py-2 disabled:opacity-50">
+        {enCours ? 'Lancement…' : valideFiche ? 'Valider la fiche et générer le brouillon' : 'Générer le brouillon'}
+      </button>
+      {etat.erreur && !enCours && (
         <span role="alert" className="text-sm text-red-700">
           {etat.erreur}
         </span>
