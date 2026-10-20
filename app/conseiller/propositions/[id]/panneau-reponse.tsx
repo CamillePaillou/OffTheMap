@@ -28,7 +28,7 @@ export function PanneauReponse({ propositionId, statut }: { propositionId: strin
 
   if (statut === 'depot_recu') {
     return (
-      <section className="mt-8 rounded border border-green-300 bg-green-50 p-4 text-sm">
+      <section className="rounded-lg border-l-4 border-green-700 bg-green-50 p-4 text-sm">
         <p className="font-medium text-green-900">Proposition acceptée, dépôt de garantie reçu.</p>
         <Link href={`/conseiller/propositions/${propositionId}/accord`} className="mt-2 inline-block underline underline-offset-4">
           Passer à la réservation : donner l’accord pour les options
@@ -39,14 +39,14 @@ export function PanneauReponse({ propositionId, statut }: { propositionId: strin
   if (!etape) return null;
   const t = ETAPES[etape];
   return (
-    <form action={action} className="mt-8 flex flex-col gap-2 rounded border border-zinc-200 p-4">
-      <h2 className="font-semibold">{t.titre}</h2>
+    <form action={action} className="panneau flex flex-col gap-3 border-t-4 border-t-orange p-5">
+      <h2 className="text-xl">{t.titre}</h2>
       {etape === 'depot_recu' && <p className="text-sm text-green-800">Acceptation enregistrée.</p>}
       <label className="flex items-center gap-2 text-sm">
         <input name="confirmer" type="checkbox" />
         {t.case}
       </label>
-      <button type="submit" disabled={enCours} className="self-start rounded bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50">
+      <button type="submit" disabled={enCours} className="self-start rounded-lg bg-nuit px-5 py-2.5 font-bold text-white hover:bg-[#0a3a57] disabled:opacity-50">
         {enCours ? 'Enregistrement…' : t.bouton}
       </button>
       {etat.erreur && (

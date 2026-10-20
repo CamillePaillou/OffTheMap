@@ -9,7 +9,7 @@ export function BoutonOption(props: { propositionId: string; ligneId: string }) 
     <form action={action} className="mt-3 flex flex-col gap-2">
       <input type="hidden" name="propositionId" value={props.propositionId} />
       <input type="hidden" name="ligneId" value={props.ligneId} />
-      <button type="submit" disabled={enCours} className="self-start rounded bg-blue-700 px-4 py-2 text-sm text-white disabled:opacity-60">
+      <button type="submit" disabled={enCours} className="self-start rounded-lg bg-nuit hover:bg-[#0a3a57] px-4 py-2 text-sm text-white disabled:opacity-60">
         {enCours ? 'Pose de l’option…' : 'Poser l’option'}
       </button>
       {etat.erreur && <p role="alert" className="text-sm text-red-700">{etat.erreur}</p>}

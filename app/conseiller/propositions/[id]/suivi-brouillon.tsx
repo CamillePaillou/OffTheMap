@@ -18,7 +18,7 @@ export function BoutonRelancerBrouillon({ propositionId }: { propositionId: stri
   const [etat, action, enCours] = useActionState<{ erreur?: string }, FormData>(() => relancerBrouillonAction(propositionId), {});
   return (
     <form action={action} className="flex items-center gap-4">
-      <button type="submit" disabled={enCours} className="rounded bg-red-700 px-4 py-2 text-white disabled:opacity-50">
+      <button type="submit" disabled={enCours} className="rounded-lg bg-red-700 px-4 py-2 text-white disabled:opacity-50">
         {enCours ? 'Relance…' : 'Relancer'}
       </button>
       {etat.erreur && (

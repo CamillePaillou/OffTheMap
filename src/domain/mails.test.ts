@@ -30,7 +30,7 @@ describe('mails modèles (E5.4)', () => {
     expect(m.corps).toContain('Bonjour Inès Martin,');
     expect(m.corps).toContain('séjour à Nantes, du 7 novembre 2026 au 8 novembre 2026');
     expect(m.corps).toContain('[créneaux à compléter]');
-    expect(m.corps).toMatch(/Camille \(démo\)\nDetour$/);
+    expect(m.corps).toMatch(/Camille \(démo\)\nDÉTOUR$/);
   });
 
   it('à corriger : chaque point avec le commentaire du conseiller, puis le lien', () => {

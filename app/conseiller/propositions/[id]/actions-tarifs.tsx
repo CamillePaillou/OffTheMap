@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import type { StatutLigne, StatutVerification } from '@/types';
 import { accepter, envoyer, indisponible, remplacer, revoir, saisirTarif, type EtatAction } from './tarifs';
 
-const champ = 'rounded border border-zinc-300 px-2 py-1';
+const champ = 'rounded-lg border border-[#b7c7d3] bg-white px-2 py-1';
 const SOURCES = [
   { id: 'telephone', libelle: 'Téléphone' },
   { id: 'mail', libelle: 'Mail' },
@@ -39,7 +39,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
   const erreur = [etatAccepter, etatSaisie, etatIndispo, etatRevoir, etatRemplacer].map((e) => e.erreurs?.formulaire).find(Boolean);
   const e = etatSaisie.erreurs ?? {};
   const v = etatSaisie.valeurs ?? {};
-  const bouton = 'rounded border border-zinc-300 px-2 py-1 text-xs disabled:opacity-50';
+  const bouton = 'rounded-lg border border-[#b7c7d3] bg-white px-2 py-1 text-xs hover:bg-ciel disabled:opacity-50';
 
   if (statut === 'confirme' || statut === 'indisponible') {
     const er = etatRemplacer.erreurs ?? {};
@@ -50,7 +50,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
           <details open={Object.keys(er).length > 0} className="text-right">
             <summary className="cursor-pointer text-xs underline underline-offset-4">Remplacer la prestation</summary>
             {remplacantes.length === 0 ? (
-              <p className="mt-2 text-xs text-zinc-600">Aucune prestation active à cette destination.</p>
+              <p className="mt-2 text-xs text-doux">Aucune prestation active à cette destination.</p>
             ) : (
               <form key={JSON.stringify(vr)} action={actionRemplacer} noValidate className="mt-2 flex flex-col items-end gap-1">
                 <label className="flex items-center gap-1 text-xs">
@@ -72,7 +72,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
                   <input type="date" name="date" defaultValue={vr.date ?? date} className={champ} aria-invalid={!!er.date} />
                 </label>
                 {er.date && <span role="alert" className="text-xs text-red-700">{er.date}</span>}
-                <button type="submit" disabled={remplacerEnCours} className="rounded bg-zinc-900 px-2 py-1 text-xs text-white disabled:opacity-50">
+                <button type="submit" disabled={remplacerEnCours} className="rounded-lg bg-nuit px-2 py-1 text-xs text-white hover:bg-[#0a3a57] disabled:opacity-50">
                   Remplacer (nouvelle ligne à vérifier)
                 </button>
               </form>
@@ -94,7 +94,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
     <div className="flex flex-col items-end gap-2">
       {verification?.statut === 'ok' && verification.prix_unitaire_cents !== null && (
         <form action={actionAccepter}>
-          <button type="submit" disabled={accepterEnCours} className="rounded bg-green-700 px-2 py-1 text-xs text-white disabled:opacity-50">
+          <button type="submit" disabled={accepterEnCours} className="rounded-lg bg-green-700 px-2 py-1 text-xs text-white disabled:opacity-50">
             Accepter {euros(verification.prix_unitaire_cents)} (agent)
           </button>
         </form>
@@ -121,7 +121,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
             </select>
           </label>
           {e.source && <span role="alert" className="text-xs text-red-700">{e.source}</span>}
-          <button type="submit" disabled={saisieEnCours} className="rounded bg-zinc-900 px-2 py-1 text-xs text-white disabled:opacity-50">
+          <button type="submit" disabled={saisieEnCours} className="rounded-lg bg-nuit hover:bg-[#0a3a57] px-2 py-1 text-xs text-white disabled:opacity-50">
             Confirmer ce tarif
           </button>
         </form>
@@ -142,17 +142,18 @@ export function PanneauEnvoi({ propositionId, bloquants }: { propositionId: stri
   const raisons = etat.bloquants ?? bloquants;
   const bloque = raisons.length > 0;
   return (
-    <form action={action} className="mt-8 flex flex-col gap-2 rounded border border-zinc-200 p-4">
+    <form action={action} className="panneau flex flex-col gap-3 border-t-4 border-t-orange p-5">
+      <h2 className="text-xl">Envoi au client</h2>
       <button
         type="submit"
         disabled={bloque || enCours}
         aria-describedby={bloque ? 'envoi-bloque' : undefined}
-        className="self-start rounded bg-zinc-900 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-40"
+        className="btn-principal self-start disabled:cursor-not-allowed disabled:bg-doux! disabled:opacity-100!"
       >
         {enCours ? 'Envoi…' : 'Envoyer au client'}
       </button>
       {bloque ? (
-        <div id="envoi-bloque" className="text-sm text-amber-900">
+        <div id="envoi-bloque" className="text-sm text-amber-950">
           <p>Envoi impossible tant que :</p>
           <ul className="list-inside list-disc">
             {raisons.map((r) => (
@@ -161,7 +162,7 @@ export function PanneauEnvoi({ propositionId, bloquants }: { propositionId: stri
           </ul>
         </div>
       ) : (
-        <p className="text-sm text-zinc-600">Tous les prix sont vérifiés. L’envoi marque la proposition « envoyée » à votre nom.</p>
+        <p className="text-sm text-doux">Tous les prix sont vérifiés. L’envoi marque la proposition « envoyée » à votre nom.</p>
       )}
       {etat.erreurs?.formulaire && <p role="alert" className="text-sm text-red-700">{etat.erreurs.formulaire}</p>}
     </form>

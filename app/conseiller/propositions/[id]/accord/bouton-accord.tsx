@@ -11,7 +11,7 @@ export function BoutonAccord(props: { propositionId: string; ligneId: string; pr
       <input type="hidden" name="propositionId" value={props.propositionId} />
       <input type="hidden" name="ligneId" value={props.ligneId} />
       <input type="hidden" name="prixAfficheCents" value={props.prixAfficheCents} />
-      <button type="submit" disabled={enCours} className="self-start rounded bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-60">
+      <button type="submit" disabled={enCours} className="self-start rounded-lg bg-nuit hover:bg-[#0a3a57] px-4 py-2 text-sm text-white disabled:opacity-60">
         {enCours ? 'Enregistrement…' : `Autoriser cette prestation à ${props.prixAffiche}`}
       </button>
       {etat.erreur && (
