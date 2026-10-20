@@ -23,6 +23,84 @@ export type Database = {
   };
   public: {
     Tables: {
+      corrections: {
+        Row: {
+          boucle: number;
+          champs: string[];
+          commentaires: Json;
+          cree_le: string;
+          demande_id: string;
+          demandee_par: string;
+          dossier_id: string;
+          expire_le: string;
+          id: string;
+          jeton_hash: string;
+          motif: string;
+          nouvelle_demande_id: string | null;
+          utilisee_le: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          boucle: number;
+          champs: string[];
+          commentaires?: Json;
+          cree_le?: string;
+          demande_id: string;
+          demandee_par: string;
+          dossier_id: string;
+          expire_le: string;
+          id?: string;
+          jeton_hash: string;
+          motif: string;
+          nouvelle_demande_id?: string | null;
+          utilisee_le?: string | null;
+        };
+        Update: {
+          boucle?: number;
+          champs?: string[];
+          commentaires?: Json;
+          cree_le?: string;
+          demande_id?: string;
+          demandee_par?: string;
+          dossier_id?: string;
+          expire_le?: string;
+          id?: string;
+          jeton_hash?: string;
+          motif?: string;
+          nouvelle_demande_id?: string | null;
+          utilisee_le?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "corrections_demande_id_fkey";
+            columns: ["demande_id"];
+            isOneToOne: false;
+            referencedRelation: "demandes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "corrections_demandee_par_fkey";
+            columns: ["demandee_par"];
+            isOneToOne: false;
+            referencedRelation: "profils";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "corrections_dossier_id_fkey";
+            columns: ["dossier_id"];
+            isOneToOne: false;
+            referencedRelation: "dossiers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "corrections_nouvelle_demande_id_fkey";
+            columns: ["nouvelle_demande_id"];
+            isOneToOne: false;
+            referencedRelation: "demandes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       demandes: {
         Row: {
           budget_annonce_cents: number | null;
@@ -625,6 +703,12 @@ export type Database = {
     Functions: {
       est_conseiller: { Args: Record<PropertyKey, never>; Returns: boolean };
       deposer_demande: { Args: { p_demande: Json }; Returns: { dossier_id: string; demande_id: string }[] };
+      demander_correction: {
+        Args: { p_dossier: string; p_champs: string[]; p_motif: string; p_jeton_hash: string; p_conseiller: string; p_expire_le: string; p_commentaires?: Json };
+        Returns: { correction_id: string; boucle: number }[];
+      };
+      lire_correction: { Args: { p_jeton_hash: string }; Returns: Json };
+      corriger_demande: { Args: { p_jeton_hash: string; p_demande: Json }; Returns: { demande_id: string; version: number }[] };
       changer_statut: {
         Args: {
           p_cible: string;

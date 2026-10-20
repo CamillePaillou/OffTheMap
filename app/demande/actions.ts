@@ -8,6 +8,8 @@ import { lireSaisie, valeursSaisies } from './lecture';
 export interface EtatDemande {
   erreurs?: ErreursChamps;
   valeurs?: Record<string, string>;
+  /** Correction (E1.2) : libellés des points signalés renvoyés sans changement. */
+  inchanges?: string[];
 }
 
 /** Date du jour à Paris, AAAA-MM-JJ : une date de départ antérieure est refusée. */
