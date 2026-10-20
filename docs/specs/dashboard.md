@@ -26,3 +26,19 @@ Alignés sur le schéma de la base et les types partagés ; à valider par P3.
 | — | `client.nom` (liste), `client` complet (détail) | le conseiller doit savoir qui il rappelle ; jamais envoyé au LLM. |
 | — | `budget_reference_cents`, `derniere_verification` par ligne | budget utilisé pour les alertes ; résultat de l'agent pour E8.4. |
 | — | `historique[].cible`, `auteur_nom` | savoir quelle machine (dossier ou proposition) a changé, et quel conseiller. |
+
+## Dossiers et fiche (E2.1)
+
+Écrans : `/conseiller` (liste des dossiers, `ListeDossiers`) et `/conseiller/dossiers/{id}` (`DetailDossier`), lus en base au nom du conseiller connecté (RLS `lecture_conseiller`, adaptateur `src/infrastructure/db/dossiersSupabase.ts`).
+L'état de la fiche se déduit du statut du dossier et de la fiche (`src/domain/etatFiche.ts`) : `fiche_en_cours` et `erreur` l'emportent sur une fiche précédente.
+
+Champs de la fiche et qui les écrit :
+
+| Champs | Écrits par | Fonction SQL |
+| --- | --- | --- |
+| `envies`, `contraintes`, `points_flous`, `regimes`, `mobilite`, `niveau_physique`, `modele`, `erreur_generation` | la génération (E2.2) | `enregistrer_generation_fiche(demande_id, modele, generation)` |
+| `budget_reel_cents`, `date_debut_fixe`, `date_fin_fixe`, `nb_nuits_fixe`, `notes_conseiller` | le conseiller, après l'entretien | `corriger_fiche(...)`, via le cas d'usage `corrigerFiche` |
+
+Une régénération ne liste pas les champs du conseiller : budget réel, dates fixes, notes, décision et validation restent (tests dans `supabase/scripts/test_contraintes.sql`). E2.2 doit écrire la fiche par `enregistrer_generation_fiche`, jamais par un `insert`/`update` direct. Les deux fonctions ne sont appelables que par le serveur (`service_role`).
+
+Bouton « relancer » : affiché quand le dossier est au statut `erreur` ; transition `erreur → fiche_en_cours` au nom du conseiller (cas d'usage `relancerFiche`, fonction `changer_statut`). La génération elle-même sera lancée là par E2.2.
