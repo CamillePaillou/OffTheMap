@@ -22,6 +22,11 @@ begin
   if manquants is not null then raise exception 'étapes de la proposition sans exemple : %', manquants; end if;
 
   if not exists (select 1 from verifications where statut = 'echec') then raise exception 'aucune vérification en échec'; end if;
+  -- traces au format TraceVerification (E8.5) : un tour tracé par tour compté, numérotés à partir de 1
+  if exists (select 1 from verifications where jsonb_array_length(trace) <> nb_tours) then raise exception 'trace et nb_tours incohérents'; end if;
+  if exists (select 1 from verifications, jsonb_array_elements(trace) t where not (t ? 'numero' and t ? 'horodatage' and t -> 'decision' ? 'statut')) then
+    raise exception 'trace hors du format TraceVerification'; end if;
+  if exists (select 1 from verifications where (resume is null) <> (arret <> 'conclusion')) then raise exception 'résumé de l''agent absent ou en trop'; end if;
   if not exists (select 1 from proposition_lignes where statut = 'indisponible') then raise exception 'aucune ligne indisponible'; end if;
   if not exists (select 1 from options where statut = 'posee') then raise exception 'aucune option posée'; end if;
   if not exists (select 1 from options where statut = 'confirmee') then raise exception 'aucune réservation confirmée'; end if;

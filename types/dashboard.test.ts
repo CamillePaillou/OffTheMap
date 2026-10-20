@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { DETAIL_DOSSIER, LISTE_DOSSIERS, PROPOSITION } from '../fixtures/dashboard';
+import { DETAIL_DOSSIER, LISTE_DOSSIERS, PROPOSITION, VERIFICATIONS } from '../fixtures/dashboard';
 import { ALERTES_BLOQUANTES, REGLES_CHIFFRAGE } from './chiffrage';
-import { LigneProposition, Proposition } from './dashboard';
+import { LigneProposition, Proposition, VerificationLigne } from './dashboard';
 import { TRANSITIONS_DOSSIER, TRANSITIONS_PROPOSITION, trouverTransition } from './transitions';
 
 const brut = (nom: string) => JSON.parse(readFileSync(join(__dirname, '../fixtures/dashboard', nom), 'utf8'));
@@ -81,5 +81,32 @@ describe('les schémas refusent une fixture incohérente', () => {
   it('refuse un champ inconnu et un montant à 0 au lieu de null', () => {
     expect(Proposition.safeParse({ ...brut('proposition.json'), tarif_confirme_cents: null }).success).toBe(false);
     expect(Proposition.safeParse({ ...brut('proposition.json'), budget_reference_cents: 0 }).success).toBe(false);
+  });
+});
+
+describe('fixtures des vérifications (E8.4)', () => {
+  it('chaque vérification correspond à une ligne de la proposition et à son résumé', () => {
+    for (const v of VERIFICATIONS) {
+      const ligne = PROPOSITION.lignes.find((l) => l.id === v.ligne_id);
+      expect(ligne, v.id).toBeDefined();
+      expect(ligne?.derniere_verification).toMatchObject({
+        statut: v.statut, prix_unitaire_cents: v.prix_unitaire_cents, places_restantes: v.places_restantes, le: v.le,
+      });
+    }
+  });
+
+  it('la réponse brute est celle du simulateur, et ses faits sont ceux de la vérification', () => {
+    for (const v of VERIFICATIONS.filter((x) => x.statut !== 'echec')) {
+      const brut = v.reponse_serveur as Record<string, unknown>;
+      expect(brut.prix_unitaire_cents).toBe(v.prix_unitaire_cents);
+      expect(brut.prix_total_cents).toBe(v.prix_total_cents);
+      expect(brut.places_restantes).toBe(v.places_restantes);
+    }
+  });
+
+  it('refuse un prix après un échec, et une trace qui ne compte pas les tours', () => {
+    const [ok, echec] = brut('verifications.json');
+    expect(VerificationLigne.safeParse({ ...echec, prix_unitaire_cents: 4000 }).success).toBe(false);
+    expect(VerificationLigne.safeParse({ ...ok, nb_tours: ok.nb_tours + 1 }).success).toBe(false);
   });
 });

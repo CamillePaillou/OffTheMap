@@ -642,6 +642,7 @@ export type Database = {
           prix_total_cents: number | null;
           prix_unitaire_cents: number | null;
           reponse_serveur: Json | null;
+          resume: string | null;
           statut: Database["public"]["Enums"]["statut_verification"];
           trace: NonNullable<Json>;
         };
@@ -658,6 +659,7 @@ export type Database = {
           prix_total_cents?: number | null;
           prix_unitaire_cents?: number | null;
           reponse_serveur?: Json | null;
+          resume?: string | null;
           statut: Database["public"]["Enums"]["statut_verification"];
           trace?: NonNullable<Json>;
         };
@@ -673,6 +675,7 @@ export type Database = {
           prix_total_cents?: number | null;
           prix_unitaire_cents?: number | null;
           reponse_serveur?: Json | null;
+          resume?: string | null;
           statut?: Database["public"]["Enums"]["statut_verification"];
           trace?: NonNullable<Json>;
         };
@@ -706,6 +709,30 @@ export type Database = {
       };
       lire_correction: { Args: { p_jeton_hash: string }; Returns: Json };
       corriger_demande: { Args: { p_jeton_hash: string; p_demande: Json }; Returns: { demande_id: string; version: number }[] };
+      changer_statut: {
+        Args: {
+          p_cible: string;
+          p_id: string;
+          p_ancien: string;
+          p_nouveau: string;
+          p_auteur: Database["public"]["Enums"]["auteur_evenement"];
+          p_auteur_id: string | null;
+          p_detail?: Json;
+        };
+        Returns: number;
+      };
+      corriger_fiche: {
+        Args: {
+          p_fiche_id: string;
+          p_budget_reel_cents: number | null;
+          p_date_debut_fixe: string | null;
+          p_date_fin_fixe: string | null;
+          p_nb_nuits_fixe: number | null;
+          p_notes_conseiller: string | null;
+        };
+        Returns: undefined;
+      };
+      enregistrer_generation_fiche: { Args: { p_demande_id: string; p_modele: string; p_generation: Json }; Returns: string };
     };
     Enums: {
       arret_agent: "conclusion" | "tours_max" | "echec_serveur" | "reponse_invalide";
