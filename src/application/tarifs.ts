@@ -8,6 +8,7 @@
  *   alertes (chiffrer, E4.2).
  * - L'envoi n'est possible que si aucune ligne n'est à vérifier ni indisponible et aucune alerte n'est bloquante :
  *   sinon il est refusé et le statut ne change pas.
+ * - Une ligne indisponible se remplace par une autre prestation du catalogue, sans toucher aux autres lignes (E5.2).
  */
 import { z } from 'zod';
 import { ALERTES_BLOQUANTES, type SourcePrix, type StatutLigne, type StatutProposition } from '../../types';
@@ -17,6 +18,8 @@ import { StatutModifieErreur } from '../ports/statuts';
 import {
   EnvoiRefuseErreur,
   LigneModifieeErreur,
+  MemePrestationErreur,
+  PrestationRefuseeErreur,
   PropositionFigeeErreur,
   type TarifsRepository,
 } from '../ports/tarifs';
@@ -40,9 +43,11 @@ export const schemaTarif = z.object({
   source: z.enum(SOURCES_SAISIES, 'Indiquez d’où vient ce tarif'),
 });
 
-export type RefusLigne = 'introuvable' | 'transition_interdite' | 'ligne_modifiee' | 'proposition_figee' | 'pas_de_prix_verifie';
+export type RefusLigne =
+  | 'introuvable' | 'transition_interdite' | 'ligne_modifiee' | 'proposition_figee' | 'pas_de_prix_verifie'
+  | 'prestation_refusee' | 'meme_prestation';
 export type ResultatLigne =
-  | { ok: true; statutProposition: StatutProposition }
+  | { ok: true; statutProposition: StatutProposition; /** E5.2 : la ligne créée par le remplacement. */ nouvelleLigneId?: string }
   | { ok: false; erreurs: ErreursChamps }
   | { ok: false; raison: RefusLigne };
 
@@ -106,6 +111,50 @@ export function marquerIndisponible(repo: TarifsRepository, entree: { ligneId: s
 /** Repasse une ligne confirmée ou indisponible à vérifier, avant l'envoi. */
 export function revoirLigne(repo: TarifsRepository, entree: { ligneId: string; conseillerId: string }) {
   return changer(repo, entree.ligneId, entree.conseillerId, 'a_verifier', null);
+}
+
+export const schemaRemplacement = z.object({
+  prestationId: z.string().regex(/^[a-z0-9-]+$/, 'Choisissez une prestation du catalogue'),
+  /** Vide : la date de l'ancienne ligne est gardée. */
+  date: z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/, 'Date au format AAAA-MM-JJ').transform((d) => d || undefined),
+});
+
+/**
+ * Remplace une ligne indisponible par une prestation du catalogue, une autre ou la même à une autre date (E5.2) :
+ * l'ancienne passe à « remplacee »,
+ * la nouvelle naît « à vérifier » au prix du catalogue. Les autres lignes et leurs tarifs confirmés restent intacts.
+ * Le total et le statut de la proposition sont recalculés par la base, les alertes par le code.
+ */
+export async function remplacerLigne(
+  repo: TarifsRepository,
+  entree: { ligneId: string; conseillerId: string; prestationId: unknown; date?: unknown },
+): Promise<ResultatLigne> {
+  const saisie = schemaRemplacement.safeParse({ prestationId: entree.prestationId, date: entree.date ?? '' });
+  if (!saisie.success) {
+    const erreurs: ErreursChamps = {};
+    for (const i of saisie.error.issues) erreurs[String(i.path[0] ?? 'formulaire')] ??= i.message;
+    return { ok: false, erreurs };
+  }
+  const ligne = await repo.lireLigne(entree.ligneId);
+  if (!ligne) return { ok: false, raison: 'introuvable' };
+  if (!entree.conseillerId.trim() || !trouverTransition(TRANSITIONS_LIGNE, ligne.statut, 'remplacee', 'conseiller')) {
+    return { ok: false, raison: 'transition_interdite' };
+  }
+  let r;
+  try {
+    r = await repo.remplacerLigne({
+      ligneId: entree.ligneId, prestationId: saisie.data.prestationId, conseillerId: entree.conseillerId,
+      ...(saisie.data.date ? { date: saisie.data.date } : {}),
+    });
+  } catch (e) {
+    if (e instanceof LigneModifieeErreur) return { ok: false, raison: 'ligne_modifiee' };
+    if (e instanceof PropositionFigeeErreur) return { ok: false, raison: 'proposition_figee' };
+    if (e instanceof PrestationRefuseeErreur) return { ok: false, raison: 'prestation_refusee' };
+    if (e instanceof MemePrestationErreur) return { ok: false, raison: 'meme_prestation' };
+    throw e;
+  }
+  await recalculerAlertes(repo, ligne.propositionId);
+  return { ok: true, statutProposition: r.statutProposition, nouvelleLigneId: r.ligneId };
 }
 
 /** Chiffrage (E4.2) et ce qui bloque l'envoi, sans rien écrire : pour l'affichage. */

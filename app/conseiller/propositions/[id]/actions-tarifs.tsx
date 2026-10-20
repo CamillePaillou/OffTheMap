@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import type { StatutLigne, StatutVerification } from '@/types';
-import { accepter, envoyer, indisponible, revoir, saisirTarif, type EtatAction } from './tarifs';
+import { accepter, envoyer, indisponible, remplacer, revoir, saisirTarif, type EtatAction } from './tarifs';
 
 const champ = 'rounded border border-zinc-300 px-2 py-1';
 const SOURCES = [
@@ -20,29 +20,72 @@ interface PropsLigne {
   /** La proposition n'est plus modifiable (envoyée ou au-delà). */
   figee: boolean;
   verification: { statut: StatutVerification; prix_unitaire_cents: number | null } | null;
+  /** E5.2 : prestations du catalogue qui peuvent remplacer une ligne indisponible. */
+  remplacantes?: { id: string; nom: string; prix_unitaire_cents: number; capacite: number }[];
+  /** Prestation et date actuelles de la ligne : la même prestation peut être reprise à une autre date. */
+  prestationId?: string;
+  date?: string;
 }
 
-/** Tarif d'une ligne (E5.1) : accepter le prix revérifié, saisir un tarif avec sa source, indisponible, revoir. */
-export function ActionsLigne({ propositionId, ligneId, statut, figee, verification }: PropsLigne) {
+/** Tarif d'une ligne (E5.1) : accepter le prix revérifié, saisir un tarif avec sa source, indisponible, revoir ; remplacer (E5.2). */
+export function ActionsLigne({ propositionId, ligneId, statut, figee, verification, remplacantes = [], prestationId, date }: PropsLigne) {
   const [etatAccepter, actionAccepter, accepterEnCours] = useActionState<EtatAction, FormData>(() => accepter(propositionId, ligneId), {});
   const [etatSaisie, actionSaisie, saisieEnCours] = useActionState<EtatAction, FormData>(saisirTarif.bind(null, propositionId, ligneId), {});
   const [etatIndispo, actionIndispo, indispoEnCours] = useActionState<EtatAction, FormData>(() => indisponible(propositionId, ligneId), {});
   const [etatRevoir, actionRevoir, revoirEnCours] = useActionState<EtatAction, FormData>(() => revoir(propositionId, ligneId), {});
+  const [etatRemplacer, actionRemplacer, remplacerEnCours] = useActionState<EtatAction, FormData>(remplacer.bind(null, propositionId, ligneId), {});
   if (figee) return null;
 
-  const erreur = [etatAccepter, etatSaisie, etatIndispo, etatRevoir].map((e) => e.erreurs?.formulaire).find(Boolean);
+  const erreur = [etatAccepter, etatSaisie, etatIndispo, etatRevoir, etatRemplacer].map((e) => e.erreurs?.formulaire).find(Boolean);
   const e = etatSaisie.erreurs ?? {};
   const v = etatSaisie.valeurs ?? {};
   const bouton = 'rounded border border-zinc-300 px-2 py-1 text-xs disabled:opacity-50';
 
   if (statut === 'confirme' || statut === 'indisponible') {
+    const er = etatRemplacer.erreurs ?? {};
+    const vr = etatRemplacer.valeurs ?? {};
     return (
-      <form action={actionRevoir} className="flex flex-col items-end gap-1">
-        <button type="submit" disabled={revoirEnCours} className={bouton}>
-          Repasser à vérifier
-        </button>
+      <div className="flex flex-col items-end gap-2">
+        {statut === 'indisponible' && (
+          <details open={Object.keys(er).length > 0} className="text-right">
+            <summary className="cursor-pointer text-xs underline underline-offset-4">Remplacer la prestation</summary>
+            {remplacantes.length === 0 ? (
+              <p className="mt-2 text-xs text-zinc-600">Aucune prestation active à cette destination.</p>
+            ) : (
+              <form key={JSON.stringify(vr)} action={actionRemplacer} noValidate className="mt-2 flex flex-col items-end gap-1">
+                <label className="flex items-center gap-1 text-xs">
+                  Prestation
+                  <select name="prestation" defaultValue={vr.prestation ?? ''} className={champ} aria-invalid={!!er.prestationId}>
+                    <option value="" disabled>
+                      choisir
+                    </option>
+                    {remplacantes.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.id === prestationId ? `${p.nom} (même prestation, autre date)` : p.nom} · {euros(p.prix_unitaire_cents)} · {p.capacite} pers. max
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {er.prestationId && <span role="alert" className="text-xs text-red-700">{er.prestationId}</span>}
+                <label className="flex items-center gap-1 text-xs">
+                  Date
+                  <input type="date" name="date" defaultValue={vr.date ?? date} className={champ} aria-invalid={!!er.date} />
+                </label>
+                {er.date && <span role="alert" className="text-xs text-red-700">{er.date}</span>}
+                <button type="submit" disabled={remplacerEnCours} className="rounded bg-zinc-900 px-2 py-1 text-xs text-white disabled:opacity-50">
+                  Remplacer (nouvelle ligne à vérifier)
+                </button>
+              </form>
+            )}
+          </details>
+        )}
+        <form action={actionRevoir}>
+          <button type="submit" disabled={revoirEnCours} className={bouton}>
+            Repasser à vérifier
+          </button>
+        </form>
         {erreur && <span role="alert" className="text-xs text-red-700">{erreur}</span>}
-      </form>
+      </div>
     );
   }
   if (statut !== 'a_verifier') return null;

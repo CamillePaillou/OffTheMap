@@ -24,7 +24,8 @@ const HORS_TOTAL: readonly string[] = REGLES_CHIFFRAGE.statutsHorsTotal; // lign
 const SOURCE = { agent: 'agent', telephone: 'téléphone', mail: 'mail', lien: 'lien' } as const;
 const instant = (iso: string) => new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' });
 
-// Proposition : prix proposé, prix revérifié par l'agent et écart (E8.4) ; tarifs confirmés et envoi (E5.1).
+// Proposition : prix proposé, prix revérifié par l'agent et écart (E8.4) ; tarifs confirmés et envoi (E5.1) ;
+// remplacement d'une ligne indisponible (E5.2).
 export default function PropositionPage({ params }: PageProps<'/conseiller/propositions/[id]'>) {
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-16">
@@ -43,7 +44,8 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   const proposition = await lecture.proposition(id);
   if (!proposition) notFound();
   // E5.1 : ce qui bloque l'envoi, recalculé depuis la base (sans rien écrire)
-  const chiffrage = await new TarifsSupabase().lireChiffrage(id);
+  const tarifs = new TarifsSupabase();
+  const chiffrage = await tarifs.lireChiffrage(id);
   const envoi = chiffrage ? etatEnvoi(chiffrage) : null;
   const modifiable = proposition.statut === 'a_verifier' || proposition.statut === 'prete';
   const alertes = modifiable && envoi ? envoi.chiffrage.alertes : proposition.alertes;
@@ -65,7 +67,9 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   const lignes = await Promise.all(
     proposition.lignes.map(async (ligne) => {
       const verification = await lecture.verificationDeLigne(ligne.id);
-      return { ligne, verification, ecart: verification && ecartPrix(ligne, verification) };
+      // E5.2 : les prestations de remplacement ne sont cherchées que pour une ligne indisponible
+      const remplacantes = modifiable && ligne.statut === 'indisponible' ? await tarifs.prestationsRemplacantes(ligne.id) : [];
+      return { ligne, verification, remplacantes, ecart: verification && ecartPrix(ligne, verification) };
     }),
   );
 
@@ -146,8 +150,8 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
             </tr>
           </thead>
           <tbody>
-            {lignes.map(({ ligne, verification, ecart }) => (
-              <tr key={ligne.id} className="border-b border-zinc-200">
+            {lignes.map(({ ligne, verification, remplacantes, ecart }) => (
+              <tr key={ligne.id} className={`border-b border-zinc-200 ${ligne.statut === 'remplacee' ? 'text-zinc-400 line-through' : ''}`}>
                 <td className="py-3 pr-4">
                   {ligne.prestation.nom}
                   {resume.parLigne.get(ligne.id)?.map((a, i) => (
@@ -185,6 +189,9 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                       statut={ligne.statut}
                       figee={!modifiable}
                       verification={ligne.derniere_verification}
+                      remplacantes={remplacantes}
+                      prestationId={ligne.prestation.id}
+                      date={ligne.date}
                     />
                   </div>
                 </td>

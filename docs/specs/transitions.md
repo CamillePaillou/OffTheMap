@@ -110,5 +110,5 @@ Le détail de la ligne d'historique suit `DetailEvenement` (`types/historique.ts
 
 ## Limites connues du MVP
 
-- Une ligne restée `indisponible` bloque l'envoi tant que son remplacement (Should E5.2) n'est pas livré : le conseiller peut seulement la revérifier.
+- Une ligne `indisponible` bloque l'envoi : le conseiller la revérifie, ou la remplace (E5.2, `remplacer_ligne` : la ligne passe à `remplacee` et une nouvelle ligne naît `a_verifier`).
 - La durée de l'option n'est pas codée : l'expiration vient de `expire_le` renvoyé par le simulateur.

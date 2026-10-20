@@ -1,6 +1,6 @@
 # Changement demandé par le client (E6.1)
 
-**Règle** : la version envoyée ne change jamais ; la suivante porte le numéro suivant. Cas d'usage : `src/application/changementClient.ts`. Base : `supabase/migrations/20261020220000_version_suivante.sql`. Écran : panneau « Le client demande un changement » sur une proposition envoyée.
+**Règle** : la version envoyée ne change jamais ; la suivante porte le numéro suivant. Cas d'usage : `src/application/changementClient.ts`. Base : `supabase/migrations/20261020230000_version_suivante.sql`. Écran : panneau « Le client demande un changement » sur une proposition envoyée.
 
 ```gherkin
 Scénario : version envoyée intacte
