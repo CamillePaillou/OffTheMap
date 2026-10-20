@@ -4,11 +4,11 @@
   "cree_le": "2026-10-19T09:12:00Z",
   "demande": {
     "version": 1,
-    "client": { "nom": "Sophie Martin", "email": "sophie.martin@example.org", "tel": null },
+    "client": { "nom": "Sophie Martin", "email": "sophie.martin@example.org" },
     "destination": "Nantes",
-    "dates": { "debut": "2026-11-07", "fin": "2026-11-08", "flexibles": false, "nb_nuits": 1 },
+    "dates": { "debut": "2026-11-07", "fin": "2026-11-08", "nb_nuits": 1 },
     "voyageurs": ["adulte", "adulte"],
-    "budget_annonce": { "montant_cents": 40000, "ferme": false },
+    "budget_annonce": { "montant_cents": 40000 },
     "envies": "Un week-end créatif, sans voiture, avec un atelier.",
     "contraintes": "Arriver avant midi le samedi."
   },

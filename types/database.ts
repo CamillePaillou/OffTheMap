@@ -26,7 +26,6 @@ export type Database = {
       demandes: {
         Row: {
           budget_annonce_cents: number | null;
-          budget_ferme: boolean;
           consentement_ia: boolean;
           consentement_rgpd: boolean;
           consenti_le: string;
@@ -34,7 +33,6 @@ export type Database = {
           cree_le: string;
           date_debut: string;
           date_fin: string;
-          dates_flexibles: boolean;
           destination: string | null;
           dossier_id: string;
           email: string;
@@ -42,20 +40,15 @@ export type Database = {
           id: string;
           mobilite: Database["public"]["Enums"]["mobilite"] | null;
           nb_nuits: number;
-          niveau_physique: Database["public"]["Enums"]["niveau_physique"] | null;
           nom: string;
-          regime_precision: string | null;
           regimes: Database["public"]["Enums"]["regime"][];
           remplacee_le: string | null;
-          sante_precision: string | null;
-          tel: string | null;
           version: number;
           voyageurs: Database["public"]["Enums"]["tranche_age"][];
         };
         ComputedFields: never;
         Insert: {
           budget_annonce_cents?: number | null;
-          budget_ferme?: boolean;
           consentement_ia: boolean;
           consentement_rgpd: boolean;
           consenti_le?: string;
@@ -63,7 +56,6 @@ export type Database = {
           cree_le?: string;
           date_debut: string;
           date_fin: string;
-          dates_flexibles?: boolean;
           destination?: string | null;
           dossier_id: string;
           email: string;
@@ -71,19 +63,14 @@ export type Database = {
           id?: string;
           mobilite?: Database["public"]["Enums"]["mobilite"] | null;
           nb_nuits: number;
-          niveau_physique?: Database["public"]["Enums"]["niveau_physique"] | null;
           nom: string;
-          regime_precision?: string | null;
           regimes?: Database["public"]["Enums"]["regime"][];
           remplacee_le?: string | null;
-          sante_precision?: string | null;
-          tel?: string | null;
           version?: number;
           voyageurs: Database["public"]["Enums"]["tranche_age"][];
         };
         Update: {
           budget_annonce_cents?: number | null;
-          budget_ferme?: boolean;
           consentement_ia?: boolean;
           consentement_rgpd?: boolean;
           consenti_le?: string;
@@ -91,7 +78,6 @@ export type Database = {
           cree_le?: string;
           date_debut?: string;
           date_fin?: string;
-          dates_flexibles?: boolean;
           destination?: string | null;
           dossier_id?: string;
           email?: string;
@@ -99,13 +85,9 @@ export type Database = {
           id?: string;
           mobilite?: Database["public"]["Enums"]["mobilite"] | null;
           nb_nuits?: number;
-          niveau_physique?: Database["public"]["Enums"]["niveau_physique"] | null;
           nom?: string;
-          regime_precision?: string | null;
           regimes?: Database["public"]["Enums"]["regime"][];
           remplacee_le?: string | null;
-          sante_precision?: string | null;
-          tel?: string | null;
           version?: number;
           voyageurs?: Database["public"]["Enums"]["tranche_age"][];
         };
@@ -582,6 +564,7 @@ export type Database = {
           prix_total_cents: number | null;
           prix_unitaire_cents: number | null;
           reponse_serveur: Json | null;
+          resume: string | null;
           statut: Database["public"]["Enums"]["statut_verification"];
           trace: NonNullable<Json>;
         };
@@ -598,6 +581,7 @@ export type Database = {
           prix_total_cents?: number | null;
           prix_unitaire_cents?: number | null;
           reponse_serveur?: Json | null;
+          resume?: string | null;
           statut: Database["public"]["Enums"]["statut_verification"];
           trace?: NonNullable<Json>;
         };
@@ -613,6 +597,7 @@ export type Database = {
           prix_total_cents?: number | null;
           prix_unitaire_cents?: number | null;
           reponse_serveur?: Json | null;
+          resume?: string | null;
           statut?: Database["public"]["Enums"]["statut_verification"];
           trace?: NonNullable<Json>;
         };
@@ -639,6 +624,31 @@ export type Database = {
     };
     Functions: {
       est_conseiller: { Args: Record<PropertyKey, never>; Returns: boolean };
+      deposer_demande: { Args: { p_demande: Json }; Returns: { dossier_id: string; demande_id: string }[] };
+      changer_statut: {
+        Args: {
+          p_cible: string;
+          p_id: string;
+          p_ancien: string;
+          p_nouveau: string;
+          p_auteur: Database["public"]["Enums"]["auteur_evenement"];
+          p_auteur_id: string | null;
+          p_detail?: Json;
+        };
+        Returns: number;
+      };
+      corriger_fiche: {
+        Args: {
+          p_fiche_id: string;
+          p_budget_reel_cents: number | null;
+          p_date_debut_fixe: string | null;
+          p_date_fin_fixe: string | null;
+          p_nb_nuits_fixe: number | null;
+          p_notes_conseiller: string | null;
+        };
+        Returns: undefined;
+      };
+      enregistrer_generation_fiche: { Args: { p_demande_id: string; p_modele: string; p_generation: Json }; Returns: string };
     };
     Enums: {
       arret_agent: "conclusion" | "tours_max" | "echec_serveur" | "reponse_invalide";
@@ -677,7 +687,7 @@ export type Database = {
         | "reservee"
         | "erreur";
       statut_verification: "ok" | "echec" | "indisponible";
-      tranche_age: "0_2" | "3_11" | "12_17" | "adulte";
+      tranche_age: "0_2" | "3_11" | "12_17" | "adulte" | "enfant";
       type_evenement:
         | "statut"
         | "mail"
@@ -845,7 +855,7 @@ export const Constants = {
         "erreur",
       ],
       statut_verification: ["ok", "echec", "indisponible"],
-      tranche_age: ["0_2", "3_11", "12_17", "adulte"],
+      tranche_age: ["0_2", "3_11", "12_17", "adulte", "enfant"],
       type_evenement: [
         "statut",
         "mail",

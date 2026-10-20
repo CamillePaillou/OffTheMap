@@ -10,22 +10,16 @@ import { OpenRouterLlmClient } from './openrouter-llm-client';
 const sophie: DemandeLue = {
   nom: 'Sophie Marchand',
   email: 'sophie.marchand@example.org',
-  tel: '0611223344',
   destination: 'Nantes',
   date_debut: '2026-11-07',
   date_fin: '2026-11-09',
-  dates_flexibles: false,
   nb_nuits: 2,
   voyageurs: ['adulte', 'adulte'],
   budget_annonce_cents: 40000,
-  budget_ferme: true,
   envies: 'Un week-end créatif sans voiture',
   contraintes: 'Pas de longues marches',
-  niveau_physique: null,
   regimes: ['vegetarien'],
-  regime_precision: 'allergie sévère aux arachides',
   mobilite: 'reduite',
-  sante_precision: 'asthme, traitement en cours',
 };
 
 const entree = (): EntreeBrouillon => ({
@@ -46,7 +40,7 @@ describe('minimisation : rien de sensible ne part vers le LLM', () => {
     for (const interdit of ['Sophie', 'Marchand', 'example.org', '0611223344', 'arachides', 'asthme']) {
       expect(charge).not.toContain(interdit);
     }
-    for (const champ of ['"nom"', '"email"', '"tel"', '"regime_precision"', '"sante_precision"']) {
+    for (const champ of ['"nom"', '"email"', 'Sophie', 'sophie.marchand']) {
       expect(charge).not.toContain(champ);
     }
   });

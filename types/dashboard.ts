@@ -7,9 +7,10 @@
 import { z } from 'zod';
 import { CODES_ALERTE } from './chiffrage';
 import {
-  AUTEURS_EVENEMENT, DECISIONS_TRI, LIMITES, MOBILITES, NIVEAUX_PHYSIQUES, REGIMES, SOURCES_PRIX, STATUTS_DOSSIER,
+  ARRETS_AGENT, AUTEURS_EVENEMENT, DECISIONS_TRI, LIMITES, MOBILITES, NIVEAUX_PHYSIQUES, REGIMES, SOURCES_PRIX, STATUTS_DOSSIER,
   STATUTS_LIGNE, STATUTS_PROPOSITION, STATUTS_VERIFICATION, TRANCHES_AGE, TYPES_EVENEMENT, TYPES_PRESTATION,
 } from './enums';
+import { TraceVerification } from './trace';
 
 const uuid = z.uuid();
 const dateJour = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'AAAA-MM-JJ');
@@ -42,7 +43,7 @@ export const DossierResume = z.object({
     date_debut: dateJour,
     date_fin: dateJour,
     voyageurs: z.number().int().min(1).max(LIMITES.participantsMax),
-    budget_annonce: z.object({ montant_cents: centsPositif, ferme: z.boolean() }).strict().nullable(),
+    budget_annonce: z.object({ montant_cents: centsPositif }).strict().nullable(), // budget total du groupe
   }).strict(),
   fiche: z.object({ etat: z.enum(ETATS_FICHE) }).strict().nullable(),
   proposition: z.object({
@@ -79,11 +80,11 @@ export const DetailDossier = z.object({
   cree_le: instant,
   demande: z.object({
     version: z.number().int().min(1),
-    client: z.object({ nom: z.string().min(1).max(120), email: z.email(), tel: z.string().nullable() }).strict(),
+    client: z.object({ nom: z.string().min(1).max(120), email: z.email() }).strict(),
     destination: z.string().nullable(),
-    dates: z.object({ debut: dateJour, fin: dateJour, flexibles: z.boolean(), nb_nuits: z.number().int().min(0).max(LIMITES.nuitsMax) }).strict(),
+    dates: z.object({ debut: dateJour, fin: dateJour, nb_nuits: z.number().int().min(0).max(LIMITES.nuitsMax) }).strict(),
     voyageurs: z.array(z.enum(TRANCHES_AGE)).min(1).max(LIMITES.participantsMax),
-    budget_annonce: z.object({ montant_cents: centsPositif, ferme: z.boolean() }).strict().nullable(),
+    budget_annonce: z.object({ montant_cents: centsPositif }).strict().nullable(), // budget total du groupe
     envies: z.string().nullable(),
     contraintes: z.string().nullable(),
   }).strict(),
@@ -159,3 +160,27 @@ export const Proposition = z.object({
   ecarts: z.object({ resume: z.string() }).strict().nullable(), // Should
 }).strict();
 export type Proposition = z.infer<typeof Proposition>;
+
+// ------------------------------------------------------------------ GET /api/lignes/{id}/verification (E8.4)
+/** Dernière vérification d'une ligne : ce que le conseiller regarde avant d'accepter un tarif. */
+export const VerificationLigne = z.object({
+  id: uuid,
+  ligne_id: uuid,
+  statut: z.enum(STATUTS_VERIFICATION),
+  prix_unitaire_cents: cents.nullable(),
+  prix_total_cents: cents.nullable(),
+  places_restantes: z.number().int().nonnegative().nullable(),
+  resume: z.string().nullable(), // texte de l'agent, sans montant
+  reponse_serveur: z.unknown(), // réponse du simulateur rendue par l'adaptateur (port Disponibilite, centimes), affichée telle quelle ; null si aucune
+  trace: TraceVerification, // format de E8.5 (types/trace.ts), expurgé avant écriture
+  modele: z.string().min(1),
+  nb_tours: z.number().int().min(0).max(LIMITES.toursAgentMax),
+  arret: z.enum(ARRETS_AGENT),
+  demandee_par: z.string().min(1),
+  le: instant,
+}).strict()
+  .refine((v) => (v.statut === 'echec') === (v.prix_unitaire_cents === null && v.prix_total_cents === null && v.places_restantes === null), {
+    message: 'pas de prix ni de places si le simulateur a échoué ; toujours sinon',
+  })
+  .refine((v) => v.trace.length === v.nb_tours, { message: 'un tour tracé par tour compté' });
+export type VerificationLigne = z.infer<typeof VerificationLigne>;
