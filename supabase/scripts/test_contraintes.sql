@@ -9,7 +9,8 @@ grant all on all tables in schema public to anon, authenticated;
 insert into auth.users (id) values ('00000000-0000-0000-0000-00000000000a');
 insert into profils values ('00000000-0000-0000-0000-00000000000a', 'Conseillère Alice');
 insert into prestations (id, type, nom, destination, prix_unitaire_cents, capacite) values
-  ('activite-nantes-01', 'activite', 'Atelier de machines imaginaires', 'Nantes', 3500, 10);
+  ('activite-nantes-01', 'activite', 'Atelier de machines imaginaires', 'Nantes', 3500, 10)
+  on conflict (id) do update set prix_unitaire_cents = 3500, capacite = 10, actif = true;  -- déjà présente si le seed est chargé
 insert into dossiers (id) values ('00000000-0000-0000-0000-0000000000d1');
 insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents)
   values ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000d1', true, true, 'Inès', 'ines@example.org',
@@ -88,7 +89,7 @@ select doit_valoir($$select count(*) from dossiers where id = '00000000-0000-000
 select changer_statut('proposition', '00000000-0000-0000-0000-0000000000f1', 'brouillon_en_cours', 'brouillon_pret', 'systeme', null, '{"type": "statut", "cible": "proposition"}');
 select doit_valoir($$select count(*) from historique_dossier where proposition_id = '00000000-0000-0000-0000-0000000000f1'
   and dossier_id = '00000000-0000-0000-0000-0000000000d1' and nouveau_statut = 'brouillon_pret'$$, 1, 'transition de proposition rattachée au dossier');
-select doit_valoir($$select count(*) from historique_dossier where type = 'statut'$$, 2, 'une ligne d''historique par transition, aucune pour les refus');
+select doit_valoir($$select count(*) from historique_dossier where dossier_id = '00000000-0000-0000-0000-0000000000d1' and type = 'statut'$$, 2, 'une ligne d''historique par transition, aucune pour les refus');
 
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
@@ -106,9 +107,10 @@ select doit_valoir($$select count(*) from demandes$$, 0, 'un compte sans profil 
 select doit_valoir($$select count(*) from verifications$$, 0, 'un compte sans profil ne lit pas les vérifications');
 select doit_valoir($$select count(*) from options$$, 0, 'un compte sans profil ne lit pas les options');
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
-select doit_valoir($$select count(*) from demandes$$, 1, 'un conseiller lit tout');
-select doit_valoir($$select count(*) from verifications$$, 1, 'un conseiller lit les vérifications');
-select doit_valoir($$select count(*) from options$$, 1, 'un conseiller lit les options');
+-- compté sur les lignes du test seulement : le seed de démonstration peut être chargé
+select doit_valoir($$select count(*) from demandes where id = '00000000-0000-0000-0000-0000000000e1'$$, 1, 'un conseiller lit tout');
+select doit_valoir($$select count(*) from verifications where ligne_id = '00000000-0000-0000-0000-0000000000a1'$$, 1, 'un conseiller lit les vérifications');
+select doit_valoir($$select count(*) from options where ligne_id = '00000000-0000-0000-0000-0000000000a1'$$, 1, 'un conseiller lit les options');
 select doit_echouer($$insert into dossiers default values$$, 'écriture directe par un conseiller');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un conseiller');
 -- tables de l'agent (E0.5) : seul le serveur écrit ; un conseiller connecté ne crée, ne modifie ni ne supprime rien

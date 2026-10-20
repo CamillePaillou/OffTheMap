@@ -94,3 +94,9 @@ jobs:
         run: for f in supabase/migrations/*.sql; do echo "$f"; psql -v ON_ERROR_STOP=1 -q -f "$f"; done
       - name: Tests du schéma
         run: psql -q -f supabase/scripts/test_contraintes.sql
+      - name: Seed (deux fois, pour vérifier qu'il est rejouable)
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/seed.sql && psql -v ON_ERROR_STOP=1 -q -f supabase/seed.sql
+      - name: Tests du seed
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_seed.sql
+      - name: Tests du schéma avec le seed chargé
+        run: psql -q -f supabase/scripts/test_contraintes.sql

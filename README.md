@@ -38,6 +38,10 @@ Le premier `make up` télécharge les images Supabase : compter quelques minutes
 
 Une nouvelle migration se crée avec `npx supabase migration new <nom>`.
 
+## Données de démonstration
+
+`make seed` (et `make reset`) charge `supabase/seed.sql` : le compte du conseiller (`conseiller@offthemap.test`, mot de passe `offthemap-demo`, base locale uniquement), les 9 prestations du simulateur du formateur et 13 dossiers fictifs à Nantes, un par étape clé, du dossier tout juste reçu jusqu'à la réservation confirmée. Le seed est rejouable : il remplace les dossiers de démonstration sans créer de doublon. `make test-db` le vérifie.
+
 ## Types et contrats
 
 | Où | Quoi |
