@@ -2,16 +2,19 @@
  * Dépôt des accords en mémoire, pour les tests et l'écran sans base (même contrat que le futur adaptateur
  * PostgreSQL : accord et événement `accord` écrits ensemble, une seule démarche en cours par ligne).
  */
-import { DemarcheEnCoursErreur, type AccordsRepository, type NouvelAccord, type ResultatPoseOption, type TentativeOption } from '../../ports/accords';
+import { DemarcheEnCoursErreur, type AccordsRepository, type NouvelAccord, type ResultatPoseOption, type TentativeOption, type AccordOptionEtOption, type ResultatConfirmation, type TentativeConfirmation } from '../../ports/accords';
 
 export interface AccordEnMemoire extends NouvelAccord {
   option_id: string;
-  statut: 'accord_donne' | 'posee' | 'echec';
+  statut: 'accord_donne' | 'posee' | 'echec' | 'confirmee';
   option_id_simulateur?: string;
   expire_option_le?: string;
   reponse_serveur?: unknown;
   erreur_option?: string;
   accord_utilise: boolean;
+  reservation_id_simulateur?: string;
+  reponse_confirmation?: unknown;
+  ligne_snapshot?: { prestation_id: string; date: string; participants: number };
 }
 
 export interface EvenementAccordEnMemoire {
@@ -62,6 +65,7 @@ export class AccordsEnMemoire implements AccordsRepository {
       accord.option_id_simulateur = resultat.option_id_simulateur;
       accord.expire_option_le = resultat.expire_le;
       accord.reponse_serveur = resultat.reponse_serveur;
+      accord.ligne_snapshot = resultat.ligne_snapshot;
     } else {
       accord.statut = 'echec';
       accord.erreur_option = resultat.raison;
@@ -71,6 +75,25 @@ export class AccordsEnMemoire implements AccordsRepository {
       dossier_id: accord.dossier_id, proposition_id: accord.proposition_id, type: 'option', auteur_id: 'systeme',
       detail: { type: 'option', option_id: optionId, ligne_id: accord.ligne_id, ...resultat },
     });
+  }
+
+  async optionPosee(ligneId: string): Promise<AccordOptionEtOption | undefined> {
+    const a = this.accords.find((x) => x.ligne_id === ligneId && (x.statut === 'posee' || x.statut === 'confirmee'));
+    if (!a) return undefined;
+    return a.ligne_snapshot ? { ...a, ligne_snapshot: a.ligne_snapshot } : undefined;
+  }
+
+  async terminerConfirmation(optionId: string, resultat: ResultatConfirmation) {
+    const a = this.accords.find((x) => x.option_id === optionId);
+    if (!a) throw new Error(`Option introuvable : ${optionId}`);
+    if (resultat.ok) { a.statut = 'confirmee'; a.reservation_id_simulateur = resultat.reservation_id_simulateur; a.reponse_confirmation = resultat.reponse_serveur; }
+    else { a.erreur_option = resultat.raison; a.reponse_confirmation = resultat.reponse_serveur; }
+    this.historique.push({ dossier_id: a.dossier_id, proposition_id: a.proposition_id, type: 'option', auteur_id: 'systeme', detail: { type: 'confirmation', option_id: optionId, ...resultat } });
+  }
+
+  async tracerTentativeConfirmation(e: TentativeConfirmation) {
+    const a = this.accords.find((x) => x.ligne_id === e.ligne_id);
+    this.historique.push({ dossier_id: a?.dossier_id ?? '', proposition_id: a?.proposition_id ?? '', type: 'option', auteur_id: e.auteur_id, detail: { type: 'tentative_confirmation', ligne_id: e.ligne_id, raison: e.raison, date: e.date, ...(e.detail !== undefined ? { detail: e.detail } : {}) } });
   }
 
   async tracerTentativeOption(e: TentativeOption) {

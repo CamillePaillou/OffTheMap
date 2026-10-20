@@ -6,6 +6,7 @@ import { LIMITES } from '@/types/enums';
 import { MESSAGES_REFUS_ACCORD, evaluerAccord, prixReverifieCents } from '@/src/domain/accord';
 import { BoutonAccord } from './bouton-accord';
 import { BoutonOption } from './bouton-option';
+import { BoutonConfirmation } from './bouton-confirmation';
 import { accordsDemo } from './depot';
 import { Fil } from '../../../_composants/fil';
 
@@ -63,6 +64,7 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
           const prix = prixReverifieCents(ligne);
           const accord = accordsDemo.accordValable(ligne.id, maintenant);
           const optionPosee = accordsDemo.accords.find((a) => a.ligne_id === ligne.id && a.statut === 'posee');
+          const reservationConfirmee = accordsDemo.accords.find((a) => a.ligne_id === ligne.id && a.statut === 'confirmee');
           const verdict = evaluerAccord({
             statutProposition: proposition.statut,
             ligne,
@@ -85,6 +87,15 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
               </dl>
               {v && <p className="mt-1 text-xs text-ardoise">Vérifié par l’agent à {heure(v.le)}.</p>}
 
+              {reservationConfirmee ? (
+                <p className="mt-3 rounded bg-green-50 px-3 py-2 text-sm text-green-800" role="status">Réservation confirmée : {reservationConfirmee.reservation_id_simulateur ?? 'identifiant non renseigné'}.</p>
+              ) : optionPosee ? (
+                <>
+                  <p className="mt-3 rounded bg-green-50 px-3 py-2 text-sm text-green-800" role="status">
+                    Option posée : {optionPosee.option_id_simulateur}. Expiration confirmée par le simulateur : {optionPosee.expire_option_le ? new Date(optionPosee.expire_option_le).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }) : 'non renseignée'}.
+                  </p>
+                  <BoutonConfirmation propositionId={proposition.id} ligneId={ligne.id} />
+                </>
               {optionPosee ? (
                 <p className="mt-4 rounded-lg bg-sauge-pale px-3 py-2 text-sm text-sauge" role="status">
                   Option posée : {optionPosee.option_id_simulateur}. Expiration confirmée par le simulateur : {optionPosee.expire_option_le ? new Date(optionPosee.expire_option_le).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }) : 'non renseignée'}.

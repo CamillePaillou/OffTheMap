@@ -34,13 +34,22 @@ export interface AccordsRepository {
   terminerPoseOption(optionId: string, resultat: ResultatPoseOption): Promise<void>;
   /** Journalise aussi les tentatives refusées avant toute écriture externe. */
   tracerTentativeOption(evenement: TentativeOption): Promise<void>;
+  /** Retrouve l'option posée pour la seconde validation humaine. */
+  optionPosee(ligneId: string): Promise<AccordOptionEtOption | undefined> | AccordOptionEtOption | undefined;
+  /** Enregistre le résultat de la confirmation, sans jamais conserver la clé d'approbation. */
+  terminerConfirmation(optionId: string, resultat: ResultatConfirmation): Promise<void>;
+  tracerTentativeConfirmation(evenement: TentativeConfirmation): Promise<void>;
 }
 
-export interface AccordOption extends NouvelAccord { option_id: string; accord_utilise: boolean; statut: 'accord_donne' | 'posee' | 'echec'; }
+export interface AccordOption extends NouvelAccord { option_id: string; accord_utilise: boolean; statut: 'accord_donne' | 'posee' | 'echec' | 'confirmee'; }
+export interface AccordOptionEtOption extends AccordOption { option_id_simulateur?: string; expire_option_le?: string; ligne_snapshot: { prestation_id: string; date: string; participants: number }; }
 export type ResultatPoseOption =
-  | { ok: true; option_id_simulateur: string; expire_le: string; reponse_serveur: unknown }
+  | { ok: true; option_id_simulateur: string; expire_le: string; reponse_serveur: unknown; ligne_snapshot?: { prestation_id: string; date: string; participants: number } }
   | { ok: false; raison: string; reponse_serveur?: unknown };
 export interface TentativeOption {
   dossier_id: string; proposition_id: string; ligne_id: string; auteur_id: string;
   raison: string; date: string;
 }
+
+export type ResultatConfirmation = { ok: true; reservation_id_simulateur: string; reponse_serveur: unknown } | { ok: false; raison: string; reponse_serveur?: unknown };
+export interface TentativeConfirmation { ligne_id: string; auteur_id: string; raison: string; date: string; detail?: unknown }
