@@ -1,5 +1,6 @@
 import 'server-only';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { clientSupabase } from '@/lib/supabase/serveur';
 import { ESPACE_CONSEILLER, urlConnexion } from './redirection';
 
@@ -14,6 +15,7 @@ export interface Conseiller {
  * Le proxy ne fait qu'un contrôle rapide ; chaque page et cas d'usage du conseiller appelle cette fonction.
  */
 export async function exigerConseiller(suite: string = ESPACE_CONSEILLER): Promise<Conseiller> {
+  await connection(); // contrôle fait à chaque requête : jamais pré-rendu (le client Supabase lit l'heure)
   const supabase = await clientSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(urlConnexion(suite));
