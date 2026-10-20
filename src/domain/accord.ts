@@ -1,0 +1,70 @@
+/**
+ * Règle pure de l'accord du conseiller (E9.3, ADR-0010) : peut-il autoriser l'écriture d'une option
+ * sur UNE ligne, au prix qu'il a sous les yeux ? Aucune écriture ici ; le cas d'usage donnerAccord s'en charge.
+ *
+ * L'accord est lié à une ligne (prestation, date, participants) et à un prix total : si le prix revérifié
+ * n'est plus celui affiché, il est refusé. Usage unique et durée de vie : voir LIMITES.dureeAccordMinutes.
+ */
+import type { LigneProposition } from '../../types/dashboard';
+import type { StatutProposition } from '../../types/enums';
+import { LIMITES } from '../../types/enums';
+
+export type RefusAccord =
+  | 'proposition_pas_au_depot' // l'accord n'a de sens qu'après l'acceptation du client et le dépôt
+  | 'ligne_non_confirmee' // la ligne n'est pas « confirmée » par l'agent (à vérifier, indisponible, remplacée, réservée)
+  | 'prestation_inactive'
+  | 'verification_absente'
+  | 'verification_non_ok' // échec ou indisponible : aucun prix fiable
+  | 'demarche_en_cours' // un accord ou une option est déjà en cours sur cette ligne
+  | 'prix_modifie'; // le prix revérifié n'est plus celui que le conseiller a vu
+
+export interface DemandeAccord {
+  statutProposition: StatutProposition;
+  ligne: LigneProposition;
+  /** Total de la ligne affiché au conseiller au moment du clic (centimes). */
+  prixAfficheCents: number;
+  demarcheEnCours: boolean;
+  maintenant: Date;
+}
+
+export type VerdictAccord =
+  | { ok: true; prix_accorde_cents: number; accord_le: string; accord_expire_le: string }
+  | { ok: false; raison: RefusAccord };
+
+/** Prix total revérifié d'une ligne (centimes), ou null si la ligne n'a pas de vérification « ok ». */
+export function prixReverifieCents(ligne: LigneProposition): number | null {
+  const v = ligne.derniere_verification;
+  if (!v || v.statut !== 'ok' || v.prix_unitaire_cents === null) return null;
+  return v.prix_unitaire_cents * ligne.participants;
+}
+
+export function evaluerAccord(d: DemandeAccord): VerdictAccord {
+  if (d.statutProposition !== 'depot_recu') return { ok: false, raison: 'proposition_pas_au_depot' };
+  if (!d.ligne.prestation.actif) return { ok: false, raison: 'prestation_inactive' };
+  if (d.ligne.statut !== 'confirme') return { ok: false, raison: 'ligne_non_confirmee' };
+  if (!d.ligne.derniere_verification) return { ok: false, raison: 'verification_absente' };
+  const prix = prixReverifieCents(d.ligne);
+  if (prix === null) return { ok: false, raison: 'verification_non_ok' };
+  if (d.demarcheEnCours) return { ok: false, raison: 'demarche_en_cours' };
+  if (prix !== d.prixAfficheCents) return { ok: false, raison: 'prix_modifie' };
+
+  return {
+    ok: true,
+    prix_accorde_cents: prix,
+    accord_le: d.maintenant.toISOString(),
+    accord_expire_le: new Date(d.maintenant.getTime() + LIMITES.dureeAccordMinutes * 60_000).toISOString(),
+  };
+}
+
+export const MESSAGES_REFUS_ACCORD: Record<RefusAccord | 'ligne_introuvable' | 'proposition_introuvable' | 'conseiller_non_identifie', string> = {
+  proposition_pas_au_depot: 'L’accord n’est possible qu’après l’acceptation du client et le dépôt reçu.',
+  ligne_non_confirmee: 'Cette ligne n’est pas confirmée par l’agent.',
+  prestation_inactive: 'Cette prestation n’est plus proposée au catalogue.',
+  verification_absente: 'Le prix de cette ligne n’a pas encore été vérifié.',
+  verification_non_ok: 'La dernière vérification n’a pas abouti : aucun prix fiable.',
+  demarche_en_cours: 'Un accord ou une option est déjà en cours sur cette ligne.',
+  prix_modifie: 'Le prix a changé depuis l’affichage : rechargez la page et relisez-le avant d’autoriser.',
+  ligne_introuvable: 'Ligne introuvable dans cette proposition.',
+  proposition_introuvable: 'Proposition introuvable.',
+  conseiller_non_identifie: 'Conseiller non identifié.',
+};
