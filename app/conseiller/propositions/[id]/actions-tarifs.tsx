@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import type { StatutLigne, StatutVerification } from '@/types';
 import { accepter, envoyer, indisponible, remplacer, revoir, saisirTarif, type EtatAction } from './tarifs';
 
-const champ = 'rounded border border-zinc-300 px-2 py-1';
+const champ = 'rounded-lg border border-[#d5d9df] bg-white px-2 py-1';
 const SOURCES = [
   { id: 'telephone', libelle: 'Téléphone' },
   { id: 'mail', libelle: 'Mail' },
@@ -39,7 +39,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
   const erreur = [etatAccepter, etatSaisie, etatIndispo, etatRevoir, etatRemplacer].map((e) => e.erreurs?.formulaire).find(Boolean);
   const e = etatSaisie.erreurs ?? {};
   const v = etatSaisie.valeurs ?? {};
-  const bouton = 'rounded border border-zinc-300 px-2 py-1 text-xs disabled:opacity-50';
+  const bouton = 'rounded-lg border border-[#d5d9df] bg-white px-2 py-1 text-xs hover:bg-brume disabled:opacity-50';
 
   if (statut === 'confirme' || statut === 'indisponible') {
     const er = etatRemplacer.erreurs ?? {};
@@ -50,7 +50,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
           <details open={Object.keys(er).length > 0} className="text-right">
             <summary className="cursor-pointer text-xs underline underline-offset-4">Remplacer la prestation</summary>
             {remplacantes.length === 0 ? (
-              <p className="mt-2 text-xs text-zinc-600">Aucune prestation active à cette destination.</p>
+              <p className="mt-2 text-xs text-ardoise">Aucune prestation active à cette destination.</p>
             ) : (
               <form key={JSON.stringify(vr)} action={actionRemplacer} noValidate className="mt-2 flex flex-col items-end gap-1">
                 <label className="flex items-center gap-1 text-xs">
@@ -66,13 +66,13 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
                     ))}
                   </select>
                 </label>
-                {er.prestationId && <span role="alert" className="text-xs text-red-700">{er.prestationId}</span>}
+                {er.prestationId && <span role="alert" className="text-xs text-grenade">{er.prestationId}</span>}
                 <label className="flex items-center gap-1 text-xs">
                   Date
                   <input type="date" name="date" defaultValue={vr.date ?? date} className={champ} aria-invalid={!!er.date} />
                 </label>
-                {er.date && <span role="alert" className="text-xs text-red-700">{er.date}</span>}
-                <button type="submit" disabled={remplacerEnCours} className="rounded bg-zinc-900 px-2 py-1 text-xs text-white disabled:opacity-50">
+                {er.date && <span role="alert" className="text-xs text-grenade">{er.date}</span>}
+                <button type="submit" disabled={remplacerEnCours} className="bo-btn px-2.5! py-1! text-xs">
                   Remplacer (nouvelle ligne à vérifier)
                 </button>
               </form>
@@ -84,7 +84,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
             Repasser à vérifier
           </button>
         </form>
-        {erreur && <span role="alert" className="text-xs text-red-700">{erreur}</span>}
+        {erreur && <span role="alert" className="text-xs text-grenade">{erreur}</span>}
       </div>
     );
   }
@@ -94,7 +94,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
     <div className="flex flex-col items-end gap-2">
       {verification?.statut === 'ok' && verification.prix_unitaire_cents !== null && (
         <form action={actionAccepter}>
-          <button type="submit" disabled={accepterEnCours} className="rounded bg-green-700 px-2 py-1 text-xs text-white disabled:opacity-50">
+          <button type="submit" disabled={accepterEnCours} className="bo-btn px-2.5! py-1! text-xs">
             Accepter {euros(verification.prix_unitaire_cents)} (agent)
           </button>
         </form>
@@ -106,7 +106,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
             Prix par personne (€)
             <input name="montant" inputMode="decimal" defaultValue={v.montant} className={`${champ} w-20 text-right`} aria-invalid={!!e.montant} />
           </label>
-          {e.montant && <span role="alert" className="text-xs text-red-700">{e.montant}</span>}
+          {e.montant && <span role="alert" className="text-xs text-grenade">{e.montant}</span>}
           <label className="flex items-center gap-1 text-xs">
             Source
             <select name="source" defaultValue={v.source ?? ''} className={champ} aria-invalid={!!e.source}>
@@ -120,8 +120,8 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
               ))}
             </select>
           </label>
-          {e.source && <span role="alert" className="text-xs text-red-700">{e.source}</span>}
-          <button type="submit" disabled={saisieEnCours} className="rounded bg-zinc-900 px-2 py-1 text-xs text-white disabled:opacity-50">
+          {e.source && <span role="alert" className="text-xs text-grenade">{e.source}</span>}
+          <button type="submit" disabled={saisieEnCours} className="bo-btn px-2.5! py-1! text-xs">
             Confirmer ce tarif
           </button>
         </form>
@@ -131,7 +131,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
           {verification?.statut === 'indisponible' ? 'Accepter : indisponible' : 'Marquer indisponible'}
         </button>
       </form>
-      {erreur && <span role="alert" className="text-xs text-red-700">{erreur}</span>}
+      {erreur && <span role="alert" className="text-xs text-grenade">{erreur}</span>}
     </div>
   );
 }
@@ -142,17 +142,18 @@ export function PanneauEnvoi({ propositionId, bloquants }: { propositionId: stri
   const raisons = etat.bloquants ?? bloquants;
   const bloque = raisons.length > 0;
   return (
-    <form action={action} className="mt-8 flex flex-col gap-2 rounded border border-zinc-200 p-4">
+    <form action={action} className="bo-carte flex flex-col gap-3 p-5">
+      <h2 className="text-xl">Envoi au client</h2>
       <button
         type="submit"
         disabled={bloque || enCours}
         aria-describedby={bloque ? 'envoi-bloque' : undefined}
-        className="self-start rounded bg-zinc-900 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-40"
+        className="bo-btn self-start"
       >
         {enCours ? 'Envoi…' : 'Envoyer au client'}
       </button>
       {bloque ? (
-        <div id="envoi-bloque" className="text-sm text-amber-900">
+        <div id="envoi-bloque" className="text-sm text-[#5c3d0c]">
           <p>Envoi impossible tant que :</p>
           <ul className="list-inside list-disc">
             {raisons.map((r) => (
@@ -161,9 +162,9 @@ export function PanneauEnvoi({ propositionId, bloquants }: { propositionId: stri
           </ul>
         </div>
       ) : (
-        <p className="text-sm text-zinc-600">Tous les prix sont vérifiés. L’envoi marque la proposition « envoyée » à votre nom.</p>
+        <p className="text-sm text-ardoise">Tous les prix sont vérifiés. L’envoi marque la proposition « envoyée » à votre nom.</p>
       )}
-      {etat.erreurs?.formulaire && <p role="alert" className="text-sm text-red-700">{etat.erreurs.formulaire}</p>}
+      {etat.erreurs?.formulaire && <p role="alert" className="text-sm text-grenade">{etat.erreurs.formulaire}</p>}
     </form>
   );
 }

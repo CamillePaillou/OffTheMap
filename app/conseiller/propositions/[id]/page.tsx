@@ -7,6 +7,7 @@ import { etatEnvoi } from '@/src/application/tarifs';
 import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
 import { TarifsSupabase } from '@/src/infrastructure/db/tarifsSupabase';
 import { Ecart } from '../../_composants/ecart';
+import { Fil } from '../../_composants/fil';
 import { STATUT_PROPOSITION } from '../../_composants/libelles';
 import { resumerProposition } from '@/src/domain/proposition/resumeProposition';
 import { REGLES_CHIFFRAGE } from '@/types/chiffrage';
@@ -28,8 +29,8 @@ const instant = (iso: string) => new Date(iso).toLocaleString('fr-FR', { timeZon
 // remplacement d'une ligne indisponible (E5.2).
 export default function PropositionPage({ params }: PageProps<'/conseiller/propositions/[id]'>) {
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-16">
-      <Suspense fallback={<p className="mt-6 text-zinc-600">Chargement…</p>}>
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
+      <Suspense fallback={<p className="mt-6 text-ardoise">Chargement…</p>}>
         <Contenu params={params} />
       </Suspense>
     </main>
@@ -54,9 +55,9 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
 
   // mail de la proposition (E5.4) : seulement une fois envoyée, donc tous ses prix vérifiés (E5.1)
   const envoyee = ['envoyee', 'sans_reponse', 'changement_demande', 'acceptee', 'depot_recu', 'reservee'].includes(proposition.statut);
-  const dossier = envoyee ? await new DossiersSupabase().detail(proposition.dossier_id) : null;
+  const dossier = await new DossiersSupabase().detail(proposition.dossier_id); // nom du client (fil d'Ariane) et mail
   let mail: { sujet: string; corps: string; mailto: string } | null = null;
-  if (dossier) {
+  if (dossier && envoyee) {
     try {
       const m = mailProposition(sejourDe(dossier, conseiller.nomAffiche), lignesPourMail(proposition));
       mail = { ...m, mailto: lienMailto(dossier.demande.client.email, m) };
@@ -73,27 +74,34 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
     }),
   );
 
+  const comptees = proposition.lignes.filter((l) => l.statut !== 'remplacee');
+  const confirmees = comptees.filter((l) => l.statut === 'confirme' || l.statut === 'reservee').length;
+  const jauge = resume.budget ? Math.min(resume.budget.part_pourcent, 100) : 0;
+  // colonne de droite seulement s'il y a quelque chose à faire : envoyer, ou enregistrer la réponse du client
+  const aCote = (modifiable && envoi !== null) || ['envoyee', 'sans_reponse', 'acceptee', 'depot_recu'].includes(proposition.statut);
+  const tonJauge = resume.budget?.depasse ? 'bg-grenade' : (resume.budget?.part_pourcent ?? 0) >= 90 ? 'bg-miel' : 'bg-pervenche';
+
   return (
     <>
-      <Link href={`/conseiller/dossiers/${proposition.dossier_id}`} className="text-sm underline underline-offset-4">
-        ← Fiche du dossier
-      </Link>
-      <h1 className="mt-6 text-2xl font-semibold">Proposition v{proposition.version}</h1>
-      <p className="mt-1 text-zinc-600">{STATUT_PROPOSITION[proposition.statut]}</p>
-      <p className="mt-3 text-lg">
-        Total : <strong>{total === null ? '—' : euros(total)}</strong>
-        {resume.budget && (
-          <span className={`ml-2 text-base ${resume.budget.depasse ? 'text-red-700' : resume.budget.part_pourcent >= 90 ? 'text-amber-700' : 'text-zinc-600'}`}>
-            sur un budget de {euros(resume.budget.reference_cents)} ({resume.budget.part_pourcent} %)
-          </span>
-        )}
-      </p>
+      <Fil
+        etapes={[
+          { libelle: 'Dossiers', href: '/conseiller' },
+          { libelle: dossier?.demande.client.nom ?? 'Dossier', href: `/conseiller/dossiers/${proposition.dossier_id}` },
+          { libelle: `Proposition v${proposition.version}` },
+        ]}
+      />
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <h1 className="text-3xl sm:text-4xl">Proposition, version {proposition.version}</h1>
+        <span className="rounded-full bg-pervenche-pale px-2.5 py-0.5 text-sm font-semibold text-encre ring-1 ring-inset ring-transparent">
+          {STATUT_PROPOSITION[proposition.statut]}
+        </span>
+      </div>
 
       {proposition.statut === 'remplacee' && (
-        <p className="mt-6 rounded border border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+        <p className="mt-6 rounded-[18px] bg-[#eef1f3] p-4 text-sm text-encre">
           Version remplacée après un changement demandé par le client. Elle reste telle qu’elle a été envoyée ; la version suivante est
           dans la{' '}
-          <Link href={`/conseiller/dossiers/${proposition.dossier_id}`} className="underline underline-offset-4">
+          <Link href={`/conseiller/dossiers/${proposition.dossier_id}`} className="font-semibold underline underline-offset-4">
             fiche du dossier
           </Link>
           .
@@ -106,124 +114,168 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
         </p>
       )}
       {proposition.motif_changement && (
-        <p className="mt-6 rounded border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <span className="font-medium">Changement demandé par le client :</span> {proposition.motif_changement}
+        <p className="mt-6 rounded-[18px] bg-miel-pale p-4 text-sm text-[#5c3d0c]">
+          <span className="font-semibold">Changement demandé par le client :</span> {proposition.motif_changement}
         </p>
       )}
 
       {proposition.statut === 'brouillon_en_cours' && (
-        <p role="status" className="mt-6 text-zinc-600">
+        <p role="status" className="bo-carte mt-6 p-4 text-ardoise">
           Brouillon en cours de génération…
           <RafraichirPendantGeneration />
         </p>
       )}
       {proposition.statut === 'erreur' && (
-        <section className="mt-6 rounded border border-red-200 bg-red-50 p-4">
-          <p className="font-medium text-red-800">La génération du brouillon a échoué.</p>
+        <section className="mt-6 rounded-[18px] bg-grenade-pale p-4">
+          <p className="font-semibold text-grenade">La génération du brouillon a échoué.</p>
           <div className="mt-3">
             <BoutonRelancerBrouillon propositionId={proposition.id} />
           </div>
         </section>
       )}
 
-      {proposition.programme && (
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold">Programme</h2>
-          <ol className="mt-2 flex flex-col gap-3 text-sm">
-            {proposition.programme.map((jour, i) => (
-              <li key={i}>
-                <span className="font-medium">{jour.date} · {jour.titre}</span>
-                <p className="mt-1 whitespace-pre-line text-zinc-700 dark:text-zinc-300">{jour.texte}</p>
-              </li>
-            ))}
-          </ol>
+      <div className={`mt-6 grid items-start gap-6 ${aCote ? 'lg:grid-cols-[minmax(0,1fr)_24rem]' : ''}`}>
+        <section aria-labelledby="titre-total" className="bo-carte grid gap-6 p-5 sm:grid-cols-3 sm:p-6">
+          <div className="sm:col-span-2">
+            <h2 id="titre-total" className="text-base text-ardoise!">Total</h2>
+            <p className="mt-1 text-4xl font-semibold text-encre">{total === null ? '—' : euros(total)}</p>
+            {resume.budget ? (
+              <div className="mt-4">
+                <div className="h-2.5 overflow-hidden rounded-full bg-brume" aria-hidden>
+                  <div className={`h-full rounded-full ${tonJauge}`} style={{ width: `${jauge}%` }} />
+                </div>
+                <p className={`mt-2 text-sm ${resume.budget.depasse ? 'font-semibold text-grenade' : resume.budget.part_pourcent >= 90 ? 'text-[#5c3d0c]' : 'text-ardoise'}`}>
+                  {resume.budget.part_pourcent} % du budget de {euros(resume.budget.reference_cents)}
+                  {resume.budget.depasse ? ' : budget dépassé' : ''}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-ardoise">Pas de budget de référence.</p>
+            )}
+          </div>
+          <dl className="flex flex-col gap-3 text-sm sm:border-l sm:border-trait sm:pl-6">
+            <div>
+              <dt className="text-ardoise">Tarifs confirmés</dt>
+              <dd className=" text-2xl font-semibold text-encre">
+                {confirmees} / {comptees.length}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ardoise">Alertes bloquantes</dt>
+              <dd className={` text-2xl font-semibold ${resume.bloquantes > 0 ? 'text-grenade' : 'text-encre'}`}>{resume.bloquantes}</dd>
+            </div>
+          </dl>
         </section>
-      )}
 
-      <div className="mt-8 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-300 text-zinc-600">
-            <tr>
-              <th className="py-2 pr-4 font-medium">Prestation</th>
-              <th className="py-2 pr-4 font-medium">Date</th>
-              <th className="py-2 pr-4 text-right font-medium">Pers.</th>
-              <th className="py-2 pr-4 text-right font-medium">Prix proposé</th>
-              <th className="py-2 pr-4 text-right font-medium">Total ligne</th>
-              <th className="py-2 pr-4 text-right font-medium">Prix revérifié</th>
-              <th className="py-2 pr-4 text-right font-medium">Écart (unitaire)</th>
-              <th className="py-2 pr-4 font-medium">Tarif</th>
-              <th className="py-2 font-medium" />
-            </tr>
-          </thead>
-          <tbody>
-            {lignes.map(({ ligne, verification, remplacantes, ecart }) => (
-              <tr key={ligne.id} className={`border-b border-zinc-200 ${ligne.statut === 'remplacee' ? 'text-zinc-400 line-through' : ''}`}>
-                <td className="py-3 pr-4">
-                  {ligne.prestation.nom}
-                  {resume.parLigne.get(ligne.id)?.map((a, i) => (
-                    <span key={i} className={`block text-xs ${a.bloquante ? 'text-red-700' : 'text-amber-700'}`}>
-                      {a.libelle}
-                    </span>
-                  ))}
-                </td>
-                <td className="py-3 pr-4">{ligne.date}</td>
-                <td className="py-3 pr-4 text-right">{ligne.participants}</td>
-                <td className="py-3 pr-4 text-right">{euros(ligne.prix_unitaire_catalogue_cents)}</td>
-                <td className={`py-3 pr-4 text-right ${HORS_TOTAL.includes(ligne.statut) ? 'text-zinc-400 line-through' : ''}`}>
-                  {euros(ligne.total_ligne_cents)}
-                </td>
-                <td className="py-3 pr-4 text-right">
-                  {verification?.prix_unitaire_cents == null ? '—' : euros(verification.prix_unitaire_cents)}
-                </td>
-                <td className="py-3 pr-4 text-right">
-                  {verification ? <Ecart ecart={ecart} /> : <span className="text-zinc-500">pas encore vérifié</span>}
-                </td>
-                <td className="py-3 pr-4">
-                  <span className={ligne.statut === 'confirme' ? 'text-green-800' : ligne.statut === 'a_verifier' ? 'text-amber-800' : 'text-zinc-600'}>
-                    {STATUT_LIGNE[ligne.statut]}
-                  </span>
-                  {ligne.prix_confirme && (
-                    <span className="block text-xs text-zinc-600">
-                      {euros(ligne.prix_confirme.montant_cents)} · {SOURCE[ligne.prix_confirme.source]} · {instant(ligne.prix_confirme.le)} ·{' '}
-                      {ligne.prix_confirme.par}
-                    </span>
-                  )}
-                  <div className="mt-2">
-                    <ActionsLigne
-                      propositionId={proposition.id}
-                      ligneId={ligne.id}
-                      statut={ligne.statut}
-                      figee={!modifiable}
-                      verification={ligne.derniere_verification}
-                      remplacantes={remplacantes}
-                      prestationId={ligne.prestation.id}
-                      date={ligne.date}
-                    />
-                  </div>
-                </td>
-                <td className="py-3 text-right">
-                  <Link
-                    href={`/conseiller/propositions/${proposition.id}/lignes/${ligne.id}`}
-                    className="underline underline-offset-4"
-                  >
-                    {verification ? 'Détail' : 'Vérifier'}
-                  </Link>
-                </td>
+        {aCote && (
+          <div className="flex flex-col gap-4">
+            {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} />}
+            <PanneauReponse propositionId={proposition.id} statut={proposition.statut} />
+            {proposition.statut === 'envoyee' && <PanneauChangement propositionId={proposition.id} version={proposition.version} />}
+          </div>
+        )}
+      </div>
+
+      <h2 className="mt-10 text-2xl">Prestations</h2>
+      <div className="mt-3">
+      <div className="bo-carte overflow-x-auto">
+          <table className="w-full min-w-[60rem] text-left text-sm">
+            <caption className="sr-only">Prestations de la proposition et leurs tarifs</caption>
+            <thead className="bg-brume text-ardoise">
+              <tr>
+                <th className="px-3 py-3 font-semibold">Prestation</th>
+                <th className="px-3 py-3 font-semibold">Date</th>
+                <th className="px-3 py-3 text-right font-semibold">Pers.</th>
+                <th className="px-3 py-3 text-right font-semibold">Prix proposé</th>
+                <th className="px-3 py-3 text-right font-semibold">Total ligne</th>
+                <th className="px-3 py-3 text-right font-semibold">Prix revérifié</th>
+                <th className="px-3 py-3 text-right font-semibold">Écart (unitaire)</th>
+                <th className="px-3 py-3 font-semibold">Tarif</th>
+                <th className="px-3 py-3 font-semibold" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-trait">
+              {lignes.map(({ ligne, verification, remplacantes, ecart }) => (
+                <tr key={ligne.id} className={`align-top ${ligne.statut === 'remplacee' ? 'text-ardoise line-through' : ''}`}>
+                  <td className="px-3 py-3 font-semibold">
+                    {ligne.prestation.nom}
+                    {resume.parLigne.get(ligne.id)?.map((a, i) => (
+                      <span key={i} className={`block text-xs ${a.bloquante ? 'text-grenade' : 'text-miel-fonce'}`}>
+                        {a.libelle}
+                      </span>
+                    ))}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3">{ligne.date}</td>
+                  <td className="px-3 py-3 text-right">{ligne.participants}</td>
+                  <td className="px-3 py-3 text-right">{euros(ligne.prix_unitaire_catalogue_cents)}</td>
+                  <td className={`px-3 py-3 text-right ${HORS_TOTAL.includes(ligne.statut) ? 'text-ardoise line-through' : ''}`}>
+                    {euros(ligne.total_ligne_cents)}
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    {verification?.prix_unitaire_cents == null ? '—' : euros(verification.prix_unitaire_cents)}
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    {verification ? <Ecart ecart={ecart} /> : <span className="text-ardoise">pas encore vérifié</span>}
+                  </td>
+                  <td className="px-3 py-3">
+                    <span
+                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${
+                        ligne.statut === 'confirme'
+                          ? 'bg-sauge-pale text-sauge ring-transparent'
+                          : ligne.statut === 'a_verifier'
+                            ? 'bg-miel-pale text-[#5c3d0c] ring-transparent'
+                            : ligne.statut === 'indisponible'
+                              ? 'bg-grenade-pale text-grenade ring-transparent'
+                              : 'bg-[#eef1f3] text-ardoise ring-trait'
+                      }`}
+                    >
+                      {STATUT_LIGNE[ligne.statut]}
+                    </span>
+                    {ligne.prix_confirme && (
+                      <span className="block text-xs text-ardoise">
+                        {euros(ligne.prix_confirme.montant_cents)} · {SOURCE[ligne.prix_confirme.source]} · {instant(ligne.prix_confirme.le)} ·{' '}
+                        {ligne.prix_confirme.par}
+                      </span>
+                    )}
+                    <div className="mt-2">
+                      <ActionsLigne
+                        propositionId={proposition.id}
+                        ligneId={ligne.id}
+                        statut={ligne.statut}
+                        figee={!modifiable}
+                        verification={ligne.derniere_verification}
+                        remplacantes={remplacantes}
+                        prestationId={ligne.prestation.id}
+                        date={ligne.date}
+                      />
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    <Link
+                    href={`/conseiller/propositions/${proposition.id}/lignes/${ligne.id}`}
+                    className={`inline-flex whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold no-underline ${
+                      verification ? 'border border-[#d5d9df] bg-white text-encre hover:bg-brume' : 'bg-pervenche text-white hover:bg-pervenche-fonce'
+                    }`}
+                  >
+                    {verification ? 'Détail' : 'Vérifier le prix'}
+                  </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {alertes.length > 0 && (
-        <section className="mt-6">
-          <h2 className="font-semibold">
-            Alertes{resume.bloquantes > 0 && <span className="ml-2 text-sm font-normal text-red-700">{resume.bloquantes} bloquante{resume.bloquantes > 1 ? 's' : ''}</span>}
+        <section aria-labelledby="titre-alertes" className="mt-6 rounded-[18px] bg-miel-pale p-4">
+          <h2 id="titre-alertes" className="text-lg text-[#5c3d0c]!">
+            Alertes{resume.bloquantes > 0 && <span className="ml-2 text-sm font-normal text-grenade">{resume.bloquantes} bloquante{resume.bloquantes > 1 ? 's' : ''}</span>}
           </h2>
-          <ul className="mt-1 flex flex-col gap-1 text-sm">
+          <ul className="mt-2 flex flex-col gap-1 text-sm text-[#5c3d0c]">
             {[...resume.generales, ...[...resume.parLigne.values()].flat()].map((a, i) => (
               <li key={i}>
-                <span className={a.bloquante ? 'font-medium text-red-700' : 'font-medium text-amber-700'}>{a.libelle}</span>
+                <span className={a.bloquante ? 'font-semibold text-grenade' : 'font-semibold'}>{a.libelle}</span>
                 {a.bloquante ? ' (bloque l’envoi)' : ''} : {a.message}
               </li>
             ))}
@@ -231,15 +283,28 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
         </section>
       )}
 
+      <div className={`mt-10 grid items-start gap-6 ${proposition.programme && mail ? 'lg:grid-cols-2' : ''}`}>
+        {proposition.programme && (
+          <section aria-labelledby="titre-programme" className="bo-carte p-5 sm:p-6">
+            <h2 id="titre-programme" className="text-2xl">Programme</h2>
+            <ol className="mt-4 flex flex-col gap-5 border-l-2 border-pervenche-pale pl-5 text-sm">
+              {proposition.programme.map((jour, i) => (
+                <li key={i}>
+                  <span className="text-base font-semibold text-encre">{jour.date} · {jour.titre}</span>
+                  <p className="mt-1 whitespace-pre-line leading-relaxed">{jour.texte}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
       {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} />}
 
       <PanneauReponse propositionId={proposition.id} statut={proposition.statut} />
       {(proposition.statut === 'envoyee' || proposition.statut === 'sans_reponse') && <PanneauChangement propositionId={proposition.id} version={proposition.version} />}
 
-      {mail && (
-        <section className="mt-8">
-          <h2 className="font-semibold">Mail au client</h2>
-          <div className="mt-2">
+        {mail && (
+          <section aria-labelledby="titre-mail" className="flex flex-col gap-3">
+            <h2 id="titre-mail" className="text-2xl">Mail au client</h2>
             <CarteMail
               dossierId={proposition.dossier_id}
               propositionId={proposition.id}
@@ -251,9 +316,9 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
               imprimer={`/conseiller/propositions/${proposition.id}/imprimer`}
               ouvert={proposition.statut === 'envoyee' || proposition.statut === 'sans_reponse'}
             />
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+      </div>
     </>
   );
 }

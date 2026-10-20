@@ -27,7 +27,7 @@ export class MailImpossibleErreur extends Error {}
 
 const date = (iso: string) => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(new Date(`${iso.slice(0, 10)}T12:00:00Z`));
 const euros = (cents: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(cents / 100);
-const signature = (conseiller: string) => ['', 'Bien cordialement,', conseiller, 'Detour'];
+const signature = (conseiller: string) => ['', 'Bien cordialement,', conseiller, 'DÉTOUR'];
 const texte = (lignes: (string | false | null | undefined)[]) => lignes.filter((l): l is string => typeof l === 'string').join('\n');
 
 export interface Sejour {
@@ -41,7 +41,7 @@ export interface Sejour {
 /** Après la validation de la demande : proposer un entretien de cadrage. Les créneaux sont à compléter. */
 export function mailRendezVous(s: Sejour): Mail {
   return {
-    sujet: 'Votre projet de voyage Detour : prenons rendez-vous',
+    sujet: 'Votre projet de voyage DÉTOUR : prenons rendez-vous',
     corps: texte([
       `Bonjour ${s.nom},`,
       '',
@@ -69,7 +69,7 @@ export interface MailCorrection {
 /** Demande à corriger (E3.1) : chaque point à revoir, avec le commentaire du conseiller, et le lien de correction. */
 export function mailACorriger(m: MailCorrection): Mail {
   return {
-    sujet: 'Votre demande de voyage Detour : quelques précisions',
+    sujet: 'Votre demande de voyage DÉTOUR : quelques précisions',
     corps: texte([
       `Bonjour ${m.nom},`,
       '',
@@ -118,7 +118,7 @@ function lignesVerifiees(lignes: readonly LigneMail[], statutsAttendus: readonly
 export function mailProposition(s: Sejour, lignes: readonly LigneMail[]): Mail {
   const { texteLignes, total } = lignesVerifiees(lignes, ['confirme', 'reservee']);
   return {
-    sujet: `Votre proposition de voyage Detour${s.destination ? ` : ${s.destination}` : ''}`,
+    sujet: `Votre proposition de voyage DÉTOUR${s.destination ? ` : ${s.destination}` : ''}`,
     corps: texte([
       `Bonjour ${s.nom},`,
       '',
@@ -139,7 +139,7 @@ export function mailProposition(s: Sejour, lignes: readonly LigneMail[]): Mail {
 export function mailConfirmation(s: Sejour, lignes: readonly LigneMail[]): Mail {
   const { texteLignes, total } = lignesVerifiees(lignes, ['reservee']);
   return {
-    sujet: 'Votre voyage Detour est réservé',
+    sujet: 'Votre voyage DÉTOUR est réservé',
     corps: texte([
       `Bonjour ${s.nom},`,
       '',

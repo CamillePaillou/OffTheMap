@@ -21,30 +21,39 @@ interface Props {
 export function CarteMail({ dossierId, propositionId, modele, titre, sujet, corps, mailto, imprimer, ouvert = false }: Props) {
   const [etat, action, enCours] = useActionState<EtatMail, FormData>(() => marquerEnvoye(dossierId, propositionId, modele), {});
   return (
-    <details open={ouvert} className="rounded border border-zinc-200 bg-white p-4">
-      <summary className="cursor-pointer font-medium">{titre}</summary>
-      <div className="mt-3 rounded bg-zinc-50 p-3">
-        <p className="text-xs text-zinc-500">Aperçu : relisez et complétez dans votre messagerie avant d’envoyer</p>
-        <p className="mt-1 font-medium">{sujet}</p>
-        <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-800">{corps}</p>
+    <details open={ouvert} className={`bo-carte group p-4 ${etat.envoye ? 'ring-2 ring-sauge-pale' : ''}`}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-encre [&::-webkit-details-marker]:hidden">
+        <span>{titre}</span>
+        <span className="text-sm font-normal text-ardoise">
+          {etat.envoye ? 'envoyé' : <span className="group-open:hidden">voir</span>}
+          {!etat.envoye && <span className="hidden group-open:inline">fermer</span>}
+        </span>
+      </summary>
+      <div className="mt-3 overflow-hidden rounded-[14px] border border-trait">
+        <p className="border-b border-trait bg-brume px-3 py-2 text-sm">
+          <span className="text-ardoise">Objet : </span>
+          <span className="font-semibold">{sujet}</span>
+        </p>
+        <p className="max-h-72 overflow-y-auto whitespace-pre-wrap px-3 py-3 text-sm leading-relaxed text-encre">{corps}</p>
       </div>
+      <p className="mt-2 text-xs text-ardoise">Relisez et complétez dans votre messagerie avant d’envoyer.</p>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <a href={mailto} className="rounded bg-zinc-900 px-4 py-2 text-sm text-white">
+        <a href={mailto} className="bo-btn text-sm">
           Ouvrir dans ma messagerie
         </a>
         {imprimer && (
-          <a href={imprimer} target="_blank" rel="noopener" className="rounded border border-zinc-300 px-4 py-2 text-sm">
+          <a href={imprimer} target="_blank" rel="noopener" className="bo-btn-2 text-sm">
             Version imprimable (PDF)
           </a>
         )}
         <form action={action}>
-          <button type="submit" disabled={enCours || etat.envoye} className="rounded border border-zinc-300 px-4 py-2 text-sm disabled:opacity-50">
-            {etat.envoye ? 'Marqué envoyé' : 'Marquer comme envoyé'}
+          <button type="submit" disabled={enCours || etat.envoye} className="bo-btn-2 text-sm disabled:text-sauge! disabled:opacity-100!">
+            {etat.envoye ? '✓ Marqué envoyé' : 'Marquer comme envoyé'}
           </button>
         </form>
       </div>
       {etat.erreur && (
-        <p role="alert" className="mt-2 text-sm text-red-700">
+        <p role="alert" className="mt-2 text-sm text-grenade">
           {etat.erreur}
         </p>
       )}
