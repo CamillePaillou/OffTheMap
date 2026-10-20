@@ -1,0 +1,115 @@
+[
+  {
+    "id": "5a1e0000-0000-4000-8000-0000000000c1",
+    "ligne_id": "5a1e0000-0000-4000-8000-0000000000b3",
+    "statut": "ok",
+    "prix_unitaire_cents": 4000,
+    "prix_total_cents": 8000,
+    "places_restantes": 6,
+    "resume": "L’atelier est disponible le 7 novembre pour deux personnes ; le tarif a augmenté depuis le catalogue.",
+    "reponse_serveur": {
+      "prestation_id": "activite-nantes-01",
+      "date": "2026-11-07",
+      "participants": 2,
+      "disponible": true,
+      "places_restantes": 6,
+      "prix_unitaire_cents": 4000,
+      "prix_total_cents": 8000
+    },
+    "trace": [
+      {
+        "numero": 1,
+        "horodatage": "2026-10-21T14:39:58Z",
+        "appel": {
+          "nom": "verifier_disponibilite",
+          "arguments": {
+            "prestation_id": "activite-nantes-01",
+            "date": "2026-11-07",
+            "participants": 2
+          }
+        },
+        "conclusion": null,
+        "decision": {
+          "statut": "accepte",
+          "raison": null,
+          "ecarts": []
+        },
+        "http_statut": 200,
+        "reponse_simulateur": {
+          "prestation_id": "activite-nantes-01",
+          "date": "2026-11-07",
+          "participants": 2,
+          "disponible": true,
+          "places_restantes": 6,
+          "prix_unitaire_cents": 4000,
+          "prix_total_cents": 8000
+        },
+        "duree_ms": 412
+      },
+      {
+        "numero": 2,
+        "horodatage": "2026-10-21T14:39:59Z",
+        "appel": null,
+        "conclusion": {
+          "statut": "ok",
+          "places_restantes": 6,
+          "prix_unitaire_cents": 4000,
+          "resume": "L’atelier est disponible le 7 novembre pour deux personnes ; le tarif a augmenté depuis le catalogue."
+        },
+        "decision": {
+          "statut": "accepte",
+          "raison": null,
+          "ecarts": []
+        },
+        "http_statut": null,
+        "reponse_simulateur": null,
+        "duree_ms": 980
+      }
+    ],
+    "modele": "meta-llama/llama-3.3-70b-instruct:free",
+    "nb_tours": 2,
+    "arret": "conclusion",
+    "demandee_par": "Camille (démo)",
+    "le": "2026-10-21T14:40:00Z"
+  },
+  {
+    "id": "5a1e0000-0000-4000-8000-0000000000c2",
+    "ligne_id": "5a1e0000-0000-4000-8000-0000000000b2",
+    "statut": "echec",
+    "prix_unitaire_cents": null,
+    "prix_total_cents": null,
+    "places_restantes": null,
+    "resume": "Le serveur du prestataire n’a pas répondu à temps : tarif non vérifié.",
+    "reponse_serveur": null,
+    "trace": [
+      {
+        "numero": 1,
+        "horodatage": "2026-10-21T14:44:55Z",
+        "appel": {
+          "nom": "verifier_disponibilite",
+          "arguments": {
+            "prestation_id": "hotel-nantes-01",
+            "date": "2026-11-07",
+            "participants": 2
+          }
+        },
+        "conclusion": null,
+        "decision": {
+          "statut": "accepte",
+          "raison": null,
+          "ecarts": []
+        },
+        "http_statut": null,
+        "reponse_simulateur": {
+          "panne": "delai"
+        },
+        "duree_ms": 5000
+      }
+    ],
+    "modele": "meta-llama/llama-3.3-70b-instruct:free",
+    "nb_tours": 1,
+    "arret": "echec_serveur",
+    "demandee_par": "Camille (démo)",
+    "le": "2026-10-21T14:45:00Z"
+  }
+]

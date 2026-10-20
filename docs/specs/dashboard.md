@@ -8,6 +8,7 @@ Les fixtures de `fixtures/dashboard/` les suivent et sont validées par `types/d
 | `GET /api/dossiers?limit&offset` | `ListeDossiers` | `liste-dossiers.json` (5 dossiers, statuts variés) | E2.1 |
 | `GET /api/dossiers/{id}` | `DetailDossier` | `detail-dossier.json` (Sophie, Nantes, en proposition) | E2.1, E3.1 |
 | `GET /api/propositions/{id}` | `Proposition` | `proposition.json` (exemple B des règles de chiffrage) | E4.5, E8.4, E9.3 |
+| `GET /api/lignes/{id}/verification` | `VerificationLigne` | `verifications.json` (atelier revérifié à 40 €, hôtel en échec) | E8.4, E9.3 |
 
 Principes (plan, section 5.2) : montants en centimes ; valeur indisponible = `null`, jamais `0` ; pagination par `limit` et `offset` ; dates en UTC ISO-8601 ; aucun champ en trop (schémas stricts).
 
@@ -42,3 +43,10 @@ Champs de la fiche et qui les écrit :
 Une régénération ne liste pas les champs du conseiller : budget réel, dates fixes, notes, décision et validation restent (tests dans `supabase/scripts/test_contraintes.sql`). E2.2 doit écrire la fiche par `enregistrer_generation_fiche`, jamais par un `insert`/`update` direct. Les deux fonctions ne sont appelables que par le serveur (`service_role`).
 
 Bouton « relancer » : affiché quand le dossier est au statut `erreur` ; transition `erreur → fiche_en_cours` au nom du conseiller (cas d'usage `relancerFiche`, fonction `changer_statut`). La génération elle-même sera lancée là par E2.2.
+
+## Vérification d'une ligne (E8.4)
+
+`VerificationLigne` reprend une ligne de `verifications` : prix revérifié (unitaire et total), places, résumé de l'agent, `reponse_serveur` (réponse du simulateur telle que rendue par l'adaptateur, en centimes : c'est ce que `verifierPrestation` enregistre), `trace` (format `TraceVerification` de E8.5, `types/trace.ts`) et raison d'arrêt.
+L'écart avec le prix proposé n'est pas dans le payload : il est calculé par le code (`src/domain/ecartPrix.ts`), jamais par le modèle.
+Écrans : `/conseiller/propositions/{id}` (ouvert depuis la fiche du dossier) (prix proposé, revérifié et écart par ligne) et `/conseiller/propositions/{id}/lignes/{ligneId}` (réponse brute et trace). Ils lisent la base au nom du conseiller (`src/infrastructure/db/propositionsSupabase.ts`).
+Le bouton « Vérifier le prix » / « Revérifier » de l'écran d'une ligne lance `verifierPrestation(ligne, { modele, prestataires, secrets })` (E8.3) par le cas d'usage `reverifierLigne` : l'agent ne reçoit que prestation, nom, date et participants ; le résultat (prix, places, réponse, trace expurgée, `resume`) est écrit dans `verifications` avec la clé service_role. Il faut `LLM_API_KEY`, `LLM_MODEL` et `SIMULATEUR_TEAM_KEY` dans `.env` (voir `.env.example`).

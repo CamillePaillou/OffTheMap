@@ -129,7 +129,10 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
           <ul className="mt-2 text-sm">
             {dossier.propositions.map((p) => (
               <li key={p.id}>
-                v{p.version} · {STATUT_PROPOSITION[p.statut]} · {p.total_cents === null ? 'total à calculer' : euros(p.total_cents)}
+                <Link href={`/conseiller/propositions/${p.id}`} className="underline underline-offset-4">
+                  v{p.version} · {STATUT_PROPOSITION[p.statut]}
+                </Link>{' '}
+                · {p.total_cents === null ? 'total à calculer' : euros(p.total_cents)}
               </li>
             ))}
           </ul>
