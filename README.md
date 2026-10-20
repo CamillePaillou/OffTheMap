@@ -85,3 +85,8 @@ Les prestations (catalogue, disponibilités, options, réservations) viennent du
 ## Variables d'environnement
 
 `.env.example` liste toutes les variables, sans valeur sensible. Toute nouvelle variable y est ajoutée dans la même PR.
+
+## Planning
+
+- `docs/planning/pert.md` : PERT du sprint depuis le J1 (dates au plus tôt et au plus tard, marges, chemin critique), tiré des issues.
+- `docs/rituels/` : Sprint Goal, Definition of Done, Sprint Planning, dailies et rétrospectives.
