@@ -8,6 +8,10 @@ import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupaba
 import { TarifsSupabase } from '@/src/infrastructure/db/tarifsSupabase';
 import { Ecart } from '../../_composants/ecart';
 import { ActionsLigne, PanneauEnvoi } from './actions-tarifs';
+import { CarteMail } from '../../_composants/carte-mail';
+import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
+import { lienMailto, mailProposition, MailImpossibleErreur } from '@/src/domain/mails';
+import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 
 const STATUT_LIGNE = { a_verifier: 'à vérifier', confirme: 'confirmé', indisponible: 'indisponible', remplacee: 'remplacée', reservee: 'réservée' } as const;
 const SOURCE = { agent: 'agent', telephone: 'téléphone', mail: 'mail', lien: 'lien' } as const;
@@ -29,7 +33,7 @@ export default function PropositionPage({ params }: PageProps<'/conseiller/propo
 
 async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]'>, 'params'>) {
   const { id } = await params;
-  await exigerConseiller(`/conseiller/propositions/${id}`);
+  const conseiller = await exigerConseiller(`/conseiller/propositions/${id}`);
 
   const lecture = new PropositionsSupabase();
   const proposition = await lecture.proposition(id);
@@ -39,6 +43,19 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   const envoi = chiffrage ? etatEnvoi(chiffrage) : null;
   const modifiable = proposition.statut === 'a_verifier' || proposition.statut === 'prete';
   const alertes = modifiable && envoi ? envoi.chiffrage.alertes : proposition.alertes;
+
+  // mail de la proposition (E5.4) : seulement une fois envoyée, donc tous ses prix vérifiés (E5.1)
+  const envoyee = ['envoyee', 'sans_reponse', 'changement_demande', 'acceptee', 'depot_recu', 'reservee'].includes(proposition.statut);
+  const dossier = envoyee ? await new DossiersSupabase().detail(proposition.dossier_id) : null;
+  let mail: { sujet: string; corps: string; mailto: string } | null = null;
+  if (dossier) {
+    try {
+      const m = mailProposition(sejourDe(dossier, conseiller.nomAffiche), lignesPourMail(proposition));
+      mail = { ...m, mailto: lienMailto(dossier.demande.client.email, m) };
+    } catch (e) {
+      if (!(e instanceof MailImpossibleErreur)) throw e;
+    }
+  }
   const lignes = await Promise.all(
     proposition.lignes.map(async (ligne) => {
       const verification = await lecture.verificationDeLigne(ligne.id);
@@ -126,6 +143,25 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
       )}
 
       {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} />}
+
+      {mail && (
+        <section className="mt-8">
+          <h2 className="font-semibold">Mail au client</h2>
+          <div className="mt-2">
+            <CarteMail
+              dossierId={proposition.dossier_id}
+              propositionId={proposition.id}
+              modele="proposition"
+              titre="Mail « Proposition »"
+              sujet={mail.sujet}
+              corps={mail.corps}
+              mailto={mail.mailto}
+              imprimer={`/conseiller/propositions/${proposition.id}/imprimer`}
+              ouvert={proposition.statut === 'envoyee'}
+            />
+          </div>
+        </section>
+      )}
     </>
   );
 }

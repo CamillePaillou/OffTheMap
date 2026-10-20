@@ -10,14 +10,14 @@ import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import { TriSupabase } from '@/src/infrastructure/db/triSupabase';
 import { CHAMPS_CORRIGEABLES, type ChampCorrigeable } from '@/types/correction';
 import type { ErreursChamps } from '@/src/application/deposerDemande';
-import { messageCorrection } from './messageCorrection';
+import { lienMailto, mailACorriger } from '@/src/domain/mails';
 
 export interface EtatTri {
   erreurs?: ErreursChamps;
   /** Saisie à remettre dans le formulaire « à corriger » après une erreur. */
   valeurs?: Record<string, string>;
   /** Lien créé : affiché une seule fois, il n'est pas récupérable ensuite (seule son empreinte est en base). */
-  lien?: { url: string; mailto: string; expireLe: string };
+  lien?: { url: string; mailto: string; expireLe: string; sujet: string; corps: string };
 }
 
 const MESSAGES: Record<RefusTri | 'boucles_epuisees' | 'lien_non_cree', string> = {
@@ -65,14 +65,16 @@ export async function demanderUneCorrection(dossierId: string, _etat: EtatTri, f
   const h = await headers();
   const origine = `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host') ?? 'localhost:3000'}`;
   const url = `${origine}${cheminCorrection(r.jeton)}`;
-  const mail = messageCorrection({
+  const mail = mailACorriger({
     nom: dossier?.demande.client.nom ?? '',
+    points: champs,
+    commentaires: Object.fromEntries(Object.entries(commentaires).map(([k, v]) => [k, v.trim()]).filter(([, v]) => v)),
     motif: entree.motif.trim(),
     url,
     expireLe: r.expireLe,
     conseiller: conseiller.nomAffiche,
   });
-  const mailto = `mailto:${encodeURIComponent(dossier?.demande.client.email ?? '')}?subject=${encodeURIComponent(mail.sujet)}&body=${encodeURIComponent(mail.corps)}`;
+  const mailto = lienMailto(dossier?.demande.client.email ?? '', mail);
   refresh();
-  return { lien: { url, mailto, expireLe: r.expireLe } };
+  return { lien: { url, mailto, expireLe: r.expireLe, sujet: mail.sujet, corps: mail.corps } };
 }

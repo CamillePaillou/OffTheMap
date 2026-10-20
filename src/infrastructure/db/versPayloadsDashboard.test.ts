@@ -93,4 +93,12 @@ describe('lignes Supabase → payloads du dashboard', () => {
     const d = versDetailDossier(dossierDetail(), historique);
     expect(d.historique.map((h) => [h.cible, h.auteur_nom])).toEqual([['dossier', null], ['dossier', 'Camille'], ['proposition', null]]);
   });
+
+  it('détail : un mail envoyé a un libellé lisible (E5.4)', () => {
+    const historique: LigneHistorique[] = [
+      { cree_le: '2026-10-12T17:00:00+00:00', type: 'mail', proposition_id: null, ancien_statut: null, nouveau_statut: null, auteur: 'conseiller',
+        detail: { type: 'mail', modele: 'rendez_vous' }, profils: { nom_affiche: 'Camille' } },
+    ];
+    expect(versDetailDossier(dossierDetail(), historique).historique[0]).toMatchObject({ type: 'mail', resume: 'Mail « Rendez-vous » envoyé' });
+  });
 });

@@ -37,7 +37,7 @@ export class DossiersSupabase implements DossiersLecture {
       supabase.from('dossiers').select(SELECT_DETAIL).eq('id', dossierId).maybeSingle(),
       supabase
         .from('historique_dossier')
-        .select('cree_le, type, proposition_id, ancien_statut, nouveau_statut, auteur, profils (nom_affiche)')
+        .select('cree_le, type, proposition_id, ancien_statut, nouveau_statut, auteur, detail, profils (nom_affiche)')
         .eq('dossier_id', dossierId)
         .order('cree_le')
         .order('id'),

@@ -257,6 +257,17 @@ select doit_valoir($$select count(*) from propositions p join historique_dossier
 select doit_echouer($$select changer_ligne('00000000-0000-0000-0000-00000000a0a1', 'confirme', 'a_verifier', null, null, '00000000-0000-0000-0000-00000000000a')$$, 'tarif modifié après l''envoi');
 select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'second envoi');
 
+-- mails modèles (E5.4) : « marquer envoyé » journalise le modèle ; un mail sans objet à cette étape est refusé
+select doit_valoir($$select (marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', null, 'rendez_vous', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'mail de rendez-vous marqué envoyé');
+select doit_valoir($$select count(*) from dossiers d join historique_dossier h on h.dossier_id = d.id
+  where d.id = '00000000-0000-0000-0000-0000000000d8' and d.statut = 'rdv_propose'
+  and h.type = 'mail' and h.detail = '{"type": "mail", "modele": "rendez_vous"}' and h.auteur_id = '00000000-0000-0000-0000-00000000000a'$$, 1, 'journalisé, et le dossier validé passe en rendez-vous proposé');
+select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', null, 'a_corriger', '00000000-0000-0000-0000-00000000000a')$$, 'mail « à corriger » sur un dossier qui ne l''est pas');
+select doit_valoir($$select (marquer_mail_envoye('00000000-0000-0000-0000-0000000000da', '00000000-0000-0000-0000-0000000000fa', 'proposition', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'mail de la proposition envoyée marqué');
+select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000da', '00000000-0000-0000-0000-0000000000fa', 'confirmation', '00000000-0000-0000-0000-00000000000a')$$, 'confirmation d''une proposition non réservée');
+select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', '00000000-0000-0000-0000-0000000000fa', 'proposition', '00000000-0000-0000-0000-00000000000a')$$, 'proposition d''un autre dossier');
+select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000da', null, 'relance', '00000000-0000-0000-0000-00000000000a')$$, 'modèle inconnu');
+
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');
@@ -267,6 +278,7 @@ select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, 
   values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un visiteur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un visiteur');
 select doit_echouer($$select deposer_demande('{}')$$, 'dépôt direct en base par un visiteur');
+select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-0000000000d8', null, 'rendez_vous', '00000000-0000-0000-0000-00000000000a')$$, 'mail marqué par un visiteur');
 select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi appelé par un visiteur');
 select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d9', 'fiche_prete', 'validee', '00000000-0000-0000-0000-00000000000a')$$, 'tri appelé par un visiteur');
 select doit_valoir($$select count(*) from corrections$$, 0, 'un visiteur ne lit pas les liens de correction');
