@@ -21,6 +21,8 @@ flowchart LR
 | Action | Nature | Visiteur | Conseiller | Modèle | Système | Condition | Garantie |
 | --- | --- | :---: | :---: | :---: | :---: | --- | --- |
 | Déposer une demande | écriture | oui | — | — | — | consentements RGPD et IA donnés | route serveur POST /api/demandes ; contrainte CHECK en base |
+| Demander une correction de la demande | écriture | — | oui | — | — | dossier à corriger ; deux boucles au plus | fonction SQL demander_correction (service_role) ; unique (dossier, boucle) |
+| Corriger sa demande depuis un lien | écriture | oui | — | — | — | lien à usage unique, non expiré (7 jours), dossier encore à corriger | fonction SQL corriger_demande ; seule l’empreinte du jeton est stockée |
 | Lire les dossiers, fiches et propositions | lecture | — | oui | — | oui | conseiller connecté avec un profil | RLS lecture_conseiller ; aucune politique pour anon |
 | Proposer une fiche ou un brouillon | proposition | — | — | oui | — | le système valide la réponse (FicheIA, BrouillonIA) puis l’écrit | schémas Zod ; le modèle ne reçoit que DemandePourLLM |
 | Consulter une disponibilité | lecture | — | — | oui | oui | arguments identiques à la ligne vérifiée | outil unique verifier_disponibilite (OUTILS_AUTORISES) ; contrôle du programme |

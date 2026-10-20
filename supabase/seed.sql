@@ -241,3 +241,17 @@ insert into historique_dossier (dossier_id, proposition_id, type, ancien_statut,
 insert into historique_dossier (dossier_id, proposition_id, type, ancien_statut, nouveau_statut, auteur, auteur_id, detail, cree_le) values ('d0551e00-0000-4000-8000-000013000000', 'b0b05100-0000-4000-8000-000013000000', 'statut', 'depot_recu', 'reservee', 'systeme', null, '{"type": "statut", "cible": "proposition", "ancien": "depot_recu", "nouveau": "reservee"}'::jsonb, '2026-10-12 09:00:00+02'::timestamptz + interval '42 hours');
 insert into historique_dossier (dossier_id, proposition_id, type, ancien_statut, nouveau_statut, auteur, auteur_id, detail, cree_le) values ('d0551e00-0000-4000-8000-000013000000', null, 'statut', 'en_proposition', 'gagnee', 'systeme', null, '{"type": "statut", "cible": "dossier", "ancien": "en_proposition", "nouveau": "gagnee"}'::jsonb, '2026-10-12 09:00:00+02'::timestamptz + interval '45 hours');
 
+
+-- Lien de correction de démonstration (E1.2) : dossier 4, Nina Moreau, à corriger pour son budget.
+-- Lien à ouvrir : http://localhost:3000/demande/corriger/demo-Nina-Moreau-correction-budget-E12-2026
+-- Jeton public, réservé à la démo locale : seule son empreinte SHA-256 est en base. Il expire 7 jours après
+-- le chargement du seed et ne sert qu'une fois : `make seed` le remet à neuf.
+insert into corrections (dossier_id, demande_id, boucle, champs, motif, commentaires, jeton_hash, demandee_par, expire_le, cree_le)
+  values ('d0551e00-0000-4000-8000-000004000000', 'de3a0de0-0000-4000-8000-000004000000', 1, '{budget,dates,nb_nuits}',
+          'Votre budget de 150 € pour deux personnes couvre difficilement le train et une nuit d''hôtel à Nantes. Pouvez-vous le revoir, ou nous dire si vous préférez raccourcir le séjour ?',
+          '{"budget": "Comptez au moins 290 € à deux : 96 € de train aller-retour et 192 € pour une nuit d''hôtel.", "nb_nuits": "Une nuit suffit pour un week-end ; deux nuits demandent un budget plus élevé."}'::jsonb,
+          encode(sha256(convert_to('demo-Nina-Moreau-correction-budget-E12-2026', 'UTF8')), 'hex'),
+          '11111111-1111-4111-8111-111111111111', now() + interval '7 days', now());
+insert into historique_dossier (dossier_id, type, auteur, auteur_id, detail, cree_le)
+  values ('d0551e00-0000-4000-8000-000004000000', 'mail', 'conseiller', '11111111-1111-4111-8111-111111111111',
+          '{"type": "correction_demandee", "boucle": 1, "champs": ["budget", "dates", "nb_nuits"]}'::jsonb, now());

@@ -35,7 +35,7 @@ begin
   -- chaque dossier a un journal qui finit sur son statut courant
   select count(*) into n from dossiers d where d.id::text like 'd0551e00-%' and d.statut::text is distinct from (
     select h.nouveau_statut from historique_dossier h
-    where h.dossier_id = d.id and h.proposition_id is null order by h.cree_le desc, h.id desc limit 1);
+    where h.dossier_id = d.id and h.proposition_id is null and h.type = 'statut' order by h.cree_le desc, h.id desc limit 1);
   if n > 0 then raise exception '% dossier(s) dont le journal ne finit pas sur le statut courant', n; end if;
 
   raise notice 'SEED OK : catalogue, étapes clés, totaux et journaux vérifiés';

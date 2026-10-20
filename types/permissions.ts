@@ -24,6 +24,10 @@ export interface Permission {
 export const PERMISSIONS: readonly Permission[] = [
   { action: 'Déposer une demande', nature: 'ecriture', autorises: ['visiteur'],
     condition: 'consentements RGPD et IA donnés', garantie: 'route serveur POST /api/demandes ; contrainte CHECK en base' },
+  { action: 'Demander une correction de la demande', nature: 'ecriture', autorises: ['conseiller'],
+    condition: 'dossier à corriger ; deux boucles au plus', garantie: 'fonction SQL demander_correction (service_role) ; unique (dossier, boucle)' },
+  { action: 'Corriger sa demande depuis un lien', nature: 'ecriture', autorises: ['visiteur'],
+    condition: 'lien à usage unique, non expiré (7 jours), dossier encore à corriger', garantie: 'fonction SQL corriger_demande ; seule l’empreinte du jeton est stockée' },
   { action: 'Lire les dossiers, fiches et propositions', nature: 'lecture', autorises: ['conseiller', 'systeme'],
     condition: 'conseiller connecté avec un profil', garantie: 'RLS lecture_conseiller ; aucune politique pour anon' },
   { action: 'Proposer une fiche ou un brouillon', nature: 'proposition', autorises: ['modele'],

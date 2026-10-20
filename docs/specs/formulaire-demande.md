@@ -31,3 +31,7 @@ Règle : **chaque champ a un usage**. Un champ qui ne sert à rien n'est pas dem
 | Âges par tranche | Remplacés par adultes et enfants : les enfants paient le prix adulte |
 
 Les colonnes correspondantes sont retirées de `demandes` par `supabase/migrations/20261020090000_formulaire_demande.sql`.
+
+## Correction depuis un lien (E1.2)
+
+Le même formulaire sert à corriger une demande : prérempli avec la version à corriger, champs signalés surlignés, consentements à recocher. Règles : `docs/specs/correction-demande.md`.

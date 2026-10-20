@@ -104,6 +104,63 @@ select doit_echouer($$select deposer_demande('{"consentement_rgpd": false, "cons
   "email": "sans@example.org", "date_debut": "2026-11-07", "date_fin": "2026-11-08", "nb_nuits": 1, "voyageurs": ["adulte"]}')$$, 'demande sans consentement RGPD');
 select doit_valoir($$select count(*) - (select n from avant_depot) from dossiers$$, 0, 'refus du dépôt : aucun dossier orphelin');
 
+-- correction depuis un lien (E1.2) : lien à usage unique, expirant, deux boucles au plus
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000000d2', 'a_corriger'), ('00000000-0000-0000-0000-0000000000d3', 'a_corriger');
+insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents)
+  values ('00000000-0000-0000-0000-0000000000e2', '00000000-0000-0000-0000-0000000000d2', true, true, 'Nina', 'nina@example.org',
+          '2026-11-07', '2026-11-08', 1, '{adulte,adulte}', 15000),
+         ('00000000-0000-0000-0000-0000000000e3', '00000000-0000-0000-0000-0000000000d3', true, true, 'Paul', 'paul@example.org',
+          '2026-11-07', '2026-11-08', 1, '{adulte}', null);
+create temp table jetons as select n, encode(sha256(convert_to('jeton-test-' || n, 'UTF8')), 'hex') as h from generate_series(1, 5) n;
+select doit_echouer($$select demander_correction('00000000-0000-0000-0000-0000000000d1', '{budget}', 'Budget ?',
+  (select h from jetons where n = 1), '00000000-0000-0000-0000-00000000000a', now() + interval '7 days')$$, 'correction demandée sur un dossier qui n’est pas à corriger');
+select doit_echouer($$select demander_correction('00000000-0000-0000-0000-0000000000d2', '{telephone}', 'Téléphone ?',
+  (select h from jetons where n = 1), '00000000-0000-0000-0000-00000000000a', now() + interval '7 days')$$, 'point à corriger inconnu');
+select doit_echouer($$select demander_correction('00000000-0000-0000-0000-0000000000d2', '{budget}', 'Budget ?',
+  'jeton-en-clair', '00000000-0000-0000-0000-00000000000a', now() + interval '7 days')$$, 'jeton stocké en clair');
+select doit_echouer($$select demander_correction('00000000-0000-0000-0000-0000000000d2', '{budget}', 'Budget ?',
+  (select h from jetons where n = 1), '00000000-0000-0000-0000-00000000000a', now() + interval '7 days', '{"envies": "Précisez"}')$$, 'commentaire sur un point non signalé');
+select doit_echouer($$select demander_correction('00000000-0000-0000-0000-0000000000d2', '{budget}', 'Budget ?',
+  (select h from jetons where n = 1), '00000000-0000-0000-0000-00000000000a', now() + interval '7 days', jsonb_build_object('budget', repeat('x', 201)))$$, 'commentaire de plus de 200 caractères');
+select doit_valoir($$select boucle from demander_correction('00000000-0000-0000-0000-0000000000d2', '{budget,dates}',
+  'Votre budget paraît court pour deux personnes : pouvez-vous le préciser ?', (select h from jetons where n = 1),
+  '00000000-0000-0000-0000-00000000000a', now() + interval '7 days', '{"budget": "Comptez au moins 290 € à deux."}')$$, 1, 'première correction demandée, avec un commentaire');
+select doit_valoir($$select count(*) from historique_dossier where dossier_id = '00000000-0000-0000-0000-0000000000d2'
+  and type = 'mail' and detail ->> 'type' = 'correction_demandee' and not detail ? 'motif' and not detail ? 'commentaires'$$, 1, 'la demande de correction est journalisée, sans motif ni commentaire');
+select doit_valoir($$select count(*) from (select lire_correction((select h from jetons where n = 1)) l) x
+  where l ->> 'etat' = 'valide' and l -> 'champs' = '["budget", "dates"]' and l -> 'demande' ->> 'nom' = 'Nina'
+  and l -> 'commentaires' ->> 'budget' = 'Comptez au moins 290 € à deux.'$$, 1, 'lien valide : points à revoir, commentaires et version à préremplir');
+select doit_valoir($$select count(*) from (select lire_correction(repeat('0', 64)) l) x where l ->> 'etat' = 'inconnu'$$, 1, 'lien inconnu');
+select doit_valoir($$select version from corriger_demande((select h from jetons where n = 1), '{"consentement_rgpd": true, "consentement_ia": true,
+  "nom": "Nina", "email": "nina@example.org", "date_debut": "2026-11-07", "date_fin": "2026-11-09", "nb_nuits": 2,
+  "voyageurs": ["adulte", "adulte"], "budget_annonce_cents": 60000}')$$, 2, 'le renvoi crée la version 2');
+select doit_valoir($$select count(*) from demandes where dossier_id = '00000000-0000-0000-0000-0000000000d2'
+  and ((version = 1 and remplacee_le is not null) or (version = 2 and remplacee_le is null and budget_annonce_cents = 60000))$$, 2, 'version 1 marquée remplacée, version 2 courante');
+select doit_valoir($$select count(*) from dossiers d join historique_dossier h on h.dossier_id = d.id
+  where d.id = '00000000-0000-0000-0000-0000000000d2' and d.statut = 'fiche_en_cours'
+  and h.ancien_statut = 'a_corriger' and h.nouveau_statut = 'fiche_en_cours' and h.auteur = 'systeme' and (h.detail ->> 'version')::int = 2$$, 1, 'dossier repassé en fiche_en_cours, transition journalisée');
+select doit_echouer($$select corriger_demande((select h from jetons where n = 1), '{"consentement_rgpd": true, "consentement_ia": true,
+  "nom": "Nina", "email": "nina@example.org", "date_debut": "2026-11-07", "date_fin": "2026-11-09", "nb_nuits": 2, "voyageurs": ["adulte"]}')$$, 'lien réutilisé');
+select doit_valoir($$select count(*) from (select lire_correction((select h from jetons where n = 1)) l) x where l ->> 'etat' = 'utilise'$$, 1, 'lien déjà utilisé');
+update dossiers set statut = 'a_corriger' where id = '00000000-0000-0000-0000-0000000000d2';  -- le conseiller trie de nouveau « à corriger »
+select doit_valoir($$select boucle from demander_correction('00000000-0000-0000-0000-0000000000d2', '{envies}', 'Que souhaitez-vous faire ?',
+  (select h from jetons where n = 2), '00000000-0000-0000-0000-00000000000a', now() + interval '7 days')$$, 2, 'deuxième correction demandée');
+select doit_valoir($$select count(*) from (select lire_correction((select h from jetons where n = 2)) l) x
+  where l ->> 'etat' = 'valide' and l -> 'demande' ->> 'budget_annonce_cents' = '60000'$$, 1, 'la deuxième correction part de la version 2');
+select doit_echouer($$select demander_correction('00000000-0000-0000-0000-0000000000d2', '{envies}', 'Encore ?',
+  (select h from jetons where n = 3), '00000000-0000-0000-0000-00000000000a', now() + interval '7 days')$$, 'troisième correction refusée');
+update dossiers set statut = 'refusee' where id = '00000000-0000-0000-0000-0000000000d2';
+select doit_valoir($$select count(*) from (select lire_correction((select h from jetons where n = 2)) l) x where l ->> 'etat' = 'clos'$$, 1, 'lien clos quand le dossier n’attend plus de correction');
+select doit_echouer($$select corriger_demande((select h from jetons where n = 2), '{"consentement_rgpd": true, "consentement_ia": true,
+  "nom": "Nina", "email": "nina@example.org", "date_debut": "2026-11-07", "date_fin": "2026-11-09", "nb_nuits": 2, "voyageurs": ["adulte"]}')$$, 'renvoi sur un dossier refusé');
+select demander_correction('00000000-0000-0000-0000-0000000000d3', '{budget}', 'Budget ?', (select h from jetons where n = 4),
+  '00000000-0000-0000-0000-00000000000a', now() - interval '1 minute');
+select doit_valoir($$select count(*) from (select lire_correction((select h from jetons where n = 4)) l) x where l ->> 'etat' = 'expire'$$, 1, 'lien expiré');
+select doit_echouer($$select corriger_demande((select h from jetons where n = 4), '{"consentement_rgpd": true, "consentement_ia": true,
+  "nom": "Paul", "email": "paul@example.org", "date_debut": "2026-11-07", "date_fin": "2026-11-08", "nb_nuits": 1, "voyageurs": ["adulte"]}')$$, 'renvoi par un lien expiré');
+select doit_valoir($$select count(*) from demandes where dossier_id = '00000000-0000-0000-0000-0000000000d3'$$, 1, 'refus du renvoi : aucune version créée');
+select doit_echouer($$select corriger_demande((select h from jetons where n = 5), '{}')$$, 'renvoi par un lien inconnu');
+
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');
@@ -114,6 +171,9 @@ select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, 
   values ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'echec', 'm', 0, 'echec_serveur')$$, 'vérification écrite par un visiteur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un visiteur');
 select doit_echouer($$select deposer_demande('{}')$$, 'dépôt direct en base par un visiteur');
+select doit_valoir($$select count(*) from corrections$$, 0, 'un visiteur ne lit pas les liens de correction');
+select doit_echouer($$select lire_correction(repeat('0', 64))$$, 'lecture d’un lien en base par un visiteur');
+select doit_echouer($$select corriger_demande(repeat('0', 64), '{}')$$, 'correction directe en base par un visiteur');
 reset role;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000ff', false);
@@ -126,6 +186,9 @@ select doit_valoir($$select count(*) from demandes where id = '00000000-0000-000
 select doit_valoir($$select count(*) from verifications where ligne_id = '00000000-0000-0000-0000-0000000000a1'$$, 1, 'un conseiller lit les vérifications');
 select doit_valoir($$select count(*) from options where ligne_id = '00000000-0000-0000-0000-0000000000a1'$$, 1, 'un conseiller lit les options');
 select doit_echouer($$insert into dossiers default values$$, 'écriture directe par un conseiller');
+select doit_valoir($$select count(*) from corrections where dossier_id = '00000000-0000-0000-0000-0000000000d2'$$, 2, 'un conseiller lit les liens de correction');
+select doit_echouer($$select demander_correction('00000000-0000-0000-0000-0000000000d3', '{budget}', 'x', repeat('1', 64),
+  '00000000-0000-0000-0000-00000000000a', now() + interval '1 day')$$, 'correction demandée en base sans passer par le serveur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un conseiller');
 -- tables de l'agent (E0.5) : seul le serveur écrit ; un conseiller connecté ne crée, ne modifie ni ne supprime rien
 select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, modele, nb_tours, arret)
