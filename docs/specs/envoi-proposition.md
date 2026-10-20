@@ -27,7 +27,7 @@ La proposition est verrouillée pendant l'écriture : deux changements de lignes
 
 ## Remplacer une ligne indisponible (E5.2)
 
-Cas d'usage : `remplacerLigne` (`src/application/tarifs.ts`). Base : `remplacer_ligne` (`supabase/migrations/20261020200000_remplacer_ligne.sql`). Écran : « Remplacer la prestation » sur une ligne indisponible.
+Cas d'usage : `remplacerLigne` (`src/application/tarifs.ts`). Base : `remplacer_ligne` (`supabase/migrations/20261020220000_remplacer_ligne.sql`). Écran : « Remplacer la prestation » sur une ligne indisponible.
 
 | Étape | Effet |
 | --- | --- |

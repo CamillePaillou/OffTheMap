@@ -20,7 +20,7 @@ export type LignePropositionBase = Ligne<'proposition_lignes',
   verifications: Ligne<'verifications', 'statut' | 'prix_unitaire_cents' | 'places_restantes' | 'cree_le'>[];
 };
 
-export type PropositionBase = Ligne<'propositions', 'id' | 'dossier_id' | 'version' | 'statut' | 'total_cents' | 'alertes' | 'ecarts'> & {
+export type PropositionBase = Ligne<'propositions', 'id' | 'dossier_id' | 'version' | 'statut' | 'programme' | 'total_cents' | 'alertes' | 'ecarts'> & {
   proposition_lignes: LignePropositionBase[];
   dossiers: {
     demandes: (Ligne<'demandes', 'version' | 'remplacee_le' | 'budget_annonce_cents'> & {
@@ -43,6 +43,7 @@ export function versProposition(p: PropositionBase): Proposition {
     dossier_id: p.dossier_id,
     version: p.version,
     statut: p.statut,
+    programme: p.programme,
     lignes: lignes.map((l) => {
       if (!l.prestations) throw new Error(`ligne sans prestation : ${l.id}`);
       const v = plusRecente(l.verifications);

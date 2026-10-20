@@ -26,4 +26,21 @@ export interface AccordsRepository {
   demarcheEnCours(ligneId: string, maintenant: Date): Promise<boolean>;
   /** Écrit l'accord et son événement de journal ensemble. Rejette DemarcheEnCoursErreur. Renvoie l'id de l'option. */
   enregistrerAccord(accord: NouvelAccord): Promise<{ option_id: string }>;
+  /** Lit l'accord non expiré de la ligne (affichage et préparation de la pose). */
+  accordValable(ligneId: string, maintenant: Date): Promise<AccordOption | undefined> | AccordOption | undefined;
+  /** Consomme atomiquement un accord non expiré, avant l'appel d'écriture externe. */
+  consommerAccord(optionId: string, maintenant: Date): Promise<AccordOption | null>;
+  /** Enregistre la réponse réelle ou l'échec du simulateur et l'événement correspondant. */
+  terminerPoseOption(optionId: string, resultat: ResultatPoseOption): Promise<void>;
+  /** Journalise aussi les tentatives refusées avant toute écriture externe. */
+  tracerTentativeOption(evenement: TentativeOption): Promise<void>;
+}
+
+export interface AccordOption extends NouvelAccord { option_id: string; accord_utilise: boolean; statut: 'accord_donne' | 'posee' | 'echec'; }
+export type ResultatPoseOption =
+  | { ok: true; option_id_simulateur: string; expire_le: string; reponse_serveur: unknown }
+  | { ok: false; raison: string; reponse_serveur?: unknown };
+export interface TentativeOption {
+  dossier_id: string; proposition_id: string; ligne_id: string; auteur_id: string;
+  raison: string; date: string;
 }

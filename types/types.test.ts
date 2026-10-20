@@ -22,6 +22,13 @@ const enumSql = (nom: string) => {
   return valeurs;
 };
 
+describe('migrations', () => {
+  it('ont chacune un horodatage unique (version de la CLI Supabase)', () => {
+    const versions = readdirSync(dossierMigrations).filter((f) => f.endsWith('.sql')).map((f) => f.split('_')[0]);
+    expect(versions.filter((v, i) => versions.indexOf(v) !== i)).toEqual([]);
+  });
+});
+
 describe('énumérations identiques à la migration', () => {
   const paires: [string, readonly string[]][] = [
     ['statut_dossier', E.STATUTS_DOSSIER], ['decision_tri', E.DECISIONS_TRI],

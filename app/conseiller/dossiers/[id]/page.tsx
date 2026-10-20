@@ -6,8 +6,12 @@ import { CorrectionsSupabase } from '@/src/infrastructure/db/correctionsSupabase
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import type { DetailDossier } from '@/types/dashboard';
 import { DECISION, ETAT_FICHE, STATUT_DOSSIER, STATUT_PROPOSITION, euros, instantParis, jour } from '../../_composants/libelles';
-import { BoutonRelancer, FormulaireCorrection } from './formulaires';
+import { BoutonBrouillon, BoutonRelancer, FormulaireCorrection } from './formulaires';
 import { PanneauTri } from './panneauTri';
+import { CarteMail } from '../../_composants/carte-mail';
+import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
+import { lienMailto, mailConfirmation, mailRendezVous, MailImpossibleErreur } from '@/src/domain/mails';
+import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
 
 type Props = PageProps<'/conseiller/dossiers/[id]'>;
 
@@ -31,14 +35,33 @@ export default function DossierPage({ params }: Props) {
 
 async function Contenu({ params }: Pick<Props, 'params'>) {
   const { id } = await params;
-  await exigerConseiller(`/conseiller/dossiers/${id}`);
+  const conseiller = await exigerConseiller(`/conseiller/dossiers/${id}`);
   const dossier = await new DossiersSupabase().detail(id);
   if (!dossier) notFound();
   const { demande, fiche } = dossier;
   const enErreur = dossier.statut === 'erreur' || fiche?.etat === 'erreur';
   // tri (E3.1) : sur une fiche prête, ou sur un dossier à corriger (valider, refuser, nouveau lien)
+  // brouillon (E4.4) : après l'entretien, fiche corrigée (budget réel et dates fixes), aucune proposition encore
+  const ficheComplete = fiche !== null && fiche.budget_reel_cents !== null && fiche.dates_fixes.debut !== null && fiche.dates_fixes.fin !== null;
+  const peutDemanderBrouillon = (dossier.statut === 'entretien_fait' || dossier.statut === 'en_proposition') && dossier.propositions.length === 0;
   const aTrier = (dossier.statut === 'fiche_prete' || dossier.statut === 'a_corriger') && fiche !== null && fiche.etat !== 'erreur';
   const boucles = aTrier ? await new CorrectionsSupabase().boucles(dossier.dossier_id) : null;
+
+  // mails modèles (E5.4) : rendez-vous après la validation, confirmation quand une proposition est réservée
+  const sejour = sejourDe(dossier, conseiller.nomAffiche);
+  const mails: { modele: 'rendez_vous' | 'confirmation'; propositionId: string | null; titre: string; mail: { sujet: string; corps: string } }[] = [];
+  if (dossier.statut === 'validee' || dossier.statut === 'rdv_propose') {
+    mails.push({ modele: 'rendez_vous', propositionId: null, titre: 'Mail « Rendez-vous »', mail: mailRendezVous(sejour) });
+  }
+  const reservee = dossier.propositions.find((p) => p.statut === 'reservee');
+  const propositionReservee = reservee ? await new PropositionsSupabase().proposition(reservee.id) : null;
+  if (propositionReservee) {
+    try {
+      mails.push({ modele: 'confirmation', propositionId: propositionReservee.id, titre: 'Mail « Confirmation de réservation »', mail: mailConfirmation(sejour, lignesPourMail(propositionReservee)) });
+    } catch (e) {
+      if (!(e instanceof MailImpossibleErreur)) throw e; // une ligne sans prix vérifié : pas de mail
+    }
+  }
 
   return (
     <>
@@ -128,6 +151,26 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
         )}
       </section>
 
+      {mails.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold">Mails au client</h2>
+          <div className="mt-3 flex flex-col gap-3">
+            {mails.map((m) => (
+              <CarteMail
+                key={m.modele}
+                dossierId={dossier.dossier_id}
+                propositionId={m.propositionId}
+                modele={m.modele}
+                titre={m.titre}
+                sujet={m.mail.sujet}
+                corps={m.mail.corps}
+                mailto={lienMailto(demande.client.email, m.mail)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       {aTrier && boucles && fiche && (
         <PanneauTri
           dossierId={dossier.dossier_id}
@@ -135,6 +178,19 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
           boucles={boucles}
           pointsFlous={fiche.points_flous}
         />
+      )}
+
+      {peutDemanderBrouillon && (
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold">Proposition</h2>
+          {ficheComplete ? (
+            <div className="mt-3">
+              <BoutonBrouillon dossierId={dossier.dossier_id} valideFiche={dossier.statut === 'entretien_fait'} />
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-zinc-600">Renseignez le budget réel et les dates fixes pour générer le brouillon.</p>
+          )}
+        </section>
       )}
 
       {dossier.propositions.length > 0 && (
@@ -186,7 +242,7 @@ function voyageurs(tranches: DetailDossier['demande']['voyageurs']) {
 }
 
 function evenement(h: DetailDossier['historique'][number]) {
-  if (h.type !== 'statut') return h.type;
+  if (h.type !== 'statut') return h.resume ?? h.type;
   const libelle = (s: string | null) =>
     s === null ? '—' : h.cible === 'dossier' ? (STATUT_DOSSIER[s as keyof typeof STATUT_DOSSIER] ?? s) : (STATUT_PROPOSITION[s as keyof typeof STATUT_PROPOSITION] ?? s);
   const prefixe = h.cible === 'proposition' ? 'Proposition : ' : '';

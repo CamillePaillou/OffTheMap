@@ -68,6 +68,7 @@ export const EvenementHistorique = z.object({
   nouveau_statut: z.string().nullable(),
   auteur: z.enum(AUTEURS_EVENEMENT),
   auteur_nom: z.string().nullable(), // nom affiché du conseiller ; null pour le système
+  resume: z.string().min(1).optional(), // libellé d'un événement autre qu'un statut (mail envoyé, lien de correction) ; E5.4
 }).strict().refine((e) => (e.type === 'statut') === (e.cible !== null && e.nouveau_statut !== null), {
   message: 'un changement de statut a une cible et un nouveau statut ; les autres événements n’en ont pas',
 })
@@ -152,6 +153,7 @@ export const Proposition = z.object({
   dossier_id: uuid,
   version: z.number().int().min(1),
   statut: z.enum(STATUTS_PROPOSITION),
+  programme: z.array(z.object({ date: dateJour, titre: z.string(), texte: z.string() }).strict()).nullable(), // texte du brouillon (E4.4), sans montant ; null tant qu'il n'est pas écrit
   lignes: z.array(LigneProposition),
   total_cents: cents.nullable(),
   marge_cents: cents, // 0 : décidé, pas de marge (REGLES_CHIFFRAGE)

@@ -701,6 +701,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      enregistrer_reponse_client: {
+        Args: { p_proposition: string; p_nouveau: Database["public"]["Enums"]["statut_proposition"]; p_conseiller: string };
+        Returns: number;
+      };
+      marquer_mail_envoye: {
+        Args: { p_dossier: string; p_proposition: string | null; p_modele: string; p_conseiller: string };
+        Returns: number;
+      };
       changer_ligne: {
         Args: {
           p_ligne: string;
@@ -731,6 +739,11 @@ export type Database = {
       terminer_generation_fiche: {
         Args: { p_dossier: string; p_modele: string; p_generation: Json };
         Returns: Database["public"]["Enums"]["statut_dossier"];
+      };
+      demarrer_brouillon: { Args: { p_dossier: string; p_conseiller: string }; Returns: string };
+      terminer_brouillon: {
+        Args: { p_proposition: string; p_resultat: Json };
+        Returns: Database["public"]["Enums"]["statut_proposition"];
       };
       est_conseiller: { Args: Record<PropertyKey, never>; Returns: boolean };
       deposer_demande: { Args: { p_demande: Json }; Returns: { dossier_id: string; demande_id: string }[] };

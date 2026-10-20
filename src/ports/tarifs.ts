@@ -1,7 +1,7 @@
 /**
  * Port des tarifs et de l'envoi (E5.1) et du remplacement d'une ligne (E5.2). L'adaptateur PostgreSQL appelle
  * les fonctions SQL changer_ligne, enregistrer_alertes, envoyer_proposition
- * (supabase/migrations/20261020190000_tarifs_envoi.sql) et remplacer_ligne (20261020200000_remplacer_ligne.sql).
+ * (supabase/migrations/20261020190000_tarifs_envoi.sql) et remplacer_ligne (20261020220000_remplacer_ligne.sql).
  */
 import type { Alerte, SourcePrix, StatutLigne, StatutProposition, StatutVerification, TypePrestation } from '../../types';
 import type { EntreeChiffrage } from '../domain/chiffrage/chiffrer';
