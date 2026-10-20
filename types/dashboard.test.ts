@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 import { DETAIL_DOSSIER, LISTE_DOSSIERS, PROPOSITION, VERIFICATIONS } from '../fixtures/dashboard';
 import { ALERTES_BLOQUANTES, REGLES_CHIFFRAGE } from './chiffrage';
 import { LigneProposition, Proposition, VerificationLigne } from './dashboard';
-import { DisponibiliteSimulateur } from './simulateur';
 import { TRANSITIONS_DOSSIER, TRANSITIONS_PROPOSITION, trouverTransition } from './transitions';
 
 const brut = (nom: string) => JSON.parse(readFileSync(join(__dirname, '../fixtures/dashboard', nom), 'utf8'));
@@ -98,9 +97,9 @@ describe('fixtures des vérifications (E8.4)', () => {
 
   it('la réponse brute est celle du simulateur, et ses faits sont ceux de la vérification', () => {
     for (const v of VERIFICATIONS.filter((x) => x.statut !== 'echec')) {
-      const brut = DisponibiliteSimulateur.parse(v.reponse_serveur);
-      expect(brut.prix_unitaire_eur * 100).toBe(v.prix_unitaire_cents);
-      expect(brut.prix_total_eur * 100).toBe(v.prix_total_cents);
+      const brut = v.reponse_serveur as Record<string, unknown>;
+      expect(brut.prix_unitaire_cents).toBe(v.prix_unitaire_cents);
+      expect(brut.prix_total_cents).toBe(v.prix_total_cents);
       expect(brut.places_restantes).toBe(v.places_restantes);
     }
   });

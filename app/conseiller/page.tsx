@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
-import { PROPOSITION_DEMO_ID } from '@/src/infrastructure/fixtures/propositionsFixtures';
 import { deconnecter } from '../connexion/actions';
+
+/** Proposition « à vérifier » du seed de démonstration (E0.10, dossier d'Inès Martin). */
+const PROPOSITION_DEMO_ID = 'b0b05100-0000-4000-8000-000009000000';
 
 // Back-office des conseillers (P2). Sans connexion, le proxy et exigerConseiller() renvoient vers /connexion.
 export default function ConseillerPage() {
@@ -31,7 +33,7 @@ async function Contenu() {
       <p className="mt-4 text-zinc-600">Liste des dossiers à venir.</p>
       <p className="mt-2">
         <Link href={`/conseiller/propositions/${PROPOSITION_DEMO_ID}`} className="underline underline-offset-4">
-          Proposition de démonstration (Sophie, Nantes)
+          Proposition à vérifier (démonstration)
         </Link>
       </p>
     </>

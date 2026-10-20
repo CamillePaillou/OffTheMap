@@ -171,7 +171,7 @@ export const VerificationLigne = z.object({
   prix_total_cents: cents.nullable(),
   places_restantes: z.number().int().nonnegative().nullable(),
   resume: z.string().nullable(), // texte de l'agent, sans montant
-  reponse_serveur: z.unknown(), // JSON brut du simulateur (montants en euros), affiché tel quel
+  reponse_serveur: z.unknown(), // réponse du simulateur rendue par l'adaptateur (port Disponibilite, centimes), affichée telle quelle ; null si aucune
   trace: TraceVerification, // format de E8.5 (types/trace.ts), expurgé avant écriture
   modele: z.string().min(1),
   nb_tours: z.number().int().min(0).max(LIMITES.toursAgentMax),

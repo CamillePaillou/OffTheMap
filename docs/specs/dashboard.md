@@ -30,6 +30,7 @@ Alignés sur le schéma de la base et les types partagés ; à valider par P3.
 
 ## Vérification d'une ligne (E8.4)
 
-`VerificationLigne` reprend une ligne de `verifications` : prix revérifié (unitaire et total), places, résumé de l'agent, `reponse_serveur` (JSON brut du simulateur, montants en euros, affiché tel quel), `trace` (format `TraceVerification` de E8.5, `types/trace.ts`) et raison d'arrêt.
+`VerificationLigne` reprend une ligne de `verifications` : prix revérifié (unitaire et total), places, résumé de l'agent, `reponse_serveur` (réponse du simulateur telle que rendue par l'adaptateur, en centimes : c'est ce que `verifierPrestation` enregistre), `trace` (format `TraceVerification` de E8.5, `types/trace.ts`) et raison d'arrêt.
 L'écart avec le prix proposé n'est pas dans le payload : il est calculé par le code (`src/domain/ecartPrix.ts`), jamais par le modèle.
-Écrans : `/conseiller/propositions/{id}` (prix proposé, revérifié et écart par ligne) et `/conseiller/propositions/{id}/lignes/{ligneId}` (réponse brute et trace). Ils lisent les fixtures tant que l'agent (E8.3) n'écrit pas de vérifications.
+Écrans : `/conseiller/propositions/{id}` (prix proposé, revérifié et écart par ligne) et `/conseiller/propositions/{id}/lignes/{ligneId}` (réponse brute et trace). Ils lisent la base au nom du conseiller (`src/infrastructure/db/propositionsSupabase.ts`).
+Le bouton « Vérifier le prix » / « Revérifier » de l'écran d'une ligne lance `verifierPrestation(ligne, { modele, prestataires, secrets })` (E8.3) par le cas d'usage `reverifierLigne` : l'agent ne reçoit que prestation, nom, date et participants ; le résultat (prix, places, réponse, trace expurgée, `resume`) est écrit dans `verifications` avec la clé service_role. Il faut `LLM_API_KEY`, `LLM_MODEL` et `SIMULATEUR_TEAM_KEY` dans `.env` (voir `.env.example`).

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
 import { ecartPrix, euros } from '@/src/domain/ecartPrix';
-import { PropositionsFixtures } from '@/src/infrastructure/fixtures/propositionsFixtures';
+import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
 import { Ecart } from '../../_composants/ecart';
 
 // Proposition : prix proposé, prix revérifié par l'agent et écart, ligne par ligne (E8.4).
@@ -24,7 +24,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   const { id } = await params;
   await exigerConseiller(`/conseiller/propositions/${id}`);
 
-  const lecture = new PropositionsFixtures();
+  const lecture = new PropositionsSupabase();
   const proposition = await lecture.proposition(id);
   if (!proposition) notFound();
   const lignes = await Promise.all(
@@ -68,14 +68,12 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                   {verification ? <Ecart ecart={ecart} /> : <span className="text-zinc-500">pas encore vérifié</span>}
                 </td>
                 <td className="py-3 text-right">
-                  {verification && (
-                    <Link
-                      href={`/conseiller/propositions/${proposition.id}/lignes/${ligne.id}`}
-                      className="underline underline-offset-4"
-                    >
-                      Détail
-                    </Link>
-                  )}
+                  <Link
+                    href={`/conseiller/propositions/${proposition.id}/lignes/${ligne.id}`}
+                    className="underline underline-offset-4"
+                  >
+                    {verification ? 'Détail' : 'Vérifier'}
+                  </Link>
                 </td>
               </tr>
             ))}

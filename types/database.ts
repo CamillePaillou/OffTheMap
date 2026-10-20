@@ -564,6 +564,7 @@ export type Database = {
           prix_total_cents: number | null;
           prix_unitaire_cents: number | null;
           reponse_serveur: Json | null;
+          resume: string | null;
           statut: Database["public"]["Enums"]["statut_verification"];
           trace: NonNullable<Json>;
         };
@@ -580,6 +581,7 @@ export type Database = {
           prix_total_cents?: number | null;
           prix_unitaire_cents?: number | null;
           reponse_serveur?: Json | null;
+          resume?: string | null;
           statut: Database["public"]["Enums"]["statut_verification"];
           trace?: NonNullable<Json>;
         };
@@ -595,6 +597,7 @@ export type Database = {
           prix_total_cents?: number | null;
           prix_unitaire_cents?: number | null;
           reponse_serveur?: Json | null;
+          resume?: string | null;
           statut?: Database["public"]["Enums"]["statut_verification"];
           trace?: NonNullable<Json>;
         };

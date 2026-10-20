@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
 import { ecartPrix, euros } from '@/src/domain/ecartPrix';
-import { PropositionsFixtures } from '@/src/infrastructure/fixtures/propositionsFixtures';
+import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
 import { Ecart } from '../../../../_composants/ecart';
+import { BoutonReverifier } from './bouton-reverifier';
 
 type Props = PageProps<'/conseiller/propositions/[id]/lignes/[ligneId]'>;
 
@@ -30,7 +31,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   const { id, ligneId } = await params;
   await exigerConseiller(`/conseiller/propositions/${id}/lignes/${ligneId}`);
 
-  const lecture = new PropositionsFixtures();
+  const lecture = new PropositionsSupabase();
   const ligne = (await lecture.proposition(id))?.lignes.find((l) => l.id === ligneId);
   if (!ligne) notFound();
   const verification = await lecture.verificationDeLigne(ligneId);
@@ -44,6 +45,10 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
       <p className="mt-1 text-zinc-600">
         {ligne.date} · {ligne.participants} participant{ligne.participants > 1 ? 's' : ''} · {ligne.prestation.id}
       </p>
+
+      <div className="mt-6">
+        <BoutonReverifier propositionId={id} ligneId={ligne.id} deja={verification !== null} />
+      </div>
 
       {!verification ? (
         <p className="mt-8 text-zinc-600">Cette ligne n’a pas encore été vérifiée.</p>
@@ -71,7 +76,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
           {verification.reponse_serveur == null ? (
             <p className="mt-2 text-zinc-600">Aucune réponse : le serveur n’a pas répondu.</p>
           ) : (
-            <pre className="mt-2 overflow-x-auto rounded bg-zinc-100 p-4 text-sm">
+            <pre className="mt-2 overflow-x-auto rounded bg-zinc-100 p-4 text-sm dark:bg-zinc-900">
               {JSON.stringify(verification.reponse_serveur, null, 2)}
             </pre>
           )}
