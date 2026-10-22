@@ -11,6 +11,7 @@ const resultat: ResultatVerification = {
 
 const lecture: PropositionsLecture = {
   proposition: async (id) => (id === PROPOSITION.id ? PROPOSITION : null),
+  versionDuDossier: async () => null,
   verificationDeLigne: async () => null,
 };
 

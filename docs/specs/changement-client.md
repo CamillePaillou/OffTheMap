@@ -38,3 +38,7 @@ La v1 garde ses lignes (statuts et prix confirmés), son programme, son total, s
 ## Tests
 
 `src/application/changementClient.test.ts` (reprise des lignes au prix actuel, total et alertes recalculés, v1 non modifiée, motif, statuts refusés, concurrence) ; `supabase/scripts/test_contraintes.sql` (v1 intacte, v2 numéro suivant avec motif, journal, second changement refusé, droits).
+
+## Écarts avec la version envoyée (E6.2)
+
+La page de la version suivante affiche ce qui a changé depuis la version précédente, prestation par prestation, avec l'écart en euros : `docs/specs/ecarts-versions.md`.

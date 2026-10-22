@@ -5,6 +5,8 @@ import type { ResultatVerification } from '../application/verifierPrestation';
 export interface PropositionsLecture {
   /** null si la proposition n'existe pas. */
   proposition(id: string): Promise<Proposition | null>;
+  /** Une version donnée des propositions d'un dossier (E6.2 : la version précédente), ou null. */
+  versionDuDossier(dossierId: string, version: number): Promise<Proposition | null>;
   /** Dernière vérification de la ligne, ou null si elle n'a jamais été vérifiée. */
   verificationDeLigne(ligneId: string): Promise<VerificationLigne | null>;
 }

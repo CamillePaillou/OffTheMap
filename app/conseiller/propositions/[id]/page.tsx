@@ -10,6 +10,7 @@ import { Ecart } from '../../_composants/ecart';
 import { Fil } from '../../_composants/fil';
 import { STATUT_PROPOSITION } from '../../_composants/libelles';
 import { resumerProposition } from '@/src/domain/proposition/resumeProposition';
+import { comparerVersions } from '@/src/domain/proposition/ecartsVersions';
 import { REGLES_CHIFFRAGE } from '@/types/chiffrage';
 import { ActionsLigne, PanneauEnvoi } from './actions-tarifs';
 import { PanneauChangement } from './panneau-changement';
@@ -19,6 +20,7 @@ import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
 import { lienMailto, mailProposition, MailImpossibleErreur } from '@/src/domain/mails';
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import { BoutonRelancerBrouillon, RafraichirPendantGeneration } from './suivi-brouillon';
+import { EcartsVersionsCarte } from './ecarts-versions';
 
 const STATUT_LIGNE = { a_verifier: 'à vérifier', confirme: 'confirmé', indisponible: 'indisponible', remplacee: 'remplacée', reservee: 'réservée' } as const;
 const HORS_TOTAL: readonly string[] = REGLES_CHIFFRAGE.statutsHorsTotal; // lignes indisponibles ou remplacées : hors total
@@ -26,7 +28,7 @@ const SOURCE = { agent: 'agent', telephone: 'téléphone', mail: 'mail', lien: '
 const instant = (iso: string) => new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' });
 
 // Proposition : prix proposé, prix revérifié par l'agent et écart (E8.4) ; tarifs confirmés et envoi (E5.1) ;
-// remplacement d'une ligne indisponible (E5.2).
+// remplacement d'une ligne indisponible (E5.2) ; écarts avec la version précédente (E6.2).
 export default function PropositionPage({ params }: PageProps<'/conseiller/propositions/[id]'>) {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
@@ -56,6 +58,9 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   // mail de la proposition (E5.4) : seulement une fois envoyée, donc tous ses prix vérifiés (E5.1)
   const envoyee = ['envoyee', 'sans_reponse', 'changement_demande', 'acceptee', 'depot_recu', 'reservee'].includes(proposition.statut);
   const dossier = await new DossiersSupabase().detail(proposition.dossier_id); // nom du client (fil d'Ariane) et mail
+  // E6.2 : ce qui a changé depuis la version précédente, recalculé à chaque lecture
+  const precedente = proposition.version > 1 ? await lecture.versionDuDossier(proposition.dossier_id, proposition.version - 1) : null;
+  const ecartsVersions = precedente ? comparerVersions(precedente, proposition) : null;
   let mail: { sujet: string; corps: string; mailto: string } | null = null;
   if (dossier && envoyee) {
     try {
@@ -118,6 +123,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
           <span className="font-semibold">Changement demandé par le client :</span> {proposition.motif_changement}
         </p>
       )}
+      {ecartsVersions && <EcartsVersionsCarte e={ecartsVersions} />}
 
       {proposition.statut === 'brouillon_en_cours' && (
         <p role="status" className="bo-carte mt-6 p-4 text-ardoise">
