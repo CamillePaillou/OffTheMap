@@ -21,6 +21,9 @@ import { lienMailto, mailProposition, MailImpossibleErreur } from '@/src/domain/
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import { BoutonRelancerBrouillon, RafraichirPendantGeneration } from './suivi-brouillon';
 import { EcartsVersionsCarte } from './ecarts-versions';
+import { PanneauResumeEcarts } from './panneau-resume-ecarts';
+import { empreinteEcarts } from '@/src/application/resumeEcarts';
+import { versEntreeEcarts } from '@/src/domain/proposition/entreeEcarts';
 
 const STATUT_LIGNE = { a_verifier: 'à vérifier', confirme: 'confirmé', indisponible: 'indisponible', remplacee: 'remplacée', reservee: 'réservée' } as const;
 const HORS_TOTAL: readonly string[] = REGLES_CHIFFRAGE.statutsHorsTotal; // lignes indisponibles ou remplacées : hors total
@@ -123,7 +126,17 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
           <span className="font-semibold">Changement demandé par le client :</span> {proposition.motif_changement}
         </p>
       )}
-      {ecartsVersions && <EcartsVersionsCarte e={ecartsVersions} />}
+      {ecartsVersions && (
+        <EcartsVersionsCarte e={ecartsVersions}>
+          {ecartsVersions.prestations.length > 0 && (
+            <PanneauResumeEcarts
+              propositionId={proposition.id}
+              resume={proposition.ecarts?.resume ?? null}
+              aJour={proposition.ecarts?.empreinte === empreinteEcarts(versEntreeEcarts(ecartsVersions))}
+            />
+          )}
+        </EcartsVersionsCarte>
+      )}
 
       {proposition.statut === 'brouillon_en_cours' && (
         <p role="status" className="bo-carte mt-6 p-4 text-ardoise">

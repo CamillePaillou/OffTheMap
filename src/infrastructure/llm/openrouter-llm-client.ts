@@ -9,8 +9,9 @@
  * - chaque réponse passe par un outil imposé (`rendre_fiche`, `rendre_brouillon`) puis par le schéma de `types/ia.ts`.
  */
 import { z } from 'zod';
-import { FicheIA, schemaBrouillon } from '../../../types';
+import { EcartsIA, FicheIA, schemaBrouillon } from '../../../types';
 import type { BrouillonIA, DemandePourLLM } from '../../../types';
+import type { EntreeEcarts } from '../../domain/proposition/entreeEcarts';
 import { LlmError } from '../../ports/llm-client';
 import type { EntreeBrouillon, LlmClient } from '../../ports/llm-client';
 import type { DefinitionOutil, ModeleAgent, ReponseChat, RequeteChat } from '../../ports/modele-agent';
@@ -76,6 +77,14 @@ const CONSIGNES_BROUILLON =
   'en choisissant uniquement parmi les prestations autorisées. Une ligne ne dépasse jamais le nombre de participants. ' +
   'Indique dans « ecartes » les prestations autorisées que tu n’as pas retenues, avec la raison.';
 
+const CONSIGNES_ECARTS =
+  `${CONSIGNES_COMMUNES} Le client a demandé un changement ; une nouvelle version de sa proposition a été préparée. ` +
+  'À partir des écarts fournis en JSON, écris pour le conseiller un court paragraphe (trois à cinq phrases), en français, ' +
+  'adressé au client (« nous »), qui explique ce qui change : prestations ajoutées ou retirées, nuits ou jours en plus ou en moins, ' +
+  'participants, et si le coût total augmente ou diminue. N’écris AUCUN chiffre, aucun nombre, aucune date et aucun montant, ' +
+  'ni en chiffres ni en lettres (« euro » interdit) : le conseiller ajoutera les prix lui-même. ' +
+  'Si « prix_a_confirmer » est vrai, précise que les tarifs sont en cours de confirmation.';
+
 export class OpenRouterLlmClient implements LlmClient, ModeleAgent {
   private readonly fetch: typeof fetch;
 
@@ -104,6 +113,17 @@ export class OpenRouterLlmClient implements LlmClient, ModeleAgent {
     );
     const r = schema.safeParse(brute);
     if (!r.success) throw new LlmError('reponse_invalide', `brouillon non conforme : ${r.error.message}`);
+    return r.data;
+  }
+
+  async resumerEcarts(entree: EntreeEcarts): Promise<EcartsIA> {
+    const brute = await this.sortieStructuree(
+      CONSIGNES_ECARTS,
+      JSON.stringify(entree),
+      outilSortie('rendre_resume_ecarts', 'Rend le résumé des écarts, sans aucun chiffre.', EcartsIA),
+    );
+    const r = EcartsIA.safeParse(brute);
+    if (!r.success) throw new LlmError('reponse_invalide', `résumé des écarts non conforme : ${r.error.message}`);
     return r.data;
   }
 
