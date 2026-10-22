@@ -7,7 +7,7 @@
   "essai": 1,
   "mode": "agent_direct",
   "horodatage": "2026-10-22T12:44:08.019Z",
-  "verdict": "echec",
+  "verdict": "non_execute",
   "criteres": [
     {
       "critere": "La fiche signale l'incertitude dans points_flous",
@@ -60,5 +60,7 @@
       "fiche": 1,
       "brouillon": 2
     }
-  }
+  },
+  "verdict_propose_par_le_programme": "echec",
+  "raison": "quota gratuit d'OpenRouter atteint au brouillon (HTTP 429), après une fiche conforme : l'essai n'a pas eu lieu"
 }

@@ -32,3 +32,15 @@ Format du dossier étudiant J4, section 4.
 | A02 | `schemaBrouillon` refuse dès la génération une ligne ou un jour hors des dates du séjour de référence (mêmes bornes que `date_hors_sejour`) ; le modèle reçoit l'erreur et corrige. Consigne du brouillon : seules les dates du formulaire comptent. | `openrouter-llm-client.test.ts` : ligne au 14 novembre refusée puis corrigée |
 | E02 | Nouveau refus d'accord `prix_a_reverifier` tant que la dernière vérification n'est pas postérieure à l'échec `reponse_serveur_incoherente` (`dernierEchecPose`, ajouté au port). Message : l'option reste chez le prestataire jusqu'à son expiration. | `donnerAccord.test.ts` : refus, puis accord après revérification ; un échec pour délai n'exige rien |
 | N03 | Déjà corrigé dans l'application par E7.4 (PR #224 : accords en base, ligne passée à `reservee`). La campagne v2 l'évaluait encore en mémoire ; depuis v3, N03 et E02 tournent sur la base locale. | essai local de N03 et E02 sur une base PostgreSQL migrée et seedée : réussis |
+
+## Résultats v3
+
+| Cas | v2 | v3 | Preuve |
+| --- | --- | --- | --- |
+| N03 | échec (évalué en mémoire) | réussi : options en base, ligne relue en base à `reservee` | `traces/v3/N03-1.json` |
+| E02 | échec | réussi : nouvel accord refusé, `prix_a_reverifier` | `traces/v3/E02-1.json` |
+| A01 | échec | réussi : fiche obtenue au second essai, point flou sur le budget, aucune alerte de budget | `traces/v3/A01-1.json` |
+| A02 | échec | non exécuté : fiche conforme (conflit de dates signalé), brouillon bloqué par le quota d'OpenRouter | `traces/v3/A02-1.json` |
+| A03 | échec | non exécuté : fiche conforme (« 2 adultes ou 4 avec des amis ? »), brouillon bloqué par le quota | `traces/v3/A03-1.json` |
+
+Limite observée : certains points flous du modèle gratuit contiennent des fragments sans sens (« catégoriewanted », « desEventually? -> sans objet »). Le schéma ne le détecte pas ; le conseiller relit la fiche.

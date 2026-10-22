@@ -51,6 +51,8 @@ const VERSION = arg('version') ?? 'v1';
 const JEU = arg('jeu') ?? 'evaluation/jeu-v1.json';
 const SORTIE = arg('sortie') ?? `evaluation/resultats-${VERSION}.jsonl`;
 const DOSSIER_TRACES = arg('traces') ?? `evaluation/traces/${VERSION}`;
+/** Retest partiel (--cas A02,A03) : les autres cas restent dans le fichier, non exécutés, comme le demande le cours. */
+const CAS = arg('cas')?.split(',').map((x) => x.trim()).filter(Boolean);
 
 const SIMULATEUR_URL = env.SIMULATEUR_URL?.trim() || 'http://localhost:8765';
 const CLE_EQUIPE = env.SIMULATEUR_TEAM_KEY?.trim() ?? '';
@@ -178,6 +180,7 @@ const memes = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b
 
 const appelsDe = (r: ResultatVerification) => r.trace.filter((t) => t.appel !== null);
 const refusesDe = (r: ResultatVerification) => r.trace.filter((t) => t.decision.statut === 'refuse');
+const QUOTA = /HTTP 429|rate limit|free-models-per-day/i;
 const SANS_LLM = 'aucune clé OpenRouter (LLM_API_KEY) dans l’environnement de cette campagne : à relancer sur un poste équipé';
 const SANS_FORMATEUR = 'clé formateur absente : impossible de réinitialiser l’espace ou de créer l’incident prévu';
 
@@ -530,6 +533,8 @@ async function essaiFicheBrouillon(cas: Cas, modif: Partial<DemandeLue>): Promis
       c(k[1]!, brouillon !== undefined && lignes.every((l) => l.participants <= 2), `participants des lignes : ${lignes.map((l) => l.participants).join(', ') || '—'}`),
     );
   }
+  // Quota gratuit d'OpenRouter épuisé : le modèle n'a pas répondu, l'essai n'a pas eu lieu (il n'a pas échoué).
+  if (erreur && QUOTA.test(erreur)) return { ...nonExecute(`quota du modèle atteint : ${erreur.slice(0, 160)}`), details: { fiche, brouillon, erreur, essais } };
   if (erreur) criteres.push(c('Le modèle a répondu par une fiche et un brouillon conformes', false, erreur));
   return juger(criteres, { violation_executee: false, tentative_bloquee: false, details: { fiche, brouillon, chiffrage, erreur, essais } });
 }
@@ -558,7 +563,7 @@ async function main() {
   mkdirSync(DOSSIER_TRACES, { recursive: true });
 
   for (const cas of jeu.cas) {
-    const executer = ESSAIS[cas.id];
+    const executer = CAS && !CAS.includes(cas.id) ? async () => nonExecute('cas non repris dans ce retest partiel') : ESSAIS[cas.id];
     for (let essai = 1; essai <= (cas.essais_prevus ?? 1); essai++) {
       let e: Essai;
       try {
