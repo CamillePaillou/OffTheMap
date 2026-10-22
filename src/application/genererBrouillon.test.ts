@@ -18,7 +18,7 @@ const CATALOGUE: PrestationDuCatalogue[] = [
 const contexte = (surcharge: Partial<ContexteBrouillon['demande']> = {}): ContexteBrouillon => ({
   demande: {
     nom: 'Sophie Martin', email: 'sophie@example.org', destination: 'Nantes', date_debut: '2026-11-06', date_fin: '2026-11-09', nb_nuits: 3,
-    voyageurs: ['adulte', 'adulte'], budget_annonce_cents: 50000, envies: 'Atelier créatif', contraintes: null, regimes: ['vegetarien'], mobilite: null,
+    voyageurs: ['adulte', 'adulte'], budget_annonce_cents: 50000, envies: 'Atelier créatif', contraintes: null, regimes: ['vegetarien'], mobilite: null, prestations_souhaitees: [],
     ...surcharge,
   },
   fiche: {
@@ -82,6 +82,15 @@ describe('obtenir un brouillon de proposition (E4.4)', () => {
     expect(ecrit.total_cents).toBe((4800 + 9600 + 3500) * 2); // 35 800, exemple des règles de chiffrage
     expect(ecrit.alertes).toEqual([]); // 89,5 % du budget réel de 400 € : sous le seuil de 90 %
     expect(ecrit.programme).toEqual(BROUILLON.programme);
+  });
+
+  it('prestations souhaitées par le client (E1.4) : transmises au modèle, retenues en premier par le faux modèle', async () => {
+    const brouillons = new BrouillonsEnMemoire(contexte({ prestations_souhaitees: ['activite-nantes-01'] }));
+    const llm = new FauxLlmClient();
+    await genererBrouillon({ brouillons, llm }, 'p1');
+    expect(JSON.parse(llm.appels[0]!.charge).demande.prestations_souhaitees).toEqual(['activite-nantes-01']);
+    const ecrit = brouillons.ecrit as Extract<ResultatBrouillon, { lignes: unknown }>;
+    expect(ecrit.lignes[0]!.prestation_id).toBe('activite-nantes-01');
   });
 
   it('budget réel dépassé : alerte calculée par le code', async () => {

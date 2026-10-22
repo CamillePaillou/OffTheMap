@@ -5,7 +5,7 @@ import { clientService } from '../../../lib/supabase/service';
 import type { Generation, GenerationFicheRepository } from '../../ports/generationFiche';
 import { StatutModifieErreur } from '../../ports/statuts';
 
-const COLONNES = 'nom, email, destination, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents, envies, contraintes, regimes, mobilite';
+const COLONNES = 'nom, email, destination, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents, envies, contraintes, regimes, mobilite, prestations_souhaitees';
 
 /** Génération de fiche avec la clé service_role (jamais côté navigateur). */
 export class GenerationFicheSupabase implements GenerationFicheRepository {

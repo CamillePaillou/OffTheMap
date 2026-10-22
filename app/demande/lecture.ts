@@ -23,6 +23,7 @@ export function lireSaisie(f: FormData) {
     contraintes: texte(f, 'contraintes'),
     regimes: REGIMES.filter((r) => coche(f, `regime_${r}`)),
     mobilite: coche(f, 'mobilite_reduite') ? 'reduite' : null,
+    prestations: f.getAll('prestation').map(String).slice(0, 6),
     consentement_rgpd: coche(f, 'consentement_rgpd'),
     consentement_ia: coche(f, 'consentement_ia'),
   };

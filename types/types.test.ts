@@ -1,3 +1,4 @@
+import { reglesCroisees } from './demande';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -72,7 +73,7 @@ describe('minimisation vers le LLM', () => {
   const demande: DemandeLue = {
     nom: 'Inès', email: 'ines@example.org', destination: 'Nantes', date_debut: '2026-11-07', date_fin: '2026-11-08',
     nb_nuits: 1, voyageurs: ['adulte', 'adulte', 'enfant'], budget_annonce_cents: 40000,
-    envies: 'créatif, sans voiture', contraintes: null, regimes: ['vegetarien'], mobilite: null,
+    envies: 'créatif, sans voiture', contraintes: null, regimes: ['vegetarien'], mobilite: null, prestations_souhaitees: [],
   };
   it('ne transmet pas l’identité, mais les catégories et la présence d’un enfant', () => {
     const texte = JSON.stringify(versDemandePourLLM(demande));
@@ -93,5 +94,19 @@ describe('réponse du simulateur', () => {
     const r = DisponibiliteSimulateur.safeParse({ prestation_id: 'train-nantes-01', date: '2026-11-07', participants: 2, disponible: true,
       places_restantes: 8, prix_unitaire_eur: 48, prix_total_eur: 96, devise: 'EUR', simulation: true });
     expect(r.success).toBe(true);
+  });
+});
+
+describe('règles croisées du formulaire (E1.1), appliquées aussi champ par champ dans le navigateur', () => {
+  const AUJ = '2026-10-22';
+  const champs = (d: Parameters<typeof reglesCroisees>[0]) => reglesCroisees(d, AUJ).map((e) => e.champ);
+  it('chaque règle ne juge que les champs reçus', () => {
+    expect(champs({ date_debut: '2026-11-14' })).toEqual([]);
+    expect(champs({ date_debut: '2026-10-01' })).toEqual(['date_debut']);
+    expect(champs({ date_debut: '2026-11-14', date_fin: '2026-11-10' })).toEqual(['date_fin']);
+    expect(champs({ date_debut: '2026-11-14', date_fin: '2026-11-15', nb_nuits: 3 })).toEqual(['nb_nuits']);
+    expect(champs({ adultes: 0 })).toEqual(['adultes']);
+    expect(champs({ adultes: 15, enfants: 10 })).toEqual(['enfants']);
+    expect(champs({ consentement_rgpd: false, consentement_ia: true })).toEqual(['consentement_rgpd']);
   });
 });

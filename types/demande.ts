@@ -29,20 +29,41 @@ export const schemaSaisieDemande = (aujourdhui: string) =>
       contraintes: texteOptionnel(2000),
       regimes: z.array(z.enum(REGIMES)),
       mobilite: z.enum(MOBILITES).nullable(),
+      // prestations ajoutées depuis le chatbot (E1.4) : identifiants du catalogue ; la base ne garde que les actives
+      prestations: z.array(z.string().regex(/^[a-z0-9-]{1,80}$/, 'Prestation inconnue')).max(6, '6 prestations au plus').default([]),
       // Vérifiés dans superRefine avec les règles croisées : toutes les erreurs s'affichent en une fois.
       consentement_rgpd: z.boolean(),
       consentement_ia: z.boolean(),
     })
     .superRefine((d, ctx) => {
-      if (!d.consentement_rgpd) ctx.addIssue({ code: 'custom', path: ['consentement_rgpd'], message: 'Votre accord est nécessaire pour traiter votre demande' });
-      if (!d.consentement_ia) ctx.addIssue({ code: 'custom', path: ['consentement_ia'], message: 'Votre accord sur l’usage de l’IA est nécessaire' });
-      if (d.date_debut < aujourdhui) ctx.addIssue({ code: 'custom', path: ['date_debut'], message: 'La date de départ est passée' });
-      if (d.date_fin < d.date_debut) ctx.addIssue({ code: 'custom', path: ['date_fin'], message: 'La date de retour précède le départ' });
-      const jours = (Date.parse(d.date_fin) - Date.parse(d.date_debut)) / 86_400_000;
-      if (d.nb_nuits > jours) ctx.addIssue({ code: 'custom', path: ['nb_nuits'], message: 'Plus de nuits que de jours entre les deux dates' });
-      if (d.adultes < 1) ctx.addIssue({ code: 'custom', path: ['adultes'], message: 'Au moins un adulte voyage' });
-      if (d.adultes + d.enfants > LIMITES.participantsMax) ctx.addIssue({ code: 'custom', path: ['enfants'], message: `${LIMITES.participantsMax} voyageurs maximum` });
+      for (const e of reglesCroisees(d, aujourdhui)) ctx.addIssue({ code: 'custom', path: [e.champ], message: e.message });
     });
+
+/**
+ * Règles qui relient plusieurs champs, écrites une fois : le serveur les applique après le schéma, le navigateur les
+ * applique dès qu'un champ est quitté (E1.1), même si d'autres champs sont encore vides. Chaque règle ne juge que
+ * les champs qu'elle a reçus.
+ */
+export function reglesCroisees(
+  d: Partial<{ date_debut: unknown; date_fin: unknown; nb_nuits: unknown; adultes: unknown; enfants: unknown; consentement_rgpd: unknown; consentement_ia: unknown }>,
+  aujourdhui: string,
+): { champ: string; message: string }[] {
+  const erreurs: { champ: string; message: string }[] = [];
+  const estDate = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const estNombre = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+  if (d.consentement_rgpd === false) erreurs.push({ champ: 'consentement_rgpd', message: 'Votre accord est nécessaire pour traiter votre demande' });
+  if (d.consentement_ia === false) erreurs.push({ champ: 'consentement_ia', message: 'Votre accord sur l’usage de l’IA est nécessaire' });
+  if (estDate(d.date_debut) && d.date_debut < aujourdhui) erreurs.push({ champ: 'date_debut', message: 'La date de départ est passée' });
+  if (estDate(d.date_debut) && estDate(d.date_fin)) {
+    if (d.date_fin < d.date_debut) erreurs.push({ champ: 'date_fin', message: 'La date de retour précède le départ' });
+    const jours = (Date.parse(d.date_fin) - Date.parse(d.date_debut)) / 86_400_000;
+    if (estNombre(d.nb_nuits) && d.nb_nuits > jours && jours >= 0) erreurs.push({ champ: 'nb_nuits', message: 'Plus de nuits que de jours entre les deux dates' });
+  }
+  if (estNombre(d.adultes) && d.adultes < 1) erreurs.push({ champ: 'adultes', message: 'Au moins un adulte voyage' });
+  if (estNombre(d.adultes) && estNombre(d.enfants) && d.adultes + d.enfants > LIMITES.participantsMax)
+    erreurs.push({ champ: 'enfants', message: `${LIMITES.participantsMax} voyageurs maximum` });
+  return erreurs;
+}
 
 export type SaisieDemande = z.infer<ReturnType<typeof schemaSaisieDemande>>;
 
@@ -62,6 +83,7 @@ export interface NouvelleDemande {
   contraintes: string | null;
   regimes: SaisieDemande['regimes'];
   mobilite: SaisieDemande['mobilite'];
+  prestations_souhaitees: string[];
 }
 
 /** À n'appeler qu'après une validation réussie : les deux consentements y sont vrais. */
@@ -81,5 +103,6 @@ export function versNouvelleDemande(s: SaisieDemande): NouvelleDemande {
     contraintes: s.contraintes,
     regimes: s.regimes,
     mobilite: s.mobilite,
+    prestations_souhaitees: [...new Set(s.prestations)],
   };
 }

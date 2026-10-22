@@ -21,10 +21,22 @@ const dossierDetail = (surcharge: Partial<LigneDossierDetail> = {}): LigneDossie
   demandes: [{
     version: 1, remplacee_le: null, nom: 'Nina Moreau', email: 'nina@example.org', destination: 'Nantes', date_debut: '2026-11-07',
     date_fin: '2026-11-08', nb_nuits: 1, voyageurs: ['adulte', 'adulte'], budget_annonce_cents: null, envies: 'Atelier', contraintes: null,
-    fiches: ficheDetail,
+    prestations_souhaitees: ['hotel-nantes-01', 'retiree-01', 'activite-nantes-01'], fiches: ficheDetail,
   }],
   propositions: [],
   ...surcharge,
+});
+
+describe('prestations souhaitées (E1.4)', () => {
+  it('nommées depuis le catalogue, dans l’ordre du client ; une prestation sortie du catalogue n’est pas montrée', () => {
+    const catalogue = [
+      { id: 'activite-nantes-01', nom: 'Atelier de machines imaginaires', type: 'activite' as const, destination: 'Nantes' },
+      { id: 'hotel-nantes-01', nom: 'Hôtel des Machines', type: 'hebergement' as const, destination: 'Nantes' },
+    ];
+    const d = versDetailDossier(dossierDetail(), [], catalogue);
+    expect(d.demande.prestations_souhaitees.map((p) => p.nom)).toEqual(['Hôtel des Machines', 'Atelier de machines imaginaires']);
+    expect(versDetailDossier(dossierDetail(), []).demande.prestations_souhaitees).toEqual([]);
+  });
 });
 
 describe('état de la fiche', () => {

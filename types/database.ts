@@ -119,6 +119,7 @@ export type Database = {
           mobilite: Database["public"]["Enums"]["mobilite"] | null;
           nb_nuits: number;
           nom: string;
+          prestations_souhaitees: string[];
           regimes: Database["public"]["Enums"]["regime"][];
           remplacee_le: string | null;
           version: number;
@@ -142,6 +143,7 @@ export type Database = {
           mobilite?: Database["public"]["Enums"]["mobilite"] | null;
           nb_nuits: number;
           nom: string;
+          prestations_souhaitees?: string[];
           regimes?: Database["public"]["Enums"]["regime"][];
           remplacee_le?: string | null;
           version?: number;
@@ -164,6 +166,7 @@ export type Database = {
           mobilite?: Database["public"]["Enums"]["mobilite"] | null;
           nb_nuits?: number;
           nom?: string;
+          prestations_souhaitees?: string[];
           regimes?: Database["public"]["Enums"]["regime"][];
           remplacee_le?: string | null;
           version?: number;

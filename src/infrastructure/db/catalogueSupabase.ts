@@ -24,3 +24,26 @@ export async function lireCatalogueAgence(): Promise<ResultatSimulateur<Prestati
     return { ok: false, panne: 'erreur_serveur' };
   }
 }
+
+/**
+ * Noms des prestations ajoutées depuis le chatbot (E1.4), pour le formulaire public : seulement des prestations
+ * actives, dans l'ordre donné, 6 au plus, sans prix. Un identifiant inconnu est ignoré.
+ */
+export async function nommerPrestations(ids: readonly string[]): Promise<PrestationNommeeCatalogue[]> {
+  const valides = [...new Set(ids.filter((id) => /^[a-z0-9-]{1,80}$/.test(id)))].slice(0, 6);
+  if (valides.length === 0) return [];
+  try {
+    const { data, error } = await clientService().from('prestations').select('id, nom, type, destination').eq('actif', true).in('id', valides);
+    if (error || !data) return [];
+    return valides.map((id) => data.find((p) => p.id === id)).filter((p): p is PrestationNommeeCatalogue => p !== undefined);
+  } catch {
+    return []; // base injoignable : le formulaire s'affiche sans les prestations, le client peut les décrire
+  }
+}
+
+export interface PrestationNommeeCatalogue {
+  id: string;
+  nom: string;
+  type: 'transport' | 'hebergement' | 'activite';
+  destination: string;
+}
