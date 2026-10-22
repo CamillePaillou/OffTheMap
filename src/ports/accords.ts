@@ -26,6 +26,11 @@ export interface AccordsRepository {
   demarcheEnCours(ligneId: string, maintenant: Date): Promise<boolean>;
   /** Écrit l'accord et son événement de journal ensemble. Rejette DemarcheEnCoursErreur. Renvoie l'id de l'option. */
   enregistrerAccord(accord: NouvelAccord): Promise<{ option_id: string }>;
+  /**
+   * Échec de pose, si c'est la dernière démarche de la ligne : raison et date. E11.2 (cas E02) : après
+   * `reponse_serveur_incoherente`, un nouvel accord exige une vérification postérieure à cet échec.
+   */
+  dernierEchecPose(ligneId: string): Promise<{ raison: string; le: string } | undefined>;
   /** Lit l'accord non expiré de la ligne (affichage et préparation de la pose). */
   accordValable(ligneId: string, maintenant: Date): Promise<AccordOption | undefined> | AccordOption | undefined;
   /** Consomme atomiquement un accord non expiré, avant l'appel d'écriture externe. */

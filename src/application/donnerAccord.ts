@@ -33,6 +33,7 @@ export async function donnerAccord(repo: AccordsRepository, d: DemandeDonnerAcco
     ligne,
     prixAfficheCents: d.prixAfficheCents,
     demarcheEnCours: await repo.demarcheEnCours(ligne.id, maintenant),
+    refusPrixLe: refusPrix(await repo.dernierEchecPose(ligne.id)),
     maintenant,
   });
   if (!verdict.ok) return verdict;
@@ -53,3 +54,6 @@ export async function donnerAccord(repo: AccordsRepository, d: DemandeDonnerAcco
     throw e;
   }
 }
+
+/** E11.2 (E02) : seul un refus pour un prix (ou une date, des participants) différent de l'accord exige une revérification. */
+export const refusPrix = (echec: { raison: string; le: string } | undefined) => (echec?.raison === 'reponse_serveur_incoherente' ? echec.le : null);

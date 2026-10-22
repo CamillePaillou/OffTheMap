@@ -103,4 +103,29 @@ describe('donnerAccord', () => {
     expect(await donnerAccord(repo, demande({ conseiller: { id: ' ' } }))).toEqual({ ok: false, raison: 'conseiller_non_identifie' });
     expect(repo.accords).toHaveLength(0);
   });
+
+  it('E11.2 (E02) : après une option posée à un autre prix, un nouvel accord attend une vérification postérieure', async () => {
+    const repo = new AccordsEnMemoire();
+    const premier = await donnerAccord(repo, demande());
+    if (!premier.ok) throw new Error('accord attendu');
+    await repo.consommerAccord(premier.option_id, NOW);
+    await repo.terminerPoseOption(premier.option_id, { ok: false, raison: 'reponse_serveur_incoherente', reponse_serveur: { prix_total_cents: 11000 } });
+
+    expect(await donnerAccord(repo, demande())).toEqual({ ok: false, raison: 'prix_a_reverifier' });
+
+    // la ligne est revérifiée après l'échec, au nouveau prix : l'accord redevient possible à ce prix
+    const ligne = PROPOSITION_DEPOT_RECU.lignes.find((l) => l.id === TRAIN)!;
+    const reverifiee: LigneProposition = { ...ligne, derniere_verification: { ...ligne.derniere_verification!, prix_unitaire_cents: 5500, le: new Date(Date.now() + 60_000).toISOString() } };
+    const proposition: Proposition = { ...PROPOSITION_DEPOT_RECU, lignes: PROPOSITION_DEPOT_RECU.lignes.map((l) => (l.id === TRAIN ? reverifiee : l)) };
+    expect(await donnerAccord(repo, demande({ proposition, prixAfficheCents: 11000 }))).toMatchObject({ ok: true, prix_accorde_cents: 11000 });
+  });
+
+  it('E11.2 (E02) : un échec de pose pour une autre raison (délai) n’exige pas de revérification', async () => {
+    const repo = new AccordsEnMemoire();
+    const premier = await donnerAccord(repo, demande());
+    if (!premier.ok) throw new Error('accord attendu');
+    await repo.consommerAccord(premier.option_id, NOW);
+    await repo.terminerPoseOption(premier.option_id, { ok: false, raison: 'simulateur_delai' });
+    expect(await donnerAccord(repo, demande())).toMatchObject({ ok: true });
+  });
 });

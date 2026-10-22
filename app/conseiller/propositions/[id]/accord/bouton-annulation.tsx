@@ -22,7 +22,7 @@ export function BoutonAnnulation(props: { propositionId: string; ligneId: string
         {enCours ? 'Annulation…' : 'Annuler la réservation'}
       </button>
       {etat.erreur && <p role="alert" className="text-sm text-brique-texte">{etat.erreur}</p>}
-      {etat.ok && <p role="status" className="text-sm text-encre">Réservation annulée par le simulateur. Les places sont libérées.</p>}
+      {etat.ok && <p role="status" className="text-sm text-encre">Réservation annulée par le prestataire. Les places sont libérées.</p>}
     </form>
   );
 }
