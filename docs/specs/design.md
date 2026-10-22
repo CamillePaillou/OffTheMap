@@ -109,7 +109,12 @@ Le brief préfère une question à une surprise. Voici où nous nous en écarton
 1. **Texte secondaire en `#5B6480` et non en ballast.** Le ballast n'a que 4,2:1 sur la craie, sous le minimum de lisibilité (4,5:1). `#5B6480` est la couleur « muted » du brand kit lui-même ; le ballast sert aux bordures.
 2. **Brique assombrie pour le texte** (`#9E3F28`) : la brique du brief fait 4,0:1 sur la craie.
 3. **Nuances de surface** (`carte`, `trait`, `ciel-pale`, `brique-pale`) : tirées du brand kit (`--card`, `--line`) ou mélangées à la craie. Aucune nouvelle teinte.
-4. **Focus clavier** : contour encre sur les fonds clairs, jaune seulement sur les aplats encre (classe `sur-encre`). Le brand kit met du jaune partout, mais le brief interdit le jaune sur fond clair (1,9:1).
+4. **Focus clavier** : contour encre sur les fonds clairs, jaune seulement sur les aplats encre (classe `sur-encre`). Le brand kit met du jaune partout, mais le brief interdit le jaune sur fond clair (1,9:1 selon le brief, 1,6:1 mesuré sur la craie).
 5. **Pas de police IBM Plex Mono** : le brand kit l'utilise pour ses légendes, mais le brief dit « deux familles, pas de troisième ».
 6. **Carnet de route** : logo et monogramme sur le même billet, comme le modèle du brand kit (« Carnet de route envoyé au voyageur »).
-7. **Les supports de pitch** ne sont pas dans le dépôt : à refaire avec le kit (couleurs, typographies, logo).
+
+La réponse au client sur ces six points est prête dans `docs/pitch/reponse-ecarts.md`, avec un tableau pour noter la décision de l'agence.
+
+## Supports de pitch
+
+La présentation client est refaite avec le kit (couleurs, typographies, logo, photos) : plan, lien et démonstration dans `docs/pitch/presentation-client.md`.

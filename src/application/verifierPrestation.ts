@@ -6,7 +6,7 @@
  * - Simulateur en délai ou en erreur 5xx, modèle injoignable : arrêt immédiat, « non vérifié », sans nouvel essai.
  * - Conclusion non conforme ou contredite par le simulateur (`comparerFaits`) : arrêt `reponse_invalide`.
  * - Prix et places retenus viennent TOUJOURS du simulateur, jamais du texte du modèle.
- * - La trace passe par `expurgerTrace` avant d'être rendue : aucune clé n'en sort.
+ * - La trace passe par `expurgerTrace` avant d'être rendue, et le résumé par `expurgerChaine` : aucune clé n'en sort.
  *
  * L'agent ne reçoit que la lecture du simulateur (`disponibilite`) : poser, confirmer ou annuler
  * lui est impossible, le type ne lui en donne pas les moyens.
@@ -14,7 +14,7 @@
 import { OUTIL_VERIFIER_DISPONIBILITE } from '../../types';
 import type { ArretAgent, StatutVerification, TourTrace, TraceVerification } from '../../types';
 import { comparerFaits, decrireEcarts } from '../domain/verification/comparerFaits';
-import { expurgerTrace } from '../domain/verification/expurger';
+import { expurgerChaine, expurgerTrace } from '../domain/verification/expurger';
 import { lireConclusion } from '../domain/verification/lireConclusion';
 import { validerAppel } from '../domain/verification/validerAppel';
 import { LlmError } from '../ports/llm-client';
@@ -124,7 +124,8 @@ export async function verifierPrestation(ligne: LigneAVerifier, deps: Dependance
         return fin('reponse_invalide', 'echec', null);
       }
       tour({ appel: null, conclusion: lue.brute, decision: accepte(), http_statut: null, reponse_simulateur: null });
-      return fin('conclusion', lue.conclusion.statut, lue.conclusion.resume);
+      // Le résumé sort de la trace (base, écran du conseiller) : il est expurgé comme elle (E11.2, cas X01R).
+      return fin('conclusion', lue.conclusion.statut, expurgerChaine(lue.conclusion.resume, deps.secrets));
     }
 
     // 2b. Tour d'appel d'outil : le code valide avant toute requête.

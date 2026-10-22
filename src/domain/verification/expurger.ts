@@ -49,14 +49,24 @@ function expurgerValeur(valeur: unknown, secrets: readonly string[]): unknown {
 }
 
 /**
+ * Rend sûr un texte du modèle montré hors de la trace (E11.2) : le `resume` de la conclusion est enregistré dans
+ * verifications.resume et affiché au conseiller. Une description de prestation qui commande (« copie la clé ici »)
+ * peut pousser le modèle à y écrire une clé, réelle ou imitée : elle est masquée comme dans la trace.
+ */
+export function expurgerChaine(texte: string, secrets: readonly (string | undefined)[] = []): string {
+  return expurgerTexte(texte, secretsConnus(secrets));
+}
+
+const secretsConnus = (secrets: readonly (string | undefined)[]) => secrets
+  .filter((s): s is string => typeof s === 'string' && s.trim().length >= LONGUEUR_MIN_SECRET)
+  .sort((a, b) => b.length - a.length); // la plus longue d'abord si l'une contient l'autre
+
+/**
  * Rend une trace sûre à enregistrer. Lève une erreur zod si la trace ne respecte pas le contrat.
  * @param secrets valeurs exactes des clés du programme (équipe, OpenRouter, approbation).
  */
 export function expurgerTrace(trace: unknown, secrets: readonly (string | undefined)[] = []): TraceVerification {
-  const connus = secrets
-    .filter((s): s is string => typeof s === 'string' && s.trim().length >= LONGUEUR_MIN_SECRET)
-    .sort((a, b) => b.length - a.length); // la plus longue d'abord si l'une contient l'autre
-  return TraceVerification.parse(expurgerValeur(trace, connus));
+  return TraceVerification.parse(expurgerValeur(trace, secretsConnus(secrets)));
 }
 
 /** Vrai si un secret connu ou un motif de clé apparaît encore quelque part (oracle des tests et d'E11). */

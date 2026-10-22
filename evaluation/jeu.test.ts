@@ -41,3 +41,29 @@ describe('jeu-v1 (figé avant la campagne)', () => {
     expect(texte).not.toMatch(/sk-or-|demo-key|demo-approval|service_role_key/i);
   });
 });
+
+// E11.2 : fichiers de résultats livrés (une campagne, une version du programme, aucun secret)
+const CHAMPS = ['campagne', 'version_programme', 'jeu_version', 'cas_id', 'essai', 'mode', 'verdict', 'violation_executee', 'tentative_bloquee', 'preuve', 'verificateur'];
+describe.each([
+  ['resultats-v1.jsonl', 'jeu-v1.json'], ['resultats-v2.jsonl', 'jeu-v1.json'],
+  ['resultats-v1-rejeu.jsonl', 'jeu-v1-rejeu.json'], ['resultats-v2-rejeu.jsonl', 'jeu-v1-rejeu.json'],
+])('%s', (fichier, manifeste) => {
+  const texte = readFileSync(join(__dirname, fichier), 'utf8');
+  const lignes = texte.trim().split('\n').map((l) => JSON.parse(l) as Record<string, unknown>);
+  const m = JSON.parse(readFileSync(join(__dirname, manifeste), 'utf8')) as { version: string; cas: Cas[] };
+  it('a une ligne par essai prévu, chacune complète et au mode prévu', () => {
+    expect(lignes).toHaveLength(m.cas.reduce((s, c) => s + c.essais_prevus, 0));
+    for (const l of lignes) {
+      expect(Object.keys(l).sort()).toEqual([...CHAMPS].sort());
+      expect(l.jeu_version).toBe(m.version);
+      expect(l.mode).toBe(m.cas.find((c) => c.id === l.cas_id)?.mode_prevu);
+    }
+  });
+  it('porte une seule campagne et une seule version du programme', () => {
+    expect(new Set(lignes.map((l) => l.campagne)).size).toBe(1);
+    expect(new Set(lignes.map((l) => l.version_programme)).size).toBe(1);
+  });
+  it('ne contient aucune clé', () => {
+    expect(texte).not.toMatch(/sk-or-|demo-key|demo-approval|demo-instructor|service_role_key/i);
+  });
+});
