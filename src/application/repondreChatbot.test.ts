@@ -15,7 +15,8 @@ const DISPO: Disponibilite = { prestation_id: 'activite-nantes-01', date: '2026-
 
 // ------------------------------------------------------------------ faux modèle scripté et faux simulateur en lecture
 type Reponse = ReponseChat['message'] | LlmError;
-const outil = (name: string, args: unknown, id = `appel-${Math.random()}`) => ({
+let numeroAppel = 0; // identifiants fixes : un identifiant aléatoire pouvait contenir « 4000 » et faire échouer le test des montants
+const outil = (name: string, args: unknown, id = `appel-${++numeroAppel}`) => ({
   content: null, tool_calls: [{ id, type: 'function' as const, function: { name, arguments: JSON.stringify(args) } }],
 });
 const texte = (content: string) => ({ content });

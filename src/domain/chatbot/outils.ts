@@ -18,13 +18,14 @@ export const OUTILS_CHATBOT: readonly DefinitionOutil[] = [
     type: 'function',
     function: {
       name: 'chercher_prestations',
-      description: 'Liste les prestations du catalogue de l’agence (sans prix), pour une destination et un type facultatifs.',
+      description: 'Liste les prestations du catalogue des prestataires (nom, description, étiquettes, sans prix), filtrées par destination, type et mots-clés, tous facultatifs.',
       parameters: {
         type: 'object',
         additionalProperties: false,
         properties: {
           destination: { type: 'string', enum: [...DESTINATIONS] },
           type: { type: 'string', enum: [...TYPES] },
+          mots: { type: 'string', maxLength: 60, description: 'Mots-clés facultatifs cherchés dans le nom, la description et les étiquettes (ex. « intérieur », « cuisine »).' },
         },
       },
     },
@@ -54,6 +55,7 @@ export const ArgsChercher = z
   .object({
     destination: z.string().max(40).optional(),
     type: z.enum(TYPES).optional(),
+    mots: z.string().max(60).optional(),
   })
   .strict();
 
@@ -74,6 +76,9 @@ export const argsVerifier = (maintenant: Date) =>
     })
     .strict();
 
+/** Le catalogue tel que le chatbot le lit : ni prix ni capacité, la source ne les transmet même pas. */
+export type PrestationSansPrix = Omit<PrestationCatalogue, 'prix_unitaire_cents' | 'capacite'>;
+
 /** Ce que le modèle voit d'une prestation : jamais le prix. */
 export interface PrestationVisible {
   id: string;
@@ -81,12 +86,29 @@ export interface PrestationVisible {
   type: PrestationCatalogue['type'];
   destination: string;
   description?: string;
+  tags: string[];
 }
 
-export function filtrerCatalogue(catalogue: readonly PrestationCatalogue[], args: z.infer<typeof ArgsChercher>, max = 12): PrestationVisible[] {
+/** Mots vides ignorés dans une recherche par mots-clés. */
+const VIDES = new Set(['de', 'des', 'du', 'la', 'le', 'les', 'un', 'une', 'et', 'en', 'a', 'au', 'aux', 'pour', 'avec', 'sans']);
+const mots = (s: string) => sansAccent(s).split(/[^a-z0-9]+/).filter((m) => m.length > 1 && !VIDES.has(m));
+
+/** Recherche dans le catalogue. Avec des mots-clés, une prestation qui n'en contient aucun est écartée. */
+export function filtrerCatalogue(catalogue: readonly PrestationSansPrix[], args: z.infer<typeof ArgsChercher>, max = 12): PrestationVisible[] {
   const dest = args.destination ? sansAccent(args.destination) : null;
+  const cherches = args.mots ? mots(args.mots) : [];
   return catalogue
     .filter((p) => (!dest || sansAccent(p.destination) === dest) && (!args.type || p.type === args.type))
+    .filter((p) => {
+      if (cherches.length === 0) return true;
+      const texte = mots([p.nom, p.description ?? '', ...p.tags].join(' '));
+      // « interieur » trouve « intérieur », « gaufre » trouve « gaufres »
+      return cherches.some((c) => texte.some((t) => t.startsWith(c) || c.startsWith(t)));
+    })
     .slice(0, max)
-    .map((p) => ({ id: p.id, nom: p.nom, type: p.type, destination: p.destination, ...(p.description ? { description: p.description.slice(0, 200) } : {}) }));
+    .map((p) => ({
+      id: p.id, nom: p.nom, type: p.type, destination: p.destination,
+      ...(p.description ? { description: p.description.slice(0, 200) } : {}),
+      tags: p.tags.slice(0, 6).map((t) => t.slice(0, 30)),
+    }));
 }
