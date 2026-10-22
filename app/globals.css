@@ -4,6 +4,8 @@
  * DÉTOUR, charte 2026 (brief client « Nous avons changé de visage », brand kit PANDORMedia/detour, branche
  * rebrand-2026, dossier brand-2026/). Une seule identité pour le site public et l'espace conseiller, pas de mode sombre.
  * Encre et craie font le travail ; le jaune est réservé au O (logo et saut typographique) : un accent par écran.
+ * Exception voulue : les pastilles de statut de dossier (espace conseiller) ont droit au vert, à l'orange et au rouge,
+ * jamais au jaune.
  * Contrastes vérifiés par lib/design.test.ts. Écarts à la charte : docs/specs/design.md, « Écarts ».
  */
 :root {
@@ -26,6 +28,14 @@
   --detour-craie-sur-encre: #d7dce8; /* texte courant sur l'encre (navigation du brand kit) */
   --detour-craie-sourde: #aeb6ca; /* texte secondaire sur l'encre (« muted » des bandes encre du brand kit) */
 
+  /* pastilles de statut de dossier seulement (écart à la charte, docs/specs/design.md) */
+  --detour-vert: #2e7c4e; /* conclu : craie dessus à 4,54:1, ne pas éclaircir */
+  --detour-vert-pale: #dcebdc; /* validé */
+  --detour-vert-texte: #1d5534;
+  --detour-orange-pale: #fbe3c8; /* attend le client */
+  --detour-orange-texte: #733d08;
+  --detour-rouge: #b3261e; /* erreur */
+
   --detour-courbe: cubic-bezier(0.3, 0.7, 0.4, 1); /* la courbe du saut du O, reprise partout */
 }
 
@@ -45,6 +55,12 @@
   --color-brique-pale: var(--detour-brique-pale);
   --color-craie-sur-encre: var(--detour-craie-sur-encre);
   --color-craie-sourde: var(--detour-craie-sourde);
+  --color-vert: var(--detour-vert);
+  --color-vert-pale: var(--detour-vert-pale);
+  --color-vert-texte: var(--detour-vert-texte);
+  --color-orange-pale: var(--detour-orange-pale);
+  --color-orange-texte: var(--detour-orange-texte);
+  --color-rouge: var(--detour-rouge);
   --font-sans: var(--font-instrument), "Helvetica Neue", Arial, sans-serif;
   --font-titre: var(--font-bricolage), "Arial Black", system-ui, sans-serif;
   --ease-detour: var(--detour-courbe);
@@ -241,6 +257,20 @@
   }
   .bo-champ:hover { border-color: var(--detour-encre); }
   .bo-puce { display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  /* statut de dossier (types/statuts-famille.ts) : encre = à moi, orange = le client, vert = validé ou conclu */
+  .bo-puce--auto { background: var(--detour-ciel-pale); color: var(--detour-encre-doux); }
+  .bo-puce--moi { background: var(--detour-encre); color: var(--detour-craie); }
+  .bo-puce--client { background: var(--detour-orange-pale); color: var(--detour-orange-texte); }
+  .bo-puce--valide { background: var(--detour-vert-pale); color: var(--detour-vert-texte); }
+  .bo-puce--conclue { background: var(--detour-vert); color: var(--detour-craie); }
+  .bo-puce--erreur { background: var(--detour-rouge); color: var(--detour-craie); }
+  /* fond plein, sans contour : un contour encre la faisait ressembler au bouton secondaire (.bo-btn-2) */
+  .bo-puce--proposition { background: var(--detour-ciel); color: var(--detour-encre); }
+  /* la bordure pointillée mange 1,5 px de chaque côté : le padding les rend */
+  .bo-puce--clos {
+    background: transparent; color: var(--detour-encre-doux); border: 1.5px dashed var(--detour-trait);
+    padding: calc(0.15rem - 1.5px) calc(0.6rem - 1.5px);
+  }
   .bo-entre { animation: bo-entre 450ms var(--detour-courbe) both; }
   .bo-glisse { transition: width 600ms var(--detour-courbe), background-color 300ms var(--detour-courbe), border-color 300ms var(--detour-courbe); }
 }

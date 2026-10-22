@@ -112,8 +112,16 @@ Le brief préfère une question à une surprise. Voici où nous nous en écarton
 4. **Focus clavier** : contour encre sur les fonds clairs, jaune seulement sur les aplats encre (classe `sur-encre`). Le brand kit met du jaune partout, mais le brief interdit le jaune sur fond clair (1,9:1 selon le brief, 1,6:1 mesuré sur la craie).
 5. **Pas de police IBM Plex Mono** : le brand kit l'utilise pour ses légendes, mais le brief dit « deux familles, pas de troisième ».
 6. **Carnet de route** : logo et monogramme sur le même billet, comme le modèle du brand kit (« Carnet de route envoyé au voyageur »).
+7. **Vert, orange et rouge pour les statuts de dossier** (espace conseiller seulement). Avec l'encre, le ciel et la brique, douze statuts se confondaient ; le conseiller doit voir d'un coup d'œil qui a la main. Encre = à moi d'agir, orange = le dossier attend le client, vert = validé ou conclu, rouge = erreur, gris-bleu = automatique. Le jaune reste interdit. Le libellé est toujours écrit à côté de la couleur (RGAA 3.1), et chaque couple texte/fond est au moins à 4,5:1 (RGAA 3.2, vérifié par `lib/design.test.ts`) ; le vert plein est à 4,54:1, à ne pas éclaircir. Correspondance statut → famille : `types/statuts-famille.ts`.
 
-La réponse au client sur ces six points est prête dans `docs/pitch/reponse-ecarts.md`, avec un tableau pour noter la décision de l'agence.
+| Jeton | Valeur | Usage |
+| --- | --- | --- |
+| `vert` | `#2E7C4E` | fond de la pastille « Conclue », texte craie |
+| `vert-pale` / `vert-texte` | `#DCEBDC` / `#1D5534` | pastille « Validée » |
+| `orange-pale` / `orange-texte` | `#FBE3C8` / `#733D08` | pastilles « À corriger », « RDV proposé » |
+| `rouge` | `#B3261E` | fond de la pastille « Erreur », texte craie |
+
+La réponse au client sur les six premiers points est prête dans `docs/pitch/reponse-ecarts.md`, avec un tableau pour noter la décision de l'agence.
 
 ## Supports de pitch
 
