@@ -19,7 +19,7 @@ Scénario : écarts d'un exemple connu
 - Écart du total = total des lignes retenues de la version − celui de la précédente = somme des écarts par prestation.
 - `prix_a_verifier` : la version a encore des prix catalogue ; l'écran prévient que les écarts évolueront avec les tarifs confirmés.
 
-Les écarts sont **recalculés à chaque lecture**, jamais enregistrés : la version suivante change tant que ses prix ne sont pas confirmés. La colonne `propositions.ecarts` (`{ resume }`) reste réservée au résumé en mots écrit par l'IA, sans chiffres (E6.3).
+Les écarts sont **recalculés à chaque lecture**, jamais enregistrés : la version suivante change tant que ses prix ne sont pas confirmés. La colonne `propositions.ecarts` (`{ resume, empreinte }`) reste réservée au résumé en mots écrit par l'IA, sans chiffres (E6.3, `docs/specs/resume-ecarts.md`).
 
 ## Exemple connu, calculé à la main
 

@@ -113,7 +113,12 @@ export const ConclusionVerification = z.discriminatedUnion('statut', [
 export type ConclusionVerification = z.infer<typeof ConclusionVerification>;
 
 // ------------------------------------------------------------------ écarts (Should, étape 9)
+/** « € », « euro », « euros », « EUR » comme mots entiers (« heure » ou « Europe » passent). */
+const MONTANT_EN_LETTRES = /€|\beuros?\b|\bEUR\b/i;
+
 export const EcartsIA = z.object({
-  resume: z.string().trim().min(1).max(1500).refine((t) => !/\d/.test(t), { message: 'aucun nombre dans le résumé' }),
+  resume: z.string().trim().min(1).max(1500)
+    .refine((t) => !/\d/.test(t), { message: 'aucun nombre dans le résumé' })
+    .refine((t) => !MONTANT_EN_LETTRES.test(t), { message: 'aucun montant dans le résumé' }), // E6.3 : même écrit en lettres
 }).strict();
 export type EcartsIA = z.infer<typeof EcartsIA>;

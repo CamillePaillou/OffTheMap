@@ -7,7 +7,8 @@
  * - chaque réponse est validée par un schéma de `types/ia.ts` AVANT d'être rendue ;
  * - une réponse non conforme lève `LlmError('reponse_invalide')`, jamais une valeur partielle.
  */
-import type { BrouillonIA, DemandePourLLM, FicheIA, TypePrestation } from '../../types';
+import type { BrouillonIA, DemandePourLLM, EcartsIA, FicheIA, TypePrestation } from '../../types';
+import type { EntreeEcarts } from '../domain/proposition/entreeEcarts';
 
 /** Prestation que le code a laissée passer (destination, capacité) : le LLM ne choisit que parmi elles. */
 export interface PrestationAutorisee {
@@ -38,4 +39,6 @@ export interface LlmClient {
   genererFiche(demande: DemandePourLLM): Promise<FicheIA>;
   /** Étape 6 : brouillon de proposition, limité aux prestations autorisées. */
   genererBrouillon(entree: EntreeBrouillon): Promise<BrouillonIA>;
+  /** Étape 9 (E6.3) : résumé en mots des écarts entre deux versions, sans aucun chiffre ni montant. */
+  resumerEcarts(entree: EntreeEcarts): Promise<EcartsIA>;
 }

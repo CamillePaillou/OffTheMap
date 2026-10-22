@@ -31,6 +31,9 @@ class ClientCapricieux implements LlmClient {
   genererBrouillon(e: EntreeBrouillon) {
     return this.reel.genererBrouillon(e);
   }
+  resumerEcarts(e: Parameters<LlmClient['resumerEcarts']>[0]) {
+    return this.reel.resumerEcarts(e);
+  }
 }
 
 let statuts: StatutsEnMemoire;
@@ -124,6 +127,7 @@ describe('générer la fiche dès qu’une demande arrive (E2.2)', () => {
         return new FauxLlmClient().genererFiche(d);
       },
       genererBrouillon: async () => { throw new Error('non utilisé'); },
+      resumerEcarts: async () => { throw new Error('non utilisé'); },
     };
     expect(await lancerGenerationFiche(deps(llm), DOSSIER)).toEqual({ ok: false, raison: 'statut_modifie' });
     expect(fiches.fiches.size).toBe(0);
