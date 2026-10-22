@@ -13,7 +13,10 @@ const CATALOGUE: PrestationCatalogue[] = [
   p('activite-nantes-01', 'activite', 'Atelier de machines imaginaires', 'Nantes', 'Atelier accessible sans effort sportif', ['créatif', 'intérieur']),
   p('hotel-lyon-01', 'hebergement', 'Hôtel des Lumières', 'Lyon', 'Une nuit fictive, tarif par personne', ['centre-ville']), // texte exact du simulateur
   p('activite-lyon-01', 'activite', 'Enquête des traboules', 'Lyon', 'Jeu de piste en ville', ['jeu', 'extérieur']),
-  p('activite-lille-01', 'activite', 'Fabrique de gaufres', 'Lille', 'Atelier culinaire', ['cuisine', 'intérieur']),
+  p('train-lyon-01', 'transport', 'Train vers Lyon', 'Lyon', 'Trajet fictif aller-retour depuis Paris', ['train', 'sans voiture']),
+  p('train-lille-01', 'transport', 'Train vers Lille', 'Lille', 'Trajet fictif aller-retour depuis Paris', ['train', 'sans voiture']),
+  p('hotel-lille-01', 'hebergement', 'Hôtel du Beffroi', 'Lille', 'Une nuit fictive, tarif par personne', ['centre-ville']),
+  p('activite-lille-01', 'activite', 'Fabrique de gaufres', 'Lille', 'Atelier culinaire', ['cuisine', 'intérieur']), // les 9 prestations du simulateur
 ];
 const simulateur: Pick<Prestataires, 'catalogue' | 'disponibilite'> = {
   catalogue: async () => ({ ok: true, valeur: CATALOGUE }),
@@ -62,7 +65,9 @@ describe('faux modèle du chatbot (LLM_PROVIDER=fake)', () => {
     expect(pluie.texte).not.toMatch(/Enquête des traboules/); // en extérieur
 
     const offre = await demander('Qu’est-ce que vous proposez ?');
-    for (const ville of ['Nantes', 'Lyon', 'Lille']) expect(offre.texte).toMatch(new RegExp(`^${ville} :`, 'm'));
+    for (const ville of ['Nantes', 'Lyon', 'Lille']) expect(offre.texte).toMatch(new RegExp(`^- ${ville} :`, 'm'));
+    // tout le catalogue tient dans une réponse : rien n'est coupé, la dernière phrase est entière
+    expect(offre.texte).toMatch(/je vérifie si c’est libre\.$/);
     for (const r of [hotels, pluie, offre]) {
       expect(r.verification).toBeNull();
       expect(contientPrix(r.texte)).toBe(false);
