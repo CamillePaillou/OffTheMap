@@ -7,6 +7,8 @@ import type { NouvelleDemande } from '../../types/demande';
 export interface DemandeDeposee {
   dossierId: string;
   demandeId: string;
+  /** Numéro de dossier donné au client (« DT-JADE-NANT ») pour suivre sa demande sans compte. */
+  reference?: string;
 }
 
 export interface DemandesRepository {

@@ -1,0 +1,14 @@
+<!-- Mail de récupération du mot de passe (espace client). Variables de Supabase Auth : {{ .SiteURL }}, {{ .TokenHash }}. -->
+<div style="font-family: Arial, sans-serif; color: #16233f; background: #f6f1e7; padding: 24px; line-height: 1.5;">
+  <p>Bonjour,</p>
+  <p>Vous avez demandé un nouveau mot de passe pour votre espace DÉTOUR. Choisissez-le ici :</p>
+  <p>
+    <a href="{{ .SiteURL }}/compte/confirmer?token_hash={{ .TokenHash }}&type=recovery&suite=/compte/nouveau-mot-de-passe"
+       style="display: inline-block; background: #16233f; color: #f6f1e7; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-weight: bold;">
+      Choisir un nouveau mot de passe
+    </a>
+  </p>
+  <p>Le lien vaut une heure et ne sert qu’une fois. Si vous n’avez rien demandé, ignorez ce message : votre mot de passe ne change pas.</p>
+  <p>À bientôt,<br />DÉTOUR · Prenez le pas de côté.</p>
+  <p style="font-size: 12px; color: #5b6480;">Projet pédagogique Off the Map. Agence, prestataires et prix fictifs.</p>
+</div>

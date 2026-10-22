@@ -17,6 +17,8 @@ import { PanneauAbandon } from './panneau-abandon';
 import { AjouterLigne, ModifierBudget, ModifierLigne, ParticipantsPlusMoins, SejourPlusMoins } from './ajuster-lignes';
 import { PanneauChangement } from './panneau-changement';
 import { PanneauReponse } from './panneau-reponse';
+import { CarteReponseEnLigne } from './reponse-en-ligne';
+import { lireReponseEnLigne } from '@/src/infrastructure/db/reponseClientSupabase';
 import { CarteMail } from '../../_composants/carte-mail';
 import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
 import { lienMailto, mailConfirmation, mailProposition, MailImpossibleErreur } from '@/src/domain/mails';
@@ -72,6 +74,8 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   const aAbandonner = proposition.statut === 'sans_reponse' && !abandonne ? await new AbandonSupabase().lire(proposition.id) : null;
   const proposeAbandon = aAbandonner !== null && aAbandonner.dossier_statut === 'en_proposition' && abandonPropose(aAbandonner, new Date());
   const attendReponse = !abandonne && (proposition.statut === 'envoyee' || proposition.statut === 'sans_reponse');
+  // espace client : réponse donnée en ligne par le client, à enregistrer par le conseiller
+  const reponseEnLigne = attendReponse ? await lireReponseEnLigne(proposition.id) : null;
   // E6.2 : ce qui a changé depuis la version précédente, recalculé à chaque lecture
   const precedente = proposition.version > 1 ? await lecture.versionDuDossier(proposition.dossier_id, proposition.version - 1) : null;
   const ecartsVersions = precedente ? comparerVersions(precedente, proposition) : null;
@@ -238,6 +242,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
         {aCote && (
           <div className="flex flex-col gap-4">
             {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} />}
+            {reponseEnLigne && <CarteReponseEnLigne reponse={reponseEnLigne} />}
             {!abandonne && <PanneauReponse propositionId={proposition.id} statut={proposition.statut} />}
             {attendReponse && <PanneauChangement propositionId={proposition.id} version={proposition.version} />}
             {proposeAbandon && <PanneauAbandon propositionId={proposition.id} />}

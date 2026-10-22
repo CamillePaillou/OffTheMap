@@ -30,5 +30,5 @@ export async function envoyerDemande(_etat: EtatDemande, formulaire: FormData): 
   }
   if (!resultat.ok) return { erreurs: resultat.erreurs, valeurs: valeursSaisies(formulaire) };
   genererEnArrierePlan(resultat.depot.dossierId, 'apres_depot'); // E2.2 : la fiche se prépare sans faire attendre le client
-  redirect('/demande/merci');
+  redirect(resultat.depot.reference ? `/demande/merci?dossier=${encodeURIComponent(resultat.depot.reference)}` : '/demande/merci');
 }

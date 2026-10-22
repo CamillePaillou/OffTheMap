@@ -11,6 +11,9 @@ export class DemandesSupabase implements DemandesRepository {
     if (error) throw new Error(`deposer_demande : ${error.message}`);
     const ligne = data?.[0];
     if (!ligne) throw new Error('deposer_demande : aucune ligne renvoyée');
-    return { dossierId: ligne.dossier_id, demandeId: ligne.demande_id };
+    // numéro de dossier (espace client) : tiré par la base à la création du dossier ; la demande est déjà enregistrée,
+    // un échec de cette lecture ne la fait pas échouer
+    const { data: dossier } = await clientService().from('dossiers').select('reference').eq('id', ligne.dossier_id).maybeSingle();
+    return { dossierId: ligne.dossier_id, demandeId: ligne.demande_id, reference: dossier?.reference };
   }
 }
