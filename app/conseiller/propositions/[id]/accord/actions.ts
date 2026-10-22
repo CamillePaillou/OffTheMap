@@ -69,7 +69,7 @@ export async function poser(_etat: EtatAccord, formulaire: FormData): Promise<Et
     revalidatePath(`/conseiller/propositions/${proposition.id}/accord`);
     return { ok: true };
   } catch {
-    return { erreur: 'Impossible de contacter le simulateur. La tentative est à vérifier dans les traces.' };
+    return { erreur: 'Le prestataire n’a pas pu être joint. Regardez la trace avant de recommencer.' };
   }
 }
 
@@ -81,7 +81,7 @@ const messagesPose: Record<string, string> = {
   simulateur_delai: 'Le prestataire n’a pas répondu à temps. Par sécurité, l’accord est consommé : regardez la trace avant de recommencer.',
   simulateur_erreur: 'Le prestataire n’a pas pu poser l’option. Par sécurité, l’accord est consommé : regardez la trace avant de recommencer.',
   simulateur_refus: 'Le prestataire a refusé l’option : cette prestation n’est plus disponible à ces conditions.',
-  reponse_serveur_incoherente: 'La réponse du simulateur ne correspond pas à l’accord. Vérifiez la trace avant toute action.',
+  reponse_serveur_incoherente: 'La réponse du prestataire ne correspond pas à l’accord : regardez la trace avant toute action.',
 };
 
 
@@ -146,10 +146,10 @@ const messagesAnnulation: Record<string, string> = {
   cle_absente: 'La clé d’approbation est obligatoire pour annuler.',
   confirmation_absente: 'Cochez la case pour confirmer l’annulation.',
   reservation_introuvable: 'Aucune réservation confirmée à annuler sur cette prestation.',
-  simulateur_delai: 'Délai dépassé : l’annulation n’est pas certaine. Vérifiez la trace avant de réessayer.',
-  simulateur_erreur: 'Erreur du simulateur : vérifiez la trace avant de réessayer.',
-  simulateur_refus: 'Le simulateur a refusé l’annulation (clé d’approbation incorrecte ou réservation déjà annulée).',
-  reponse_serveur_incoherente: 'La réponse du simulateur ne correspond pas à la réservation. Vérifiez la trace avant toute action.',
+  simulateur_delai: 'Le prestataire n’a pas répondu à temps : l’annulation n’est pas certaine. Regardez la trace avant de recommencer.',
+  simulateur_erreur: 'Le prestataire n’a pas pu annuler la réservation. Regardez la trace avant de recommencer.',
+  simulateur_refus: 'Le prestataire a refusé l’annulation : vérifiez la clé d’approbation, la réservation est peut-être déjà annulée.',
+  reponse_serveur_incoherente: 'La réponse du prestataire ne correspond pas à la réservation : regardez la trace avant toute action.',
 };
 
 /** E9.8 : annulation d'une réservation confirmée. Clé d'approbation saisie + case de confirmation ; la clé n'est jamais journalisée. */

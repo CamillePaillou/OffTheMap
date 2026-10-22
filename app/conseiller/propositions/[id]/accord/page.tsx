@@ -61,7 +61,7 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
         <h2 id="conditions" className="text-lg">Conditions de l’accord</h2>
         <ul className="mt-3 flex list-disc flex-col gap-2 pl-5 text-sm text-encre">
           <li>Valable {LIMITES.dureeAccordMinutes} minutes, à usage unique, pour cette prestation, cette date, ce nombre de participants et ce prix seulement.</li>
-          <li>Il permet seulement de poser une option : la durée est fixée par le simulateur du prestataire et affichée à la pose.</li>
+          <li>Il permet seulement de poser une option : la durée est fixée par le prestataire et affichée à la pose.</li>
           <li>La réservation demande ensuite une seconde validation avec la clé d’approbation, saisie par vous.</li>
           <li>Si le prix revérifié change, l’accord est refusé : il faut relire le prix et autoriser de nouveau.</li>
         </ul>
@@ -115,7 +115,7 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
               ) : optionPosee ? (
                 <>
                   <p className="mt-4 rounded-lg bg-ciel-pale px-3 py-2 text-sm text-encre" role="status">
-                    Option posée : {optionPosee.option_id_simulateur}. Expiration confirmée par le simulateur : {optionPosee.expire_option_le ? new Date(optionPosee.expire_option_le).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }) : 'non renseignée'}.
+                    Option posée : {optionPosee.option_id_simulateur}. Expiration confirmée par le prestataire : {optionPosee.expire_option_le ? new Date(optionPosee.expire_option_le).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }) : 'non renseignée'}.
                   </p>
                   <BoutonConfirmation propositionId={proposition.id} ligneId={ligne.id} />
                 </>
