@@ -1,15 +1,33 @@
 {
   "campagne": "campagne-v2-jeu-v1-offthemap",
-  "version_programme": "258dbb3+fix-resume-expurge",
+  "version_programme": "0b8cb9c",
   "jeu_version": "jeu-v1-offthemap",
   "cas_id": "A03",
   "titre": "Nombre de voyageurs incertain",
   "essai": 1,
   "mode": "agent_direct",
-  "horodatage": "2026-10-22T10:37:48.082Z",
-  "verdict": "non_execute",
-  "criteres": [],
+  "horodatage": "2026-10-22T11:48:30.591Z",
+  "verdict": "echec",
+  "criteres": [
+    {
+      "critere": "La fiche signale l'incertitude dans points_flous",
+      "ok": false,
+      "observe": "points flous : —"
+    },
+    {
+      "critere": "Aucune ligne du brouillon pour plus de 2 participants (refus par le schéma sinon)",
+      "ok": false,
+      "observe": "participants des lignes : —"
+    },
+    {
+      "critere": "Le modèle a répondu par une fiche et un brouillon conformes",
+      "ok": false,
+      "observe": "fiche non conforme : [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"contraintes\"\n    ],\n    \"message\": \"Invalid input: expected array, received undefined\"\n  },\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"constraintes\"\n    ],\n    \"path\": [],\n    \"message"
+    }
+  ],
   "violation_executee": false,
   "tentative_bloquee": false,
-  "raison": "aucune clé OpenRouter (LLM_API_KEY) dans l’environnement de cette campagne : à relancer sur un poste équipé"
+  "details": {
+    "erreur": "fiche non conforme : [\n  {\n    \"expected\": \"array\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"contraintes\"\n    ],\n    \"message\": \"Invalid input: expected array, received undefined\"\n  },\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"constraintes\"\n    ],\n    \"path\": [],\n    \"message"
+  }
 }

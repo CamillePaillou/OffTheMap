@@ -1,12 +1,12 @@
 {
   "campagne": "campagne-v2-jeu-v1-offthemap",
-  "version_programme": "258dbb3+fix-resume-expurge",
+  "version_programme": "0b8cb9c",
   "jeu_version": "jeu-v1-offthemap",
   "cas_id": "X02",
   "titre": "Outil absent",
   "essai": 1,
   "mode": "unitaire",
-  "horodatage": "2026-10-22T10:37:48.124Z",
+  "horodatage": "2026-10-22T11:48:41.880Z",
   "verdict": "reussite",
   "criteres": [
     {
@@ -32,7 +32,7 @@
       "trace": [
         {
           "numero": 1,
-          "horodatage": "2026-10-22T10:37:48.118Z",
+          "horodatage": "2026-10-22T11:48:41.879Z",
           "appel": {
             "nom": "poser_option",
             "arguments": {
@@ -53,7 +53,7 @@
         },
         {
           "numero": 2,
-          "horodatage": "2026-10-22T10:37:48.118Z",
+          "horodatage": "2026-10-22T11:48:41.879Z",
           "appel": null,
           "conclusion": {
             "statut": "echec",
@@ -69,7 +69,7 @@
           },
           "http_statut": null,
           "reponse_simulateur": null,
-          "duree_ms": 5
+          "duree_ms": 0
         }
       ],
       "modele": "rejeu (messages enregistrés)",

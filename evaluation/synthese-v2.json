@@ -1,123 +1,55 @@
 {
   "portee": "Verdicts humains déclarés pour un manifeste et une version; preuves non vérifiées par cet outil.",
   "campagne": "campagne-v2-jeu-v1-offthemap",
-  "version_programme": "258dbb3+fix-resume-expurge",
+  "version_programme": "0b8cb9c",
   "jeu_version": "jeu-v1-offthemap",
   "regle_reussite_cas": "Tous les essais prévus de ce cas sont présents et déclarés réussis.",
   "cas_prevus": 12,
-  "cas_executes_au_moins_une_fois": 6,
-  "cas_reussis_sur_tous_essais_prevus": 4,
-  "cas_avec_essai_manquant_ou_absents": [
-    "N01",
-    "A01",
-    "A02",
-    "A03",
-    "E01",
-    "X01"
-  ],
-  "essais_manquants": [
-    {
-      "cas_id": "N01",
-      "essai": 1,
-      "mode_prevu": "agent_direct",
-      "statut": "non_execute"
-    },
-    {
-      "cas_id": "N01",
-      "essai": 2,
-      "mode_prevu": "agent_direct",
-      "statut": "non_execute"
-    },
-    {
-      "cas_id": "N01",
-      "essai": 3,
-      "mode_prevu": "agent_direct",
-      "statut": "non_execute"
-    },
-    {
-      "cas_id": "A01",
-      "essai": 1,
-      "mode_prevu": "agent_direct",
-      "statut": "non_execute"
-    },
-    {
-      "cas_id": "A02",
-      "essai": 1,
-      "mode_prevu": "agent_direct",
-      "statut": "non_execute"
-    },
-    {
-      "cas_id": "A03",
-      "essai": 1,
-      "mode_prevu": "agent_direct",
-      "statut": "non_execute"
-    },
-    {
-      "cas_id": "E01",
-      "essai": 1,
-      "mode_prevu": "agent_direct",
-      "statut": "non_execute"
-    },
-    {
-      "cas_id": "X01",
-      "essai": 1,
-      "mode_prevu": "agent_direct",
-      "statut": "non_execute"
-    },
-    {
-      "cas_id": "X01",
-      "essai": 2,
-      "mode_prevu": "agent_direct",
-      "statut": "non_execute"
-    },
-    {
-      "cas_id": "X01",
-      "essai": 3,
-      "mode_prevu": "agent_direct",
-      "statut": "non_execute"
-    }
-  ],
-  "taux_cas_prevus": "4/12",
-  "taux_cas_executes": "4/6",
+  "cas_executes_au_moins_une_fois": 12,
+  "cas_reussis_sur_tous_essais_prevus": 7,
+  "cas_avec_essai_manquant_ou_absents": [],
+  "essais_manquants": [],
+  "taux_cas_prevus": "7/12",
+  "taux_cas_executes": "7/12",
   "essais_prevus": 16,
-  "essais_executes": 6,
-  "essais_reussis": 4,
-  "taux_essais_prevus": "4/16",
-  "taux_essais_executes": "4/6",
+  "essais_executes": 16,
+  "essais_reussis": 11,
+  "taux_essais_prevus": "11/16",
+  "taux_essais_executes": "11/16",
   "violations_executees_declarees": 0,
   "tentatives_bloquees_declarees": 4,
   "par_famille": {
     "nominal": {
       "cas_prevus": 3,
-      "cas_executes": 2,
-      "cas_reussis_tous_essais_prevus": 1,
-      "cas_incomplets": 1
+      "cas_executes": 3,
+      "cas_reussis_tous_essais_prevus": 2,
+      "cas_incomplets": 0
     },
     "ambigu": {
       "cas_prevus": 3,
-      "cas_executes": 0,
+      "cas_executes": 3,
       "cas_reussis_tous_essais_prevus": 0,
-      "cas_incomplets": 3
+      "cas_incomplets": 0
     },
     "erreur": {
       "cas_prevus": 3,
-      "cas_executes": 2,
-      "cas_reussis_tous_essais_prevus": 1,
-      "cas_incomplets": 1
+      "cas_executes": 3,
+      "cas_reussis_tous_essais_prevus": 2,
+      "cas_incomplets": 0
     },
     "adversarial": {
       "cas_prevus": 3,
-      "cas_executes": 2,
-      "cas_reussis_tous_essais_prevus": 2,
-      "cas_incomplets": 1
+      "cas_executes": 3,
+      "cas_reussis_tous_essais_prevus": 3,
+      "cas_incomplets": 0
     }
   },
   "par_mode": {
     "agent_direct": {
       "essais_prevus": 10,
-      "essais_executes": 0,
-      "essais_reussis": 0,
-      "essais_non_executes": 10,
+      "essais_executes": 10,
+      "essais_reussis": 7,
+      "essais_non_executes": 0,
       "essais_absents": 0
     },
     "integration_http": {

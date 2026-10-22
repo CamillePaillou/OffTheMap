@@ -1,7 +1,7 @@
 {
   "portee": "Verdicts humains déclarés pour un manifeste et une version; preuves non vérifiées par cet outil.",
   "campagne": "campagne-v2-jeu-v1-rejeu-offthemap",
-  "version_programme": "258dbb3+fix-resume-expurge",
+  "version_programme": "0b8cb9c-dirty",
   "jeu_version": "jeu-v1-rejeu-offthemap",
   "regle_reussite_cas": "Tous les essais prévus de ce cas sont présents et déclarés réussis.",
   "cas_prevus": 2,
