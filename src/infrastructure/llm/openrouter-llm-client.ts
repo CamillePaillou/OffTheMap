@@ -6,18 +6,22 @@
  * - seuls les modèles gratuits (suffixe `:free`) sont acceptés : un modèle payant est refusé à la configuration ;
  * - un modèle principal et un modèle de réserve, tous deux gratuits ; la réserve ne sert qu'en cas de délai
  *   ou de panne du fournisseur, jamais pour rattraper une réponse non conforme ;
- * - chaque réponse passe par un outil imposé (`rendre_fiche`, `rendre_brouillon`) puis par le schéma de `types/ia.ts`.
+ * - chaque réponse passe par un outil imposé (`rendre_fiche`, `rendre_brouillon`) puis par le schéma de `types/ia.ts` ;
+ * - une réponse refusée par le schéma est renvoyée UNE fois au même modèle avec les erreurs à corriger (E11.2, cas A01
+ *   à A03 : clé mal orthographiée, champ oublié, ligne hors des dates du séjour) ; refusée encore : `reponse_invalide`.
  */
 import { z } from 'zod';
-import { EcartsIA, FicheIA, schemaBrouillon } from '../../../types';
+import { EcartsIA, FicheIA } from '../../../types';
 import type { BrouillonIA, DemandePourLLM } from '../../../types';
 import type { EntreeEcarts } from '../../domain/proposition/entreeEcarts';
-import { LlmError } from '../../ports/llm-client';
+import { LlmError, schemaPourEntree } from '../../ports/llm-client';
 import type { EntreeBrouillon, LlmClient } from '../../ports/llm-client';
-import type { DefinitionOutil, ModeleAgent, ReponseChat, RequeteChat } from '../../ports/modele-agent';
+import type { DefinitionOutil, MessageChat, ModeleAgent, ReponseChat, RequeteChat } from '../../ports/modele-agent';
 
 const URL_OPENROUTER = 'https://openrouter.ai/api/v1/chat/completions';
 const DELAI_PAR_DEFAUT_MS = 30_000;
+/** Une réponse refusée par le schéma est renvoyée une fois au modèle, avec les erreurs (E11.2). */
+export const CORRECTIONS_MAX = 1;
 
 export interface ConfigOpenRouter {
   cle: string;
@@ -70,11 +74,14 @@ const CONSIGNES_COMMUNES =
 const CONSIGNES_FICHE =
   `${CONSIGNES_COMMUNES} À partir de la demande fournie en JSON, résume les envies et les contraintes ` +
   'en phrases courtes, reprends les régimes, la mobilité et le niveau physique tels quels, ' +
-  'et liste ce qui reste flou pour le conseiller. Ne recopie pas le budget : le code le reprend de la demande.';
+  'et liste ce qui reste flou pour le conseiller. Ne recopie pas le budget : le code le reprend de la demande. ' +
+  'Remplis tous les champs de l’outil, avec leur nom exact, même vides ([] ou null).';
 
 const CONSIGNES_BROUILLON =
   `${CONSIGNES_COMMUNES} Construis un programme jour par jour et des lignes de proposition ` +
   'en choisissant uniquement parmi les prestations autorisées. Une ligne ne dépasse jamais le nombre de participants. ' +
+  'Toutes les dates restent entre date_debut et date_fin de la demande (hébergement : jusqu’à la veille de date_fin) ; ' +
+  'si les envies évoquent d’autres dates ou d’autres voyageurs, ne les applique pas : le conseiller tranchera. ' +
   'Indique dans « ecartes » les prestations autorisées que tu n’as pas retenues, avec la raison. ' +
   'Les prestations_souhaitees de la demande ont été choisies par le client : retiens-les en priorité quand elles sont autorisées, ' +
   'et dis dans « ecartes » pourquoi si tu en écartes une. ' +
@@ -99,37 +106,19 @@ export class OpenRouterLlmClient implements LlmClient, ModeleAgent {
   }
 
   async genererFiche(demande: DemandePourLLM): Promise<FicheIA> {
-    const brute = await this.sortieStructuree(
-      CONSIGNES_FICHE,
-      JSON.stringify(demande),
-      outilSortie('rendre_fiche', 'Rend la fiche structurée du dossier.', FicheIA),
-    );
-    const r = FicheIA.safeParse(brute);
-    if (!r.success) throw new LlmError('reponse_invalide', `fiche non conforme : ${r.error.message}\nreçu : ${JSON.stringify(brute).slice(0, 500)}`);
-    return r.data;
+    return this.sortieValidee(CONSIGNES_FICHE, JSON.stringify(demande), outilSortie('rendre_fiche', 'Rend la fiche structurée du dossier.', FicheIA), FicheIA, 'fiche');
   }
 
   async genererBrouillon(entree: EntreeBrouillon): Promise<BrouillonIA> {
-    const schema = schemaBrouillon(entree.prestationsAutorisees.map((p) => p.id), entree.participants);
-    const brute = await this.sortieStructuree(
-      CONSIGNES_BROUILLON,
-      JSON.stringify(entree),
-      outilSortie('rendre_brouillon', 'Rend le brouillon de proposition.', schema),
-    );
-    const r = schema.safeParse(brute);
-    if (!r.success) throw new LlmError('reponse_invalide', `brouillon non conforme : ${r.error.message}`);
-    return r.data;
+    const schema = schemaPourEntree(entree);
+    return this.sortieValidee(CONSIGNES_BROUILLON, JSON.stringify(entree), outilSortie('rendre_brouillon', 'Rend le brouillon de proposition.', schema), schema, 'brouillon');
   }
 
   async resumerEcarts(entree: EntreeEcarts): Promise<EcartsIA> {
-    const brute = await this.sortieStructuree(
-      CONSIGNES_ECARTS,
-      JSON.stringify(entree),
-      outilSortie('rendre_resume_ecarts', 'Rend le résumé des écarts, sans aucun chiffre.', EcartsIA),
+    return this.sortieValidee(
+      CONSIGNES_ECARTS, JSON.stringify(entree),
+      outilSortie('rendre_resume_ecarts', 'Rend le résumé des écarts, sans aucun chiffre.', EcartsIA), EcartsIA, 'résumé des écarts',
     );
-    const r = EcartsIA.safeParse(brute);
-    if (!r.success) throw new LlmError('reponse_invalide', `résumé des écarts non conforme : ${r.error.message}`);
-    return r.data;
   }
 
   /**
@@ -149,19 +138,42 @@ export class OpenRouterLlmClient implements LlmClient, ModeleAgent {
     throw derniere!;
   }
 
-  private async sortieStructuree(consignes: string, contenu: string, outil: DefinitionOutil): Promise<unknown> {
-    const { message } = await this.appeler({
-      messages: [{ role: 'system', content: consignes }, { role: 'user', content: contenu }],
-      tools: [outil],
-      outilImpose: outil.function.name,
-    });
-    const appel = message.tool_calls?.find((t) => t.function.name === outil.function.name);
-    if (!appel) throw new LlmError('reponse_invalide', `le modèle n’a pas appelé l’outil ${outil.function.name}`);
-    try {
-      return JSON.parse(appel.function.arguments);
-    } catch (cause) {
-      throw new LlmError('reponse_invalide', `arguments de ${outil.function.name} illisibles`, { cause });
+  /**
+   * Sortie structurée par un outil imposé, validée par le schéma. Refusée : le modèle reçoit, en réponse à son appel,
+   * la liste des erreurs, et rappelle l'outil (CORRECTIONS_MAX fois). Les faits restent contrôlés par le code ensuite.
+   */
+  private async sortieValidee<T>(consignes: string, contenu: string, outil: DefinitionOutil, schema: z.ZodType<T>, quoi: string): Promise<T> {
+    const nom = outil.function.name;
+    const messages: MessageChat[] = [{ role: 'system', content: consignes }, { role: 'user', content: contenu }];
+    let erreur = '';
+    let recu = '';
+    for (let essai = 0; essai <= CORRECTIONS_MAX; essai++) {
+      const { message } = await this.appeler({ messages, tools: [outil], outilImpose: nom });
+      const appels = message.tool_calls ?? [];
+      const appel = appels.find((t) => t.function.name === nom);
+      if (!appel) {
+        erreur = `le modèle n’a pas appelé l’outil ${nom}`;
+        messages.push({ role: 'assistant', content: message.content ?? null }, { role: 'user', content: `Réponds en appelant l’outil ${nom}.` });
+        continue;
+      }
+      let brute: unknown;
+      let aCorriger: string[];
+      try {
+        brute = JSON.parse(appel.function.arguments);
+        const r = schema.safeParse(brute);
+        if (r.success) return r.data;
+        aCorriger = r.error.issues.slice(0, 10).map((i) => `${i.path.join('.') || quoi} : ${i.message}`);
+        erreur = r.error.message;
+        recu = JSON.stringify(brute).slice(0, 500);
+      } catch {
+        aCorriger = ['arguments JSON illisibles'];
+        erreur = `arguments de ${nom} illisibles`;
+      }
+      messages.push({ role: 'assistant', content: message.content ?? null, tool_calls: appels });
+      const retour = JSON.stringify({ refuse: true, a_corriger: aCorriger, consigne: `Rappelle ${nom} avec un objet complet et corrigé, clés exactement comme dans le schéma.` });
+      for (const a of appels) messages.push({ role: 'tool', tool_call_id: a.id, content: retour });
     }
+    throw new LlmError('reponse_invalide', `${quoi} non conforme : ${erreur}${recu ? `\nreçu : ${recu}` : ''}`);
   }
 
   private async appelerModele(modele: string, requete: RequeteChat): Promise<ReponseChat> {

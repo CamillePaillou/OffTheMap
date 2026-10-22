@@ -7,6 +7,7 @@
  * - chaque réponse est validée par un schéma de `types/ia.ts` AVANT d'être rendue ;
  * - une réponse non conforme lève `LlmError('reponse_invalide')`, jamais une valeur partielle.
  */
+import { schemaBrouillon } from '../../types';
 import type { BrouillonIA, DemandePourLLM, EcartsIA, FicheIA, TypePrestation } from '../../types';
 import type { EntreeEcarts } from '../domain/proposition/entreeEcarts';
 
@@ -23,6 +24,15 @@ export interface EntreeBrouillon {
   prestationsAutorisees: readonly PrestationAutorisee[];
   /** Nombre de voyageurs : une ligne ne peut pas dépasser ce nombre. */
   participants: number;
+}
+
+/** Schéma du brouillon pour cette entrée : prestations autorisées, participants et dates du séjour de référence. */
+export function schemaPourEntree(entree: EntreeBrouillon) {
+  return schemaBrouillon(entree.prestationsAutorisees.map((p) => p.id), entree.participants, {
+    date_debut: entree.demande.date_debut,
+    date_fin: entree.demande.date_fin,
+    types: Object.fromEntries(entree.prestationsAutorisees.map((p) => [p.id, p.type])),
+  });
 }
 
 export type CodeErreurLlm = 'delai' | 'erreur_fournisseur' | 'reponse_invalide' | 'configuration';

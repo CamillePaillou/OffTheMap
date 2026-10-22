@@ -1,8 +1,10 @@
 'use client';
 
-import { useActionState, useState, type FocusEvent, type FormEvent } from 'react';
+import { useActionState, useEffect, useRef, useState, type FocusEvent, type FormEvent } from 'react';
+import { CHAMPS_FORMULAIRE, ETAPES_FORMULAIRE, type EtatFormulaire } from '@/src/domain/chatbot/aideFormulaire';
 import { nuitsEntre, reglesCroisees, schemaSaisieDemande } from '@/types/demande';
 import { lireSaisie } from './lecture';
+import { EVENEMENT_PRESTATION, type DetailPrestation } from '../_composants/chatbot';
 import { Ligne } from '../_composants/ligne';
 import type { ChampCorrigeable, Commentaires } from '@/types/correction';
 import { envoyerDemande, type EtatDemande } from './actions';
@@ -109,6 +111,18 @@ export function FormulaireDemande({
 }: Props) {
   // gardées dans l'état du composant : elles survivent à un renvoi du formulaire avec erreurs
   const [choisies, setChoisies] = useState<readonly PrestationChoisie[]>(prestationsChoisies);
+  // une prestation ajoutée ou retirée depuis le chatbot ouvert sur cette page
+  useEffect(() => {
+    const recevoir = (ev: Event) => {
+      const { prestation, ajoutee } = (ev as CustomEvent<DetailPrestation>).detail;
+      setChoisies((liste) => {
+        const sans = liste.filter((x) => x.id !== prestation.id);
+        return ajoutee ? [...sans, prestation].slice(-6) : sans;
+      });
+    };
+    window.addEventListener(EVENEMENT_PRESTATION, recevoir);
+    return () => window.removeEventListener(EVENEMENT_PRESTATION, recevoir);
+  }, []);
   const [etat, action, enCours] = useActionState<EtatDemande, FormData>(envoyer, {});
   const v = etat.valeurs ?? initiales ?? {};
   // erreurs vérifiées dans le navigateur, pour les champs que le client a déjà quittés (ou tous, après un envoi refusé)
@@ -145,6 +159,20 @@ export function FormulaireDemande({
   const rempli = (station: keyof typeof STATIONS) => (STATIONS[station]!(courant) ? 'true' : 'false');
   const faites = OBLIGATOIRES.filter((o) => STATIONS[o]!(courant)).length;
   const aRevoir = (nom: string) => surlignes.includes(nom);
+  // pour le chatbot de la page : des clés seulement (étapes vides, champs en erreur affichés), aucune valeur saisie,
+  // et rien sur « Alimentation et mobilité » (src/domain/chatbot/aideFormulaire.ts)
+  // « Adultes » affiche 2 par défaut avant toute frappe : le chatbot ne doit pas dire que l'étape est vide
+  const pourAssistant: EtatFormulaire = {
+    manquantes: ETAPES_FORMULAIRE.filter((s) => !STATIONS[s]!({ adultes: '2', ...courant })),
+    erreurs: CHAMPS_FORMULAIRE.filter((n) => !!e[n]),
+  };
+  // écrit sur le formulaire après le rendu, pas dans le HTML : l'état vu par le serveur et par le navigateur peut
+  // différer (valeurs reprises par le navigateur, extensions…) et un attribut rendu ferait une erreur d'hydratation
+  const formulaire = useRef<HTMLFormElement>(null);
+  const etatAssistant = JSON.stringify(pourAssistant);
+  useEffect(() => {
+    if (formulaire.current) formulaire.current.dataset.assistant = etatAssistant;
+  });
   // champ signalé par le conseiller : bordure et fond ambre, et annonce pour les lecteurs d'écran
   // champ en erreur : bordure brique ; champ signalé par le conseiller : fond ciel
   const c = (nom: string) => (e[nom] ? `${champ} border-brique!` : aRevoir(nom) ? `${champ} border-encre! bg-ciel-pale ring-2 ring-ciel` : champ);
@@ -169,7 +197,7 @@ export function FormulaireDemande({
   return (
     // La clé remonte le formulaire après une erreur : les valeurs saisies sont reprises par defaultValue.
     <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-    <form key={JSON.stringify(v)} action={action} onInput={suivre} onChange={suivre} onBlur={quitter} onSubmit={avantEnvoi} noValidate className="panneau ligne-formulaire flex flex-col gap-8 p-5 sm:p-8">
+    <form id="formulaire-demande" ref={formulaire} key={JSON.stringify(v)} action={action} onInput={suivre} onChange={suivre} onBlur={quitter} onSubmit={avantEnvoi} noValidate className="panneau ligne-formulaire flex flex-col gap-8 p-5 sm:p-8">
       {e.formulaire && (
         <p role="alert" className="rounded-lg border-l-4 border-brique bg-brique-pale px-3 py-2 text-sm text-brique-texte">
           {e.formulaire}

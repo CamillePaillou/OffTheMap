@@ -46,7 +46,18 @@ Tout autre outil (poser une option, réserver, annuler) est refusé : il n'exist
 - **Répondre, pas renvoyer** : une question sur l'offre reçoit la liste de ce que le catalogue propose ; le conseiller n'est proposé que pour le prix, la réservation, ou ce que le catalogue ne dit pas.
 - **Pannes** : catalogue du simulateur indisponible, le catalogue de l'agence prend le relais ; les deux indisponibles, ou disponibilité impossible à vérifier, réponse fixe « Je n'ai pas pu joindre nos prestataires… » (écrite par le code, sans prix ni places) ; modèle injoignable ou mal configuré, réponse fixe qui renvoie vers le formulaire. Aucun nouvel essai.
 - **Accessibilité** : bouton et panneau au clavier, Échap ferme et rend le focus, réponses annoncées (`aria-live`), utilisable sur téléphone, animations coupées si l'ordinateur le demande.
-- Le chatbot n'apparaît ni dans l'espace conseiller ni sur le formulaire (il y mène).
+- Le chatbot n'apparaît ni dans l'espace conseiller, ni sur la confirmation, ni sur la correction d'une demande. Sur le formulaire, il accompagne le remplissage (ci-dessous).
+
+## Sur le formulaire de demande
+
+Sur `/demande`, le même bouton (« Besoin d'aide ? ») ouvre le chatbot en mode accompagnement : il aide le client à remplir correctement la fiche, et répond toujours sur l'offre.
+
+- **État de la fiche, en clés seulement** : à chaque message, le navigateur joint `formulaire: { manquantes, erreurs }`, lu sur le formulaire (`data-assistant`) : les étapes encore vides (`vous`, `voyage`, `voyageurs`, `budget`, `envies`, `accords`) et les champs dont l'erreur est affichée. **Aucune valeur saisie** ne part : ni nom, ni e-mail, ni dates, ni texte libre. L'étape « Alimentation et mobilité » n'y figure jamais (la savoir cochée dirait quelque chose de la santé d'un voyageur). Le serveur refuse tout autre champ (`EtatFormulaire`, strict).
+- **Questions sur la fiche, réponse du code** (`src/domain/chatbot/aideFormulaire.ts`) : ce qu'il reste à remplir, pourquoi un champ est en rouge (avec la règle du champ, les mêmes que `reglesCroisees`), le nombre de nuits, les dates, le budget (global, transport compris), adultes et enfants, les envies, la destination, les deux accords, le compte et l'e-mail, ce qui se passe après l'envoi. Instantané, sans modèle ni simulateur.
+- **Santé** : une information de santé, déjà retirée par `minimiser`, est orientée vers les cases « Alimentation et mobilité », sans être reprise.
+- **Autres questions** : le chatbot habituel, avec en plus dans les consignes la description de la fiche et son état (en clés).
+- **Prestations** : « Ajouter à ma demande » les met directement dans « Ce qui vous tente » (événement `detour:prestation`, 6 au plus) ; pas de bouton « Composer mon week-end », le client y est déjà.
+- Sur téléphone, le bouton et le panneau passent au-dessus du rappel collé en bas du formulaire.
 
 ## En développement et en démonstration
 
@@ -56,4 +67,4 @@ Tout autre outil (poser une option, réserver, annuler) est refusé : il n'exist
 
 ## Tests
 
-`src/domain/chatbot/chatbot.test.ts` (minimisation, prix, outils), `src/application/repondreChatbot.test.ts` (les 4 scénarios de l'issue, pannes, bornes), `src/infrastructure/llm/faux-modele-chat.test.ts` (questions sur l'offre, mots-clés, disponibilité, avec le catalogue de démonstration), `src/infrastructure/prestataires/catalogueChatbot.test.ts` (prix retirés, secours du catalogue).
+`src/domain/chatbot/chatbot.test.ts` (minimisation, prix, outils), `src/domain/chatbot/aideFormulaire.test.ts` (aide au remplissage, état sans valeur), `src/application/repondreChatbot.test.ts` (les 4 scénarios de l'issue, pannes, bornes), `src/infrastructure/llm/faux-modele-chat.test.ts` (questions sur l'offre, mots-clés, disponibilité, avec le catalogue de démonstration), `src/infrastructure/prestataires/catalogueChatbot.test.ts` (prix retirés, secours du catalogue).

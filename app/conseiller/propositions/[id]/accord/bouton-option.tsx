@@ -13,7 +13,7 @@ export function BoutonOption(props: { propositionId: string; ligneId: string }) 
         {enCours ? 'Pose de l’option…' : 'Poser l’option'}
       </button>
       {etat.erreur && <p role="alert" className="text-sm text-brique-texte">{etat.erreur}</p>}
-      {etat.ok && <p role="status" className="text-sm text-encre">Option posée. L’expiration affichée provient de la réponse du simulateur.</p>}
+      {etat.ok && <p role="status" className="text-sm text-encre">Option posée. L’expiration affichée est celle donnée par le prestataire.</p>}
     </form>
   );
 }
