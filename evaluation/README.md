@@ -40,7 +40,8 @@ python3 <dépôt du formateur>/content/j4/synthese.py evaluation/jeu-v1-rejeu.js
 
 `demo-approval` et `demo-instructor` sont les clés de démonstration du simulateur local (`--demo`) ; avec le serveur du formateur, utiliser celles qu'il fournit, sur la ligne de commande, jamais dans un fichier. La clé formateur sert à réinitialiser l'espace d'équipe avant chaque essai et à créer les incidents (E01, E02).
 
-- **Agent direct** (N01, A01 à A03, E01, X01) : il faut `LLM_API_KEY` dans `.env`. Sans clé, ces essais sont écrits `non_execute` avec la raison.
+- **Agent direct** (N01, A01 à A03, E01, X01) : il faut `LLM_API_KEY` dans `.env`. Sans clé, la campagne s'arrête avant d'écrire ; `SANS_MODELE=1` l'accepte, et ces essais sont alors écrits `non_execute` avec la raison.
+- **Simulateur seulement** : la campagne n'a pas besoin de Supabase. `docker compose up -d simulateur` suffit ; s'il ne répond pas, rien n'est écrit.
 - **Manifeste complémentaire** `jeu-v1-rejeu.json` (N01R, X01R), figé avant la campagne : le programme réel reçoit des messages du modèle enregistrés. Il ne remplace pas N01 et X01, qui gardent leur ligne en agent direct.
 
 ### Résultats
