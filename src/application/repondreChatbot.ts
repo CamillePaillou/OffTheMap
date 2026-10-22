@@ -88,6 +88,19 @@ export const MESSAGES_FIXES = {
   tropDOutils: 'Je n’ai pas réussi à tout vérifier. Décrivez votre week-end : un conseiller s’en occupe et vous répond par e-mail.',
 } as const;
 
+/**
+ * Borne la réponse sans couper un mot : à la dernière fin de ligne ou de phrase avant la limite (si elle garde au
+ * moins la moitié du texte), sinon au dernier espace, puis « … ».
+ */
+export function couper(texte: string, max: number): string {
+  if (texte.length <= max) return texte;
+  const debut = texte.slice(0, max - 1);
+  const finPhrase = Math.max(debut.lastIndexOf('\n'), debut.lastIndexOf('. ') + 1, debut.lastIndexOf('? ') + 1, debut.lastIndexOf('! ') + 1);
+  if (finPhrase >= max / 2) return debut.slice(0, finPhrase).trimEnd();
+  const espace = debut.lastIndexOf(' ');
+  return `${(espace > 0 ? debut.slice(0, espace) : debut).trimEnd()}…`;
+}
+
 export async function repondreChatbot(conversation: ConversationChatbot, deps: DependancesChatbot): Promise<ReponseChatbot> {
   const maintenant = deps.maintenant?.() ?? new Date();
   const historique = conversation.messages.slice(-LIMITES_CHATBOT.messagesMax);
@@ -121,7 +134,7 @@ export async function repondreChatbot(conversation: ConversationChatbot, deps: D
 
     const demandes = reponse.message.tool_calls ?? [];
     if (demandes.length === 0) {
-      const texte = sansPrix((reponse.message.content ?? '').trim()).slice(0, LIMITES_CHATBOT.longueurReponseMax);
+      const texte = couper(sansPrix((reponse.message.content ?? '').trim()), LIMITES_CHATBOT.longueurReponseMax);
       return fin(texte || MESSAGES_FIXES.tropDOutils);
     }
     if (!avecOutils) return fin(MESSAGES_FIXES.tropDOutils);

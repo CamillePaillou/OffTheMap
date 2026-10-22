@@ -95,12 +95,15 @@ function decrire(p: PrestationLue): string {
   return `${p.nom} (${etiquettes})${description ? ` : ${description.charAt(0).toLowerCase()}${description.slice(1)}` : ''}`;
 }
 
-/** Les prestations regroupées par ville, une ville par ligne (sans le nom de la ville quand il n'y en a qu'une). */
+/**
+ * Une ville : chaque prestation avec sa description. Plusieurs villes : une ligne courte par ville (noms et types),
+ * pour tenir dans la longueur d'une réponse ; le détail vient quand le visiteur choisit une ville.
+ */
 function parVille(prestations: readonly PrestationLue[]): string {
   const villes = [...new Set(prestations.map((p) => p.destination))];
   if (villes.length === 1) return prestations.map((p) => `- ${decrire(p)}.`).join('\n');
   return villes
-    .map((v) => `${v} : ${prestations.filter((p) => p.destination === v).map(decrire).join(' ; ')}.`)
+    .map((v) => `- ${v} : ${prestations.filter((p) => p.destination === v).map((p) => `${p.nom} (${NOMS_TYPES[p.type] ?? p.type})`).join(', ')}.`)
     .join('\n');
 }
 
