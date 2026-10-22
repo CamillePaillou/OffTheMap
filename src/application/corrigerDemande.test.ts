@@ -130,10 +130,11 @@ describe('corriger ma demande depuis le lien (E1.2)', () => {
   });
   it('alerte si un point signalé revient inchangé, puis accepte après confirmation', async () => {
     const { repo, jeton } = await lien(['budget', 'dates']);
-    const saisie = renvoi({ date_fin: '2026-11-09', nb_nuits: '2' });
+    const saisie = renvoi({ date_fin: '2026-11-09' });
     expect(await corrigerDemande(repo, jeton, saisie, AUJOURDHUI, { confirmeInchanges: false })).toEqual({ ok: false, inchanges: ['budget'] });
     expect(repo.dossiers.get(DOSSIER)!.versions).toHaveLength(1);
     expect(await corrigerDemande(repo, jeton, saisie, AUJOURDHUI, { confirmeInchanges: true })).toEqual({ ok: true, version: 2, dossierId: DOSSIER });
+    expect(repo.dossiers.get(DOSSIER)!.versions[1]!.valeurs.nb_nuits).toBe(2); // recalculées depuis les nouvelles dates
   });
   it('ne sert qu’une fois', async () => {
     const { repo, jeton } = await lien();

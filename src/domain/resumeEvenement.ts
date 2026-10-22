@@ -3,11 +3,10 @@
  * annulation E9.4 à E9.8, remplacement et retrait après le dépôt E7.4), pour l'historique de la fiche.
  * Il est construit à partir des seuls champs connus du détail : ni texte libre, ni donnée du client.
  */
-import { CHAMPS_CORRIGEABLES, LIBELLES_CHAMPS, REGLES_CORRECTION, type ChampCorrigeable } from '../../types/correction';
+import { LIBELLES_CHAMPS, REGLES_CORRECTION, estChampCorrigeable as estPoint } from '../../types/correction';
 import { LIBELLES_MODELES, MODELES_MAIL, type ModeleMail } from './mails';
 
 const estModele = (m: unknown): m is ModeleMail => (MODELES_MAIL as readonly unknown[]).includes(m);
-const estPoint = (p: unknown): p is ChampCorrigeable => (CHAMPS_CORRIGEABLES as readonly unknown[]).includes(p);
 
 // événements `option` : pose, confirmation et annulation, réussies ou non, et tentatives refusées avant tout envoi (E7.4)
 const OPTION: Record<string, [ok: string, echec: string]> = {

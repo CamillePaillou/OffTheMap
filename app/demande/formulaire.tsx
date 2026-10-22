@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState, type FocusEvent, type FormEvent } from 'react';
-import { reglesCroisees, schemaSaisieDemande } from '@/types/demande';
+import { nuitsEntre, reglesCroisees, schemaSaisieDemande } from '@/types/demande';
 import { lireSaisie } from './lecture';
 import { Ligne } from '../_composants/ligne';
 import type { ChampCorrigeable, Commentaires } from '@/types/correction';
@@ -33,7 +33,7 @@ const pluriel = (n: number, mot: string) => `${n} ${mot}${n > 1 ? 's' : ''}`;
 /** Étapes du formulaire : une station remplie se colore (« la ligne »). Les facultatives le sont dès qu'on y touche. */
 const STATIONS: Record<string, (v: Record<string, string>) => boolean> = {
   vous: (v) => !!v.nom?.trim() && !!v.email?.trim(),
-  voyage: (v) => !!v.date_debut && !!v.date_fin && v.nb_nuits !== undefined && v.nb_nuits !== '',
+  voyage: (v) => !!v.date_debut && !!v.date_fin,
   voyageurs: (v) => Number(v.adultes) >= 1,
   budget: (v) => !!v.budget_euros,
   envies: (v) => !!v.envies?.trim() || !!v.contraintes?.trim() || !!v.prestation,
@@ -43,7 +43,7 @@ const STATIONS: Record<string, (v: Record<string, string>) => boolean> = {
 const OBLIGATOIRES = ['vous', 'voyage', 'voyageurs', 'accords'] as const;
 /** Champs vérifiés par le schéma : tous marqués « quittés » après un envoi refusé. */
 const STATIONS_CHAMPS = {
-  nom: 1, email: 1, date_debut: 1, date_fin: 1, nb_nuits: 1, adultes: 1, enfants: 1, budget_euros: 1, envies: 1, contraintes: 1,
+  nom: 1, email: 1, date_debut: 1, date_fin: 1, adultes: 1, enfants: 1, budget_euros: 1, envies: 1, contraintes: 1,
   consentement_rgpd: 1, consentement_ia: 1,
 } as const;
 
@@ -198,7 +198,7 @@ export function FormulaireDemande({
           <input name="destination" defaultValue={v.destination} className={c('destination')} />
         </label>
         {note('destination')}
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">Départ</span>
             <input name="date_debut" type="date" required defaultValue={v.date_debut} className={c('date_debut')} {...decrit('date_debut')} />
@@ -209,14 +209,8 @@ export function FormulaireDemande({
             <input name="date_fin" type="date" required defaultValue={v.date_fin} className={c('date_fin')} {...decrit('date_fin')} />
             {erreur('date_fin')}
           </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">Nombre de nuits</span>
-            <input name="nb_nuits" type="number" min={0} max={14} required defaultValue={v.nb_nuits} className={c('nb_nuits')} {...decrit('nb_nuits')} />
-            {erreur('nb_nuits')}
-          </label>
         </div>
         {note('dates')}
-        {note('nb_nuits')}
       </fieldset>
 
       <fieldset data-rempli={rempli('voyageurs')} className="flex flex-col gap-4">
@@ -377,7 +371,8 @@ export function FormulaireDemande({
 function Billet({ v, faites }: { v: Record<string, string>; faites: number }) {
   const adultes = Number(v.adultes) || 0;
   const enfants = Number(v.enfants) || 0;
-  const nuits = v.nb_nuits === undefined || v.nb_nuits === '' ? null : Number(v.nb_nuits);
+  // calculées depuis les dates, comme le serveur : le client ne les saisit pas
+  const nuits = nuitsEntre(v.date_debut, v.date_fin);
   const budget = Number(v.budget_euros);
   const ligne = (terme: string, valeur: string | null, vide: string) => (
     <div className="flex justify-between gap-3 py-2">
@@ -400,7 +395,7 @@ function Billet({ v, faites }: { v: Record<string, string>; faites: number }) {
       <dl className="divide-y divide-dashed divide-trait px-5 pb-2 pt-2 text-sm">
         {ligne('Aller', v.date_debut ? dateLongue(v.date_debut) : null, 'à choisir')}
         {ligne('Retour', v.date_fin ? dateLongue(v.date_fin) : null, 'à choisir')}
-        {ligne('Nuits', nuits === null ? null : pluriel(nuits, 'nuit'), 'à préciser')}
+        {ligne('Nuits', nuits === null || nuits < 0 ? null : pluriel(nuits, 'nuit'), 'selon vos dates')}
         {ligne(
           'Voyageurs',
           adultes ? [pluriel(adultes, 'adulte'), enfants ? pluriel(enfants, 'enfant') : ''].filter(Boolean).join(', ') : null,

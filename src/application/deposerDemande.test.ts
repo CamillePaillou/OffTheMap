@@ -12,7 +12,7 @@ function formulaire(champs: Record<string, string> = {}) {
   const f = new FormData();
   const base: Record<string, string> = {
     nom: 'Inès Martin', email: 'ines@example.org', destination: 'Nantes',
-    date_debut: '2026-11-07', date_fin: '2026-11-08', nb_nuits: '1',
+    date_debut: '2026-11-07', date_fin: '2026-11-08',
     adultes: '2', enfants: '0',
     budget_euros: '400', envies: 'Week-end créatif, sans voiture',
     consentement_rgpd: 'on', consentement_ia: 'on',
@@ -61,7 +61,7 @@ describe('déposer une demande (E1.1)', () => {
     ['nom vide', { nom: '' }, 'nom'],
     ['départ passé', { date_debut: '2026-10-01' }, 'date_debut'],
     ['retour avant le départ', { date_fin: '2026-11-06' }, 'date_fin'],
-    ['plus de nuits que de jours', { nb_nuits: '2' }, 'nb_nuits'],
+    ['plus de 14 nuits', { date_fin: '2026-11-22' }, 'date_fin'],
     ['aucun adulte', { adultes: '0', enfants: '2' }, 'adultes'],
     ['plus de 20 voyageurs', { adultes: '15', enfants: '6' }, 'enfants'],
     ['nombre d’enfants négatif', { enfants: '-1' }, 'enfants'],
@@ -71,6 +71,13 @@ describe('déposer une demande (E1.1)', () => {
     expect(resultat.ok).toBe(false);
     if (!resultat.ok) expect(resultat.erreurs[attendu]).toBeDefined();
     expect(repo.demandes.size).toBe(0);
+  });
+
+  it('calcule les nuits depuis les dates, sans croire une valeur envoyée par le client', async () => {
+    const { repo, resultat } = await deposer({ date_debut: '2026-12-20', date_fin: '2026-12-30', nb_nuits: '9' });
+    expect(resultat.ok).toBe(true);
+    const [demande] = [...repo.demandes.values()];
+    expect(demande?.nb_nuits).toBe(10);
   });
 
   it('accepte une demande sans destination ni budget', async () => {

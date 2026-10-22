@@ -8,7 +8,6 @@ Règle : **chaque champ a un usage**. Un champ qui ne sert à rien n'est pas dem
 | `email` | oui | Le conseiller écrit au client (rendez-vous, proposition, confirmation) ; jamais envoyé à l'IA |
 | `destination` | non | Filtre du catalogue pour le brouillon (E4.4) ; vide = « aucune idée », signalé dans la fiche |
 | `date_debut`, `date_fin` | oui | Séjour de référence du chiffrage, dates des lignes et des vérifications auprès du simulateur |
-| `nb_nuits` | oui | Nuits de référence : nombre de lignes d'hébergement, alerte `nuits_incoherentes` |
 | `adultes` | oui (au moins 1) | Nombre de participants envoyé au simulateur ; capacité et alertes |
 | `enfants` | non | Participants (même prix qu'un adulte) ; la fiche et le brouillon savent que le groupe compte des enfants |
 | `budget_euros` | non | Budget total du groupe, en centimes : alertes `budget_depasse` et `budget_proche` |
@@ -30,8 +29,9 @@ Règle : **chaque champ a un usage**. Un champ qui ne sert à rien n'est pas dem
 | Niveau d'effort physique | Déduit des envies par la fiche IA ; le catalogue n'a pas d'activité sportive |
 | Précisions de régime et de santé | Données de santé que rien n'exploitait : minimisation RGPD |
 | Âges par tranche | Remplacés par adultes et enfants : les enfants paient le prix adulte |
+| Nombre de nuits | Déduit des dates (jours entre le retour et le départ, `nuitsEntre`) : une saisie à part pouvait les contredire. Le récapitulatif l'affiche, le serveur le recalcule et le garde dans la colonne `nb_nuits` (nuits de référence : lignes d'hébergement, alerte `nuits_incoherentes`) ; 14 nuits au plus |
 
-Les colonnes correspondantes sont retirées de `demandes` par `supabase/migrations/20261020090000_formulaire_demande.sql`.
+Les colonnes correspondantes (sauf `nb_nuits`, calculé) sont retirées de `demandes` par `supabase/migrations/20261020090000_formulaire_demande.sql`.
 
 ## Correction depuis un lien (E1.2)
 
@@ -43,5 +43,5 @@ Les règles du serveur (`schemaSaisieDemande` et `reglesCroisees` dans `types/de
 
 - une erreur s'affiche dès que le client **quitte** un champ, sous le champ, bordure brique ; elle disparaît dès qu'elle est corrigée, à la frappe ;
 - un champ jamais quitté n'affiche rien : pas d'erreur sur un formulaire qu'on vient d'ouvrir ;
-- les règles croisées (départ passé, retour avant le départ, plus de nuits que de jours, au moins un adulte, 20 voyageurs au plus) jugent chaque champ dès qu'il est rempli, même si d'autres sont encore vides ;
+- les règles croisées (départ passé, retour avant le départ, plus de 14 nuits entre les dates, au moins un adulte, 20 voyageurs au plus) jugent chaque champ dès qu'il est rempli, même si d'autres sont encore vides ;
 - à l'envoi, s'il reste des erreurs, rien ne part : toutes s'affichent et le premier champ en erreur reçoit le focus. Le serveur revérifie tout à l'envoi.
