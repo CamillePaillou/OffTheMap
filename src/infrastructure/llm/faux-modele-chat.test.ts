@@ -11,7 +11,7 @@ const CATALOGUE: PrestationCatalogue[] = [
   p('train-nantes-01', 'transport', 'Train vers Nantes', 'Nantes', 'Trajet aller-retour depuis Paris', ['train', 'sans voiture']),
   p('hotel-nantes-01', 'hebergement', 'Hôtel des Machines', 'Nantes', 'Une nuit, tarif par personne', ['centre-ville']),
   p('activite-nantes-01', 'activite', 'Atelier de machines imaginaires', 'Nantes', 'Atelier accessible sans effort sportif', ['créatif', 'intérieur']),
-  p('hotel-lyon-01', 'hebergement', 'Hôtel des Lumières', 'Lyon', 'Une nuit, tarif par personne', ['centre-ville']),
+  p('hotel-lyon-01', 'hebergement', 'Hôtel des Lumières', 'Lyon', 'Une nuit fictive, tarif par personne', ['centre-ville']), // texte exact du simulateur
   p('activite-lyon-01', 'activite', 'Enquête des traboules', 'Lyon', 'Jeu de piste en ville', ['jeu', 'extérieur']),
   p('activite-lille-01', 'activite', 'Fabrique de gaufres', 'Lille', 'Atelier culinaire', ['cuisine', 'intérieur']),
 ];
@@ -53,6 +53,7 @@ describe('faux modèle du chatbot (LLM_PROVIDER=fake)', () => {
     const hotels = await demander('Vous avez quoi comme hôtels à Lyon ?');
     expect(hotels.texte).toMatch(/Hôtel des Lumières/);
     expect(hotels.texte).not.toMatch(/Enquête des traboules|conseiller/);
+    expect(hotels.texte).toMatch(/: une nuit, tarif par personne\./); // « fictive » retiré proprement
 
     const pluie = await demander('Une activité quand il pleut ?');
     expect(pluie.texte).toMatch(/intérieur/);

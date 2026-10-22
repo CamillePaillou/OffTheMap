@@ -86,7 +86,12 @@ interface PrestationLue {
 /** « Atelier de machines imaginaires (activité, créatif, intérieur) : atelier accessible sans effort sportif. » */
 function decrire(p: PrestationLue): string {
   const etiquettes = [NOMS_TYPES[p.type] ?? p.type, ...(p.tags ?? [])].join(', ');
-  const description = p.description?.replace(/\bfictif\b|\bfictive\b/g, '').replace(/\s+/g, ' ').trim();
+  // « fictif » est une mention du catalogue de cours, pas une information pour le visiteur
+  const description = p.description
+    ?.replace(/\s*\bfictif\b|\s*\bfictive\b/g, '')
+    .replace(/\s+([,.;:])/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
   return `${p.nom} (${etiquettes})${description ? ` : ${description.charAt(0).toLowerCase()}${description.slice(1)}` : ''}`;
 }
 
