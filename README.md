@@ -87,6 +87,8 @@ Les prestations (catalogue, disponibilités, options, réservations) viennent du
 
 `.env.example` liste toutes les variables, sans valeur sensible. Toute nouvelle variable y est ajoutée dans la même PR.
 
+Les clés (LLM, service_role de Supabase, simulateur, mails) restent côté serveur : jamais de préfixe `NEXT_PUBLIC_`, qui les inlinerait dans le bundle du navigateur. Deux garde-fous en CI (E7.5) : gitleaks (job `secrets`) sur l'historique, et `lib/securite.test.ts`, qui vérifie qu'aucun fichier d'environnement autre que `.env.example` n'est versionné et qu'aucun composant client n'importe, même indirectement, un module lisant une variable serveur.
+
 ## Planning
 
 - `docs/planning/pert.md` : PERT du sprint depuis le J1 (dates au plus tôt et au plus tard, marges, chemin critique), tiré des issues.
