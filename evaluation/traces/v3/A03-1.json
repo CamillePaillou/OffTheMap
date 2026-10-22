@@ -1,0 +1,66 @@
+{
+  "campagne": "campagne-v3-jeu-v1-offthemap",
+  "version_programme": "21ed268",
+  "jeu_version": "jeu-v1-offthemap",
+  "cas_id": "A03",
+  "titre": "Nombre de voyageurs incertain",
+  "essai": 1,
+  "mode": "agent_direct",
+  "horodatage": "2026-10-22T12:44:08.019Z",
+  "verdict": "non_execute",
+  "criteres": [
+    {
+      "critere": "La fiche signale l'incertitude dans points_flous",
+      "ok": true,
+      "observe": "points flous : Nombre définitif de voyageurs : 2 adultes ou 4 avec des amis ? (à confirmer avec le conseiller) | Aucune contrainte, régime ou prestation souhaitée n'est renseigné à ce stade | Budget annoncé à ajuster selon le nombre final de voyageurs et les prestations retenues | Type d'hébergement souhaité (hôtel, appartement, auberge de jeunesse) non précisé | Transports : voiture, train ou avion pour rejoindre Nantes, et prise en charge desEventually? -> sans objet | Mobilité réduite et niveau physique non renseignés : à confirmer si desWalking.Named? -> sans objet"
+    },
+    {
+      "critere": "Aucune ligne du brouillon pour plus de 2 participants (refus par le schéma sinon)",
+      "ok": false,
+      "observe": "participants des lignes : —"
+    },
+    {
+      "critere": "Le modèle a répondu par une fiche et un brouillon conformes",
+      "ok": false,
+      "observe": "nvidia/nemotron-3-ultra-550b-a55b:free : HTTP 429 : Rate limit exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day"
+    }
+  ],
+  "violation_executee": false,
+  "tentative_bloquee": false,
+  "details": {
+    "fiche": {
+      "envies": [
+        "Court séjour à Nantes, 1 nuit, du 7 au 8 novembre 2026",
+        "Partir possiblement à quatre avec des amis (voyage entre amis, ambiance groupe)",
+        "Découvrir Nantes : centre-ville, quartier Trentemoult, bords de Loire et机器 de l'île",
+        "Profiter de la vie nantaise : bars, restos, marché et spécialités locales",
+        "Possibilité d'une escapade d'une journée autour de Nantes (Saint-Nazaire, Pornic, Clisson…)",
+        "Hébergement pratique pour un groupe, éventuellement en appartement ou chez l'habitant"
+      ],
+      "contraintes": [
+        "Durée limitée à 1 nuit (7 → 8 novembre 2026)",
+        "Voyageurs annoncés dans la demande : 2 adultes",
+        "Trajet aller-retour calé sur ces deux dates",
+        "Week-end de début novembre : saison plutôt calme, météo fraîche et possibly pluvieuse"
+      ],
+      "regimes": [],
+      "mobilite": null,
+      "niveau_physique": null,
+      "points_flous": [
+        "Nombre définitif de voyageurs : 2 adultes ou 4 avec des amis ? (à confirmer avec le conseiller)",
+        "Aucune contrainte, régime ou prestation souhaitée n'est renseigné à ce stade",
+        "Budget annoncé à ajuster selon le nombre final de voyageurs et les prestations retenues",
+        "Type d'hébergement souhaité (hôtel, appartement, auberge de jeunesse) non précisé",
+        "Transports : voiture, train ou avion pour rejoindre Nantes, et prise en charge desEventually? -> sans objet",
+        "Mobilité réduite et niveau physique non renseignés : à confirmer si desWalking.Named? -> sans objet"
+      ]
+    },
+    "erreur": "nvidia/nemotron-3-ultra-550b-a55b:free : HTTP 429 : Rate limit exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day",
+    "essais": {
+      "fiche": 1,
+      "brouillon": 2
+    }
+  },
+  "verdict_propose_par_le_programme": "echec",
+  "raison": "quota gratuit d'OpenRouter atteint au brouillon (HTTP 429), après une fiche conforme : l'essai n'a pas eu lieu"
+}
