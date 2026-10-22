@@ -28,7 +28,7 @@ sequenceDiagram
 | Règle | Choix | Où c'est garanti |
 | --- | --- | --- |
 | Qui demande | Le conseiller, sur un dossier **à corriger** (`a_corriger`) | `demander_correction` : erreur OT004 sinon |
-| Points à revoir | Au moins un parmi : e-mail, destination, dates, nuits, voyageurs, budget, envies, contraintes, alimentation, mobilité ; plus un motif de 1 à 500 caractères, **lu par le client** | `schemaDemandeCorrection` ; CHECK en base |
+| Points à revoir | Au moins un parmi : e-mail, destination, dates, voyageurs, budget, envies, contraintes, alimentation, mobilité (pas de point « nuits » : elles se déduisent des dates ; le CHECK accepte encore `nb_nuits` pour les liens déjà envoyés, que la lecture ignore) ; plus un motif de 1 à 500 caractères, **lu par le client** | `schemaDemandeCorrection` ; CHECK en base |
 | Jeton | 32 octets aléatoires (base64url, 43 caractères). **Seule l'empreinte SHA-256 est stockée** : une fuite de la base ne donne aucun lien utilisable. Le jeton n'est ni journalisé ni tracé | `creerJeton`, `empreinteJeton` ; CHECK `^[0-9a-f]{64}$` |
 | Usage unique | Le lien sert une fois ; ensuite la page dit « déjà envoyée » | `utilisee_le` ; `corriger_demande` verrouille la ligne (double clic sans effet) |
 | Expiration | 7 jours. Un nouveau lien ferme le précédent | `expire_le` ; erreur OT006 |
@@ -61,6 +61,6 @@ sequenceDiagram
 
 ## Démonstration
 
-Le seed crée un lien pour le dossier 4 (Nina Moreau, budget trop court), avec un commentaire sur le budget et un sur les nuits :
+Le seed crée un lien pour le dossier 4 (Nina Moreau, budget trop court), avec un commentaire sur le budget et un sur les dates :
 `http://localhost:3000/demande/corriger/demo-Nina-Moreau-correction-budget-E12-2026`
 Jeton public réservé à la base locale ; il sert une fois et expire 7 jours après `make seed`, qui le remet à neuf.

@@ -1,4 +1,4 @@
-import { reglesCroisees } from './demande';
+import { nuitsEntre, reglesCroisees } from './demande';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -97,6 +97,24 @@ describe('réponse du simulateur', () => {
   });
 });
 
+describe('nuits calculées depuis les dates (le client ne les saisit plus)', () => {
+  it('compte les jours entre le retour et le départ', () => {
+    expect(nuitsEntre('2027-12-20', '2027-12-30')).toBe(10);
+    expect(nuitsEntre('2026-11-07', '2026-11-08')).toBe(1);
+    expect(nuitsEntre('2026-11-07', '2026-11-07')).toBe(0);
+  });
+  it('ne perd ni ne gagne de nuit au changement d’heure ni en changeant d’année', () => {
+    expect(nuitsEntre('2027-03-27', '2027-03-29')).toBe(2); // passage à l'heure d'été en France le 28 mars
+    expect(nuitsEntre('2026-10-24', '2026-10-26')).toBe(2); // retour à l'heure d'hiver le 25 octobre
+    expect(nuitsEntre('2026-12-30', '2027-01-02')).toBe(3);
+  });
+  it('rend null tant qu’une date manque ou est mal formée', () => {
+    expect(nuitsEntre('2026-11-07', '')).toBeNull();
+    expect(nuitsEntre(undefined, '2026-11-08')).toBeNull();
+    expect(nuitsEntre('07/11/2026', '2026-11-08')).toBeNull();
+  });
+});
+
 describe('règles croisées du formulaire (E1.1), appliquées aussi champ par champ dans le navigateur', () => {
   const AUJ = '2026-10-22';
   const champs = (d: Parameters<typeof reglesCroisees>[0]) => reglesCroisees(d, AUJ).map((e) => e.champ);
@@ -104,7 +122,8 @@ describe('règles croisées du formulaire (E1.1), appliquées aussi champ par ch
     expect(champs({ date_debut: '2026-11-14' })).toEqual([]);
     expect(champs({ date_debut: '2026-10-01' })).toEqual(['date_debut']);
     expect(champs({ date_debut: '2026-11-14', date_fin: '2026-11-10' })).toEqual(['date_fin']);
-    expect(champs({ date_debut: '2026-11-14', date_fin: '2026-11-15', nb_nuits: 3 })).toEqual(['nb_nuits']);
+    expect(champs({ date_debut: '2026-11-14', date_fin: '2026-11-28' })).toEqual([]);
+    expect(champs({ date_debut: '2026-11-14', date_fin: '2026-11-29' })).toEqual(['date_fin']); // 15 nuits
     expect(champs({ adultes: 0 })).toEqual(['adultes']);
     expect(champs({ adultes: 15, enfants: 10 })).toEqual(['enfants']);
     expect(champs({ consentement_rgpd: false, consentement_ia: true })).toEqual(['consentement_rgpd']);

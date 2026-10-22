@@ -15,7 +15,6 @@ export function lireSaisie(f: FormData) {
     destination: texte(f, 'destination'),
     date_debut: texte(f, 'date_debut'),
     date_fin: texte(f, 'date_fin'),
-    nb_nuits: entier(f, 'nb_nuits'),
     adultes: entier(f, 'adultes'),
     enfants: entier(f, 'enfants') ?? 0,
     budget_euros: entier(f, 'budget_euros'),

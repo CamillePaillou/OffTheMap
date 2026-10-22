@@ -1,5 +1,6 @@
 import 'server-only';
 import type { Json } from '../../../types/database';
+import { estChampCorrigeable } from '../../../types/correction';
 import type { NouvelleDemande } from '../../../types/demande';
 import {
   BouclesEpuiseesErreur,
@@ -44,9 +45,10 @@ export class CorrectionsSupabase implements CorrectionsRepository {
     if (l.etat !== 'valide') return { etat: l.etat };
     return {
       etat: 'valide',
-      champs: l.champs as never,
+      // une correction demandée avant le retrait du point « nb_nuits » le porte encore : on ne garde que les points connus
+      champs: (l.champs as unknown[]).filter(estChampCorrigeable),
       motif: l.motif as string,
-      commentaires: (l.commentaires ?? {}) as never,
+      commentaires: Object.fromEntries(Object.entries((l.commentaires ?? {}) as Record<string, string>).filter(([p]) => estChampCorrigeable(p))),
       boucle: l.boucle as number,
       expireLe: l.expire_le!,
       demande: l.demande as never,
