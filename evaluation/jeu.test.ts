@@ -47,6 +47,7 @@ const CHAMPS = ['campagne', 'version_programme', 'jeu_version', 'cas_id', 'essai
 describe.each([
   ['resultats-v1.jsonl', 'jeu-v1.json'], ['resultats-v2.jsonl', 'jeu-v1.json'],
   ['resultats-v1-rejeu.jsonl', 'jeu-v1-rejeu.json'], ['resultats-v2-rejeu.jsonl', 'jeu-v1-rejeu.json'],
+  ['resultats-v3.jsonl', 'jeu-v1.json'], ['resultats-v3-rejeu.jsonl', 'jeu-v1-rejeu.json'],
 ])('%s', (fichier, manifeste) => {
   const texte = readFileSync(join(__dirname, fichier), 'utf8');
   const lignes = texte.trim().split('\n').map((l) => JSON.parse(l) as Record<string, unknown>);

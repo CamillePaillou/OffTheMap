@@ -26,11 +26,23 @@ export const FicheIA = z.object({
 export type FicheIA = z.infer<typeof FicheIA>;
 
 // ------------------------------------------------------------------ brouillon (étape 6)
+/** Séjour de référence du brouillon : dates du formulaire (ou fixées par le conseiller) et type de chaque prestation. */
+export interface SejourBrouillon {
+  date_debut: string;
+  date_fin: string;
+  types: Readonly<Record<string, 'transport' | 'hebergement' | 'activite'>>;
+}
+
+/** « 2026-11-08 » → « 2026-11-07 » : la dernière nuit d'hébergement est la veille du départ. */
+const veille = (jour: string) => new Date(Date.parse(`${jour}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+
 /**
  * Le schéma dépend des prestations que le code a laissées passer (destination, capacité) :
- * toute prestation hors de cette liste est refusée.
+ * toute prestation hors de cette liste est refusée. Avec le séjour (E11.2, cas A02), une ligne ou un jour de programme
+ * hors des dates de référence est refusé aussi, dès la génération : le modèle doit corriger, au lieu de laisser des alertes
+ * bloquantes au conseiller. Mêmes bornes que le chiffrage (`date_hors_sejour`).
  */
-export const schemaBrouillon = (idsAutorises: readonly string[], participants: number) =>
+export const schemaBrouillon = (idsAutorises: readonly string[], participants: number, sejour?: SejourBrouillon) =>
   z.object({
     programme: z.array(z.object({
       date: dateJour,
@@ -52,7 +64,23 @@ export const schemaBrouillon = (idsAutorises: readonly string[], participants: n
       if (l.participants > participants) {
         ctx.addIssue({ code: 'custom', path: ['lignes', i, 'participants'], message: 'plus de participants que de voyageurs' });
       }
+      if (sejour) {
+        const fin = sejour.types[l.prestation_id] === 'hebergement' ? veille(sejour.date_fin) : sejour.date_fin;
+        if (l.date < sejour.date_debut || l.date > fin) {
+          ctx.addIssue({
+            code: 'custom', path: ['lignes', i, 'date'],
+            message: `date hors du séjour (${sejour.date_debut} → ${fin}) : seules les dates du formulaire comptent, une autre date demandée va dans les points flous`,
+          });
+        }
+      }
     });
+    if (sejour) {
+      b.programme.forEach((j, i) => {
+        if (j.date < sejour.date_debut || j.date > sejour.date_fin) {
+          ctx.addIssue({ code: 'custom', path: ['programme', i, 'date'], message: `jour hors du séjour (${sejour.date_debut} → ${sejour.date_fin})` });
+        }
+      });
+    }
   });
 export type BrouillonIA = z.infer<ReturnType<typeof schemaBrouillon>>;
 

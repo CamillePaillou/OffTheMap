@@ -89,7 +89,10 @@ describe('adaptateur OpenRouter', () => {
       lignes: [{ prestation_id: 'inconnue-99', date: '2026-11-07', participants: 2 }],
       ecartes: [],
     };
-    const { f } = fauxFetch({ status: 200, corps: reponseOutil('rendre_brouillon', brouillon) });
+    const { f } = fauxFetch(
+      { status: 200, corps: reponseOutil('rendre_brouillon', brouillon) },
+      { status: 200, corps: reponseOutil('rendre_brouillon', brouillon) },
+    );
     const entree = {
       demande, fiche: fiche as never, participants: 2,
       prestationsAutorisees: [{ id: 'activite-nantes-01', nom: 'Atelier', type: 'activite' as const }],
@@ -97,9 +100,39 @@ describe('adaptateur OpenRouter', () => {
     await expect(client(f).genererBrouillon(entree)).rejects.toMatchObject({ code: 'reponse_invalide' });
   });
 
-  it('rend « reponse_invalide » si le modèle répond en texte au lieu d’appeler l’outil', async () => {
-    const { f } = fauxFetch({ status: 200, corps: { choices: [{ message: { content: 'Voici la fiche…' } }] } });
+  it('rend « reponse_invalide » si le modèle répond en texte au lieu d’appeler l’outil, même après rappel', async () => {
+    const texte = { status: 200, corps: { choices: [{ message: { content: 'Voici la fiche…' } }] } };
+    const { f, requetes } = fauxFetch(texte, texte);
     await expect(client(f).genererFiche(demande)).rejects.toMatchObject({ code: 'reponse_invalide' });
+    expect(requetes).toHaveLength(2);
+  });
+
+  it('E11.2 (A01, A03) : une fiche refusée par le schéma est renvoyée une fois au modèle avec les erreurs, qui la corrige', async () => {
+    const malFormee = { envies: fiche.envies, constraintes: fiche.contraintes, mobilite: null, niveau_physique: null, points_flous: [] };
+    const { f, requetes } = fauxFetch(
+      { status: 200, corps: reponseOutil('rendre_fiche', malFormee) },
+      { status: 200, corps: reponseOutil('rendre_fiche', fiche) },
+    );
+    await expect(client(f).genererFiche(demande)).resolves.toEqual(fiche);
+    expect(requetes.map((r) => r.modele)).toEqual(['principal/modele:free', 'principal/modele:free']);
+    const retour = (requetes[1]!.corps.messages as { role: string; tool_call_id?: string; content: string }[]).at(-1)!;
+    expect(retour).toMatchObject({ role: 'tool', tool_call_id: 'appel-1' });
+    expect(retour.content).toMatch(/contraintes/);
+    expect(retour.content).toMatch(/regimes/);
+  });
+
+  it('E11.2 (A02) : une ligne datée hors du séjour du formulaire est refusée et renvoyée au modèle', async () => {
+    const programme = [{ date: '2026-11-07', titre: 'Jour 1', texte: 'Atelier.' }];
+    const hors = { programme, lignes: [{ prestation_id: 'activite-nantes-01', date: '2026-11-14', participants: 2 }], ecartes: [] };
+    const bon = { programme, lignes: [{ prestation_id: 'activite-nantes-01', date: '2026-11-08', participants: 2 }], ecartes: [] };
+    const { f, requetes } = fauxFetch(
+      { status: 200, corps: reponseOutil('rendre_brouillon', hors) },
+      { status: 200, corps: reponseOutil('rendre_brouillon', bon) },
+    );
+    const entree = { demande, fiche: fiche as never, participants: 2, prestationsAutorisees: [{ id: 'activite-nantes-01', nom: 'Atelier', type: 'activite' as const }] };
+    await expect(client(f).genererBrouillon(entree)).resolves.toMatchObject({ lignes: [{ date: '2026-11-08' }] });
+    const retour = (requetes[1]!.corps.messages as { content: string }[]).at(-1)!.content;
+    expect(retour).toMatch(/hors du séjour \(2026-11-07 → 2026-11-09\)/);
   });
 
   it('bascule sur le modèle de réserve en cas de panne ou de délai', async () => {
@@ -113,9 +146,11 @@ describe('adaptateur OpenRouter', () => {
   });
 
   it('ne bascule pas sur la réserve pour une réponse non conforme ni une clé refusée', async () => {
-    const invalide = fauxFetch({ status: 200, corps: reponseOutil('rendre_fiche', { ...fiche, envies: ['atelier à 35 €'] }) });
+    const avecPrix = { status: 200, corps: reponseOutil('rendre_fiche', { ...fiche, envies: ['atelier à 35 €'] }) };
+    const invalide = fauxFetch(avecPrix, avecPrix);
     await expect(client(invalide.f).genererFiche(demande)).rejects.toMatchObject({ code: 'reponse_invalide' });
-    expect(invalide.requetes).toHaveLength(1);
+    // une correction demandée au même modèle, jamais à la réserve
+    expect(invalide.requetes.map((r) => r.modele)).toEqual(['principal/modele:free', 'principal/modele:free']);
 
     const cle = fauxFetch({ status: 401 });
     await expect(client(cle.f).genererFiche(demande)).rejects.toMatchObject({ code: 'configuration' });

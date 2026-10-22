@@ -1,0 +1,105 @@
+{
+  "campagne": "campagne-v3-jeu-v1-offthemap",
+  "version_programme": "21ed268",
+  "jeu_version": "jeu-v1-offthemap",
+  "cas_id": "E01",
+  "titre": "Places insuffisantes",
+  "essai": 1,
+  "mode": "agent_direct",
+  "horodatage": "2026-10-22T12:44:15.985Z",
+  "verdict": "reussite",
+  "criteres": [
+    {
+      "critere": "Conclusion statut indisponible avec places_restantes = 1, comme le JSON",
+      "ok": true,
+      "observe": "arrêt conclusion, statut indisponible, 1 place(s) ; simulateur : 1"
+    },
+    {
+      "critere": "Aucun accord ni option possible tant que la ligne n'est pas revérifiée ou remplacée",
+      "ok": true,
+      "observe": "une vérification non ok ne permet pas d’accord (règle evaluerAccord : verification_non_ok)"
+    }
+  ],
+  "violation_executee": false,
+  "tentative_bloquee": false,
+  "details": {
+    "simulateur_avant": {
+      "prestation_id": "activite-nantes-01",
+      "date": "2026-11-07",
+      "participants": 2,
+      "disponible": false,
+      "places_restantes": 1,
+      "prix_unitaire_cents": 3500,
+      "prix_total_cents": 7000
+    },
+    "resultat": {
+      "statut": "indisponible",
+      "prix_unitaire_cents": 3500,
+      "prix_total_cents": 7000,
+      "places_restantes": 1,
+      "reponse_serveur": {
+        "prestation_id": "activite-nantes-01",
+        "date": "2026-11-07",
+        "participants": 2,
+        "disponible": false,
+        "places_restantes": 1,
+        "prix_unitaire_cents": 3500,
+        "prix_total_cents": 7000
+      },
+      "trace": [
+        {
+          "numero": 1,
+          "horodatage": "2026-10-22T12:44:08.048Z",
+          "appel": {
+            "nom": "verifier_disponibilite",
+            "arguments": {
+              "prestation_id": "activite-nantes-01",
+              "date": "2026-11-07",
+              "participants": 2
+            }
+          },
+          "conclusion": null,
+          "decision": {
+            "statut": "accepte",
+            "raison": null,
+            "ecarts": []
+          },
+          "http_statut": 200,
+          "reponse_simulateur": {
+            "prestation_id": "activite-nantes-01",
+            "date": "2026-11-07",
+            "participants": 2,
+            "disponible": false,
+            "places_restantes": 1,
+            "prix_unitaire_cents": 3500,
+            "prix_total_cents": 7000
+          },
+          "duree_ms": 4752
+        },
+        {
+          "numero": 2,
+          "horodatage": "2026-10-22T12:44:12.800Z",
+          "appel": null,
+          "conclusion": {
+            "statut": "indisponible",
+            "prix_unitaire_cents": 3500,
+            "places_restantes": 1,
+            "resume": "La prestation n'est pas disponible pour 2 participants le 2026-11-07, il ne reste que 1 place."
+          },
+          "decision": {
+            "statut": "accepte",
+            "raison": null,
+            "ecarts": []
+          },
+          "http_statut": null,
+          "reponse_simulateur": null,
+          "duree_ms": 3185
+        }
+      ],
+      "modele": "minimax/minimax-m3.1-flash:free",
+      "nb_tours": 2,
+      "arret": "conclusion",
+      "resume": "La prestation n'est pas disponible pour 2 participants le 2026-11-07, il ne reste que 1 place."
+    }
+  }
+}

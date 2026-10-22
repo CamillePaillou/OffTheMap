@@ -212,3 +212,28 @@ describe('réponses plus rapides et plus lisibles', () => {
     expect(r.relances).toEqual(['Où dormir à Nantes ?', 'Et le 14 novembre ?', 'Et à Lyon ?']);
   });
 });
+
+describe('sur la page du formulaire de demande', () => {
+  const surFormulaire = (content: string, formulaire: unknown) => ConversationChatbot.parse({ messages: [{ role: 'user', content }], formulaire });
+
+  it('une question sur le formulaire reçoit la réponse du code, sans modèle ni simulateur', async () => {
+    const modele = fauxModele();
+    const simulateur = fauxSimulateur();
+    const r = await repondreChatbot(surFormulaire('Il me manque quoi ?', { manquantes: ['accords'], erreurs: [] }), { modele, prestataires: simulateur, maintenant: MAINTENANT });
+    expect(r.texte).toMatch(/Il vous reste à remplir : Vos accords/);
+    expect(r.relances[0]).toBe('Qu’est-ce qu’il me manque ?');
+    expect(modele.requetes).toHaveLength(0);
+    expect(simulateur.appels).toHaveLength(0);
+  });
+
+  it('les autres questions vont au modèle, avec l’état du formulaire en clés et sans valeur saisie', async () => {
+    const modele = fauxModele(texte('Nous avons l’Atelier de machines imaginaires.'));
+    await repondreChatbot(surFormulaire('Que faire à Nantes ?', { manquantes: ['budget'], erreurs: ['date_fin'] }), { modele, prestataires: fauxSimulateur(), maintenant: MAINTENANT });
+    const consignes = String(modele.requetes[0]!.messages[0]!.content);
+    expect(consignes).toMatch(/étapes encore vides : budget ; champs en erreur : date_fin/);
+  });
+
+  it('refuse un état de formulaire qui porterait une valeur', () => {
+    expect(ConversationChatbot.safeParse({ messages: [{ role: 'user', content: 'Bonjour' }], formulaire: { manquantes: [], erreurs: [], nom: 'Léa' } }).success).toBe(false);
+  });
+});
