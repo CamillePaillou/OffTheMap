@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { PROPOSITION_DEPOT_RECU } from '@/fixtures/dashboard';
+import { chargerProposition } from './charger';
 import { exigerConseiller } from '@/lib/auth/conseiller';
 import { donnerAccord } from '@/src/application/donnerAccord';
 import { poserOption } from '@/src/application/poserOption';
@@ -36,9 +36,8 @@ export async function autoriser(_etat: EtatAccord, formulaire: FormData): Promis
   });
   if (!saisie.success) return { erreur: 'Demande invalide.' };
 
-  // Fixtures en attendant la vraie route GET /api/propositions/{id} (E4.5).
-  const proposition = PROPOSITION_DEPOT_RECU;
-  if (proposition.id !== saisie.data.propositionId) return { erreur: MESSAGES_REFUS_ACCORD.proposition_introuvable };
+  const proposition = await chargerProposition(saisie.data.propositionId);
+  if (!proposition) return { erreur: MESSAGES_REFUS_ACCORD.proposition_introuvable };
 
   const r = await donnerAccord(accordsDemo, {
     conseiller: { id: conseiller.id },
@@ -60,8 +59,8 @@ export async function poser(_etat: EtatAccord, formulaire: FormData): Promise<Et
   });
   if (!saisie.success) return { erreur: 'Demande invalide.' };
 
-  const proposition = PROPOSITION_DEPOT_RECU;
-  if (proposition.id !== saisie.data.propositionId) return { erreur: MESSAGES_REFUS_ACCORD.proposition_introuvable };
+  const proposition = await chargerProposition(saisie.data.propositionId);
+  if (!proposition) return { erreur: MESSAGES_REFUS_ACCORD.proposition_introuvable };
   try {
     const resultat = await poserOption(accordsDemo, creerPrestataires(), {
       conseiller: { id: conseiller.id, nom: conseiller.nomAffiche }, proposition, ligneId: saisie.data.ligneId,
@@ -93,8 +92,8 @@ export async function confirmer(_etat: EtatAccord, formulaire: FormData): Promis
     propositionId: formulaire.get('propositionId'), ligneId: formulaire.get('ligneId'), cleApprobation: formulaire.get('cleApprobation'),
   });
   if (!saisie.success) return { erreur: 'Saisissez la clé d’approbation pour confirmer.' };
-  const proposition = PROPOSITION_DEPOT_RECU;
-  if (proposition.id !== saisie.data.propositionId) return { erreur: MESSAGES_REFUS_ACCORD.proposition_introuvable };
+  const proposition = await chargerProposition(saisie.data.propositionId);
+  if (!proposition) return { erreur: MESSAGES_REFUS_ACCORD.proposition_introuvable };
   try {
     const resultat = await confirmerReservation(accordsDemo, creerPrestataires(), {
       conseiller: { id: conseiller.id, nom: conseiller.nomAffiche }, ligneId: saisie.data.ligneId, cleApprobation: saisie.data.cleApprobation,
@@ -160,8 +159,8 @@ export async function annuler(_etat: EtatAccord, formulaire: FormData): Promise<
     propositionId: formulaire.get('propositionId'), ligneId: formulaire.get('ligneId'), cleApprobation: formulaire.get('cleApprobation'),
   });
   if (!saisie.success) return { erreur: 'Saisissez la clé d’approbation pour annuler.' };
-  const proposition = PROPOSITION_DEPOT_RECU;
-  if (proposition.id !== saisie.data.propositionId) return { erreur: MESSAGES_REFUS_ACCORD.proposition_introuvable };
+  const proposition = await chargerProposition(saisie.data.propositionId);
+  if (!proposition) return { erreur: MESSAGES_REFUS_ACCORD.proposition_introuvable };
   try {
     const resultat = await annulerReservation(accordsDemo, creerPrestataires(), {
       conseiller: { id: conseiller.id, nom: conseiller.nomAffiche }, ligneId: saisie.data.ligneId,

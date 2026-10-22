@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { PROPOSITION_DEPOT_RECU } from '@/fixtures/dashboard';
 import { exigerConseiller } from '@/lib/auth/conseiller';
 import { LIMITES } from '@/types/enums';
 import { MESSAGES_REFUS_ACCORD, evaluerAccord, prixReverifieCents } from '@/src/domain/accord';
@@ -8,13 +7,14 @@ import { BoutonAccord } from './bouton-accord';
 import { BoutonOption } from './bouton-option';
 import { BoutonConfirmation } from './bouton-confirmation';
 import { BoutonAnnulation } from './bouton-annulation';
+import { chargerProposition } from './charger';
 import { accordsDemo } from './depot';
 import { ReservationConfirmee } from './reservation-confirmee';
 import { Fil } from '../../../_composants/fil';
 import { dateDeVerification } from '../../../_composants/libelles';
 
 // Écran d'accord (E9.3) : prestations, prix revérifié et conditions, puis autorisation d'UNE écriture précise.
-// Données : fixtures du dashboard en attendant la route GET /api/propositions/{id} (E4.5).
+// Données : la proposition en base (ou celle des fixtures pour la démonstration) ; les accords restent en mémoire.
 export default function PageAccord({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
@@ -34,8 +34,8 @@ const jour = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('f
 async function Contenu({ params }: { params: Promise<{ id: string }> }) {
   await exigerConseiller();
   const { id } = await params;
-  const proposition = PROPOSITION_DEPOT_RECU;
-  if (proposition.id !== id) notFound();
+  const proposition = await chargerProposition(id);
+  if (!proposition) notFound();
   const maintenant = new Date();
 
   // un seul O par écran : le monogramme va à la dernière réservation confirmée (celle qui vient de l'être)
