@@ -54,8 +54,8 @@ Brief client « Nous avons changé de visage » et brand kit du formateur (`PAND
 - [ ] Sur téléphone, rien ne déborde ; le tableau du carnet défile horizontalement.
 
 ### 11. Hors code
-- [ ] Supports de pitch et présentation client refaits avec le kit (couleurs, polices, logo SVG).
-- [ ] Réponse au client sur les écarts préparée, à partir de `docs/specs/design.md`, section « Écarts ».
+- [ ] Supports de pitch et présentation client refaits avec le kit (couleurs, polices, logo SVG) : `docs/pitch/presentation-client.md`.
+- [ ] Réponse au client sur les écarts préparée, à partir de `docs/specs/design.md`, section « Écarts » : `docs/pitch/reponse-ecarts.md`.
 
 ### Tests automatiques
 - [ ] `npm test` vert : 6 couleurs à la valeur du brief, contrastes, jaune rare (écrans et CSS), aucune couleur en dur, un saut au plus par page, mails datés et en « je ».
