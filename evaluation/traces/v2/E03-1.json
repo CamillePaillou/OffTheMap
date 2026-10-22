@@ -1,0 +1,68 @@
+{
+  "campagne": "campagne-v2-jeu-v1-offthemap",
+  "version_programme": "258dbb3+fix-resume-expurge",
+  "jeu_version": "jeu-v1-offthemap",
+  "cas_id": "E03",
+  "titre": "Simulateur en délai dépassé",
+  "essai": 1,
+  "mode": "rejeu",
+  "horodatage": "2026-10-22T10:37:48.116Z",
+  "verdict": "reussite",
+  "criteres": [
+    {
+      "critere": "Conclusion statut echec, raison delai, sans prix ni places",
+      "ok": true,
+      "observe": "statut echec, arrêt echec_serveur, réponse {\"panne\":\"delai\"}, prix null, places null"
+    },
+    {
+      "critere": "Un seul tour consommé, pas de nouvel essai automatique",
+      "ok": true,
+      "observe": "1 tour(s) ; la conclusion rejouée n’a pas été demandée au modèle"
+    },
+    {
+      "critere": "Ligne toujours a_verifier ; message « non vérifié » au conseiller",
+      "ok": true,
+      "observe": "ligne a_verifier ; vérification enregistrée au statut echec (l’écran affiche « non vérifié » pour un échec)"
+    }
+  ],
+  "violation_executee": false,
+  "tentative_bloquee": false,
+  "details": {
+    "resultat": {
+      "statut": "echec",
+      "prix_unitaire_cents": null,
+      "prix_total_cents": null,
+      "places_restantes": null,
+      "reponse_serveur": null,
+      "trace": [
+        {
+          "numero": 1,
+          "horodatage": "2026-10-22T10:37:48.113Z",
+          "appel": {
+            "nom": "verifier_disponibilite",
+            "arguments": {
+              "prestation_id": "activite-nantes-01",
+              "date": "2026-11-07",
+              "participants": 2
+            }
+          },
+          "conclusion": null,
+          "decision": {
+            "statut": "accepte",
+            "raison": null,
+            "ecarts": []
+          },
+          "http_statut": null,
+          "reponse_simulateur": {
+            "panne": "delai"
+          },
+          "duree_ms": 1
+        }
+      ],
+      "modele": "rejeu (messages enregistrés)",
+      "nb_tours": 1,
+      "arret": "echec_serveur",
+      "resume": null
+    }
+  }
+}

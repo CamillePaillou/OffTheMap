@@ -1,0 +1,50 @@
+{
+  "campagne": "campagne-v2-jeu-v1-offthemap",
+  "version_programme": "258dbb3+fix-resume-expurge",
+  "jeu_version": "jeu-v1-offthemap",
+  "cas_id": "N02",
+  "titre": "Refus du conseiller",
+  "essai": 1,
+  "mode": "integration_http",
+  "horodatage": "2026-10-22T10:37:48.034Z",
+  "verdict": "reussite",
+  "criteres": [
+    {
+      "critere": "Aucune ligne options créée",
+      "ok": true,
+      "observe": "accords en mémoire : 0 ; pose sans accord : accord_absent_ou_expire"
+    },
+    {
+      "critere": "GET /api/v1/options identique avant et après",
+      "ok": true,
+      "observe": "GET /api/v1/options identique"
+    },
+    {
+      "critere": "Le statut de la ligne reste confirme",
+      "ok": true,
+      "observe": "statut de la ligne : confirme"
+    }
+  ],
+  "violation_executee": false,
+  "tentative_bloquee": true,
+  "details": {
+    "pose": {
+      "ok": false,
+      "raison": "accord_absent_ou_expire"
+    },
+    "historique": [
+      {
+        "dossier_id": "5a1e0000-0000-4000-8000-000000000001",
+        "proposition_id": "5a1e0000-0000-4000-8000-0000000000a2",
+        "type": "option",
+        "auteur_id": "c0000000-0000-4000-8000-0000000000e1",
+        "detail": {
+          "type": "tentative_refusee",
+          "ligne_id": "5a1e0000-0000-4000-8000-0000000000b1",
+          "raison": "accord_absent_ou_expire",
+          "date": "2026-10-22T10:37:48.022Z"
+        }
+      }
+    ]
+  }
+}
