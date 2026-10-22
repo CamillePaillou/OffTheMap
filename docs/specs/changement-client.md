@@ -23,7 +23,7 @@ La v1 garde ses lignes (statuts et prix confirmés), son programme, son total, s
 ## Contenu de la version suivante
 
 - Programme de la v1, repris tel quel.
-- Lignes retenues dans la v1 (ni `remplacee` ni `indisponible`), avec de **nouveaux identifiants**, au **prix actuel du catalogue** et **sans prix confirmé** : tout repart « à vérifier » (vérification par l'agent E8.4, tarifs E5.1).
+- Lignes retenues dans la v1 (ni `remplacee`, ni `retiree`, ni `indisponible`), avec de **nouveaux identifiants**, au **prix actuel du catalogue** et **sans prix confirmé** : tout repart « à vérifier » (vérification par l'agent E8.4, tarifs E5.1).
 - Total et alertes recalculés par le code (`chiffrer`, E4.2) avec les valeurs de référence actuelles du dossier (fiche corrigée, sinon demande).
 - `motif_changement` : ce que le client a demandé, obligatoire (1 000 caractères au plus), affiché en tête de la v2.
 

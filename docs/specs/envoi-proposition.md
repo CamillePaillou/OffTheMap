@@ -19,7 +19,7 @@ Cas d'usage : `src/application/tarifs.ts`. Base : `supabase/migrations/202610201
 
 ## Après chaque changement
 
-1. La base recalcule le **total** : somme des lignes hors `remplacee` et `indisponible`, sans marge (`docs/specs/chiffrage.md`).
+1. La base recalcule le **total** : somme des lignes hors `remplacee`, `retiree` et `indisponible`, sans marge (`docs/specs/chiffrage.md`).
 2. La base fait suivre le **statut de la proposition** (par `changer_statut`, journal compris) : `a_verifier → prete` quand plus aucune ligne n'est à vérifier ni indisponible ; `prete → a_verifier` sinon.
 3. Le code recalcule les **alertes** avec `chiffrer` (E4.2) et les enregistre.
 

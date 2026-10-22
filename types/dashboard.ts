@@ -147,7 +147,7 @@ export const LigneProposition = z.object({
     message: 'pas de prix ni de places si le simulateur a échoué ; toujours sinon',
   }).nullable(),
 }).strict()
-  .refine((l) => ['a_verifier', 'indisponible', 'remplacee'].includes(l.statut) || l.prix_confirme !== null, {
+  .refine((l) => ['a_verifier', 'indisponible', 'remplacee', 'retiree'].includes(l.statut) || l.prix_confirme !== null, {
     message: 'une ligne confirmée ou réservée a un prix confirmé',
   })
   .refine((l) => l.total_ligne_cents === (l.prix_confirme?.montant_cents ?? l.prix_unitaire_catalogue_cents) * l.participants, {

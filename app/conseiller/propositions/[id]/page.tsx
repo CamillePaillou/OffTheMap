@@ -19,7 +19,7 @@ import { PanneauChangement } from './panneau-changement';
 import { PanneauReponse } from './panneau-reponse';
 import { CarteMail } from '../../_composants/carte-mail';
 import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
-import { lienMailto, mailProposition, MailImpossibleErreur } from '@/src/domain/mails';
+import { lienMailto, mailConfirmation, mailProposition, MailImpossibleErreur } from '@/src/domain/mails';
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import { AbandonSupabase } from '@/src/infrastructure/db/abandonSupabase';
 import { abandonPropose } from '@/src/domain/rappels';
@@ -29,8 +29,8 @@ import { PanneauResumeEcarts } from './panneau-resume-ecarts';
 import { empreinteEcarts } from '@/src/application/resumeEcarts';
 import { versEntreeEcarts } from '@/src/domain/proposition/entreeEcarts';
 
-const STATUT_LIGNE = { a_verifier: 'à vérifier', confirme: 'confirmé', indisponible: 'indisponible', remplacee: 'remplacée', reservee: 'réservée' } as const;
-const HORS_TOTAL: readonly string[] = REGLES_CHIFFRAGE.statutsHorsTotal; // lignes indisponibles ou remplacées : hors total
+const STATUT_LIGNE = { a_verifier: 'à vérifier', confirme: 'confirmé', indisponible: 'indisponible', remplacee: 'remplacée', reservee: 'réservée', retiree: 'retirée' } as const;
+const HORS_TOTAL: readonly string[] = REGLES_CHIFFRAGE.statutsHorsTotal; // lignes indisponibles, remplacées ou retirées : hors total
 const SOURCE = { agent: 'agent', telephone: 'téléphone', mail: 'mail', lien: 'lien' } as const;
 
 // Proposition : prix proposé, prix revérifié par l'agent et écart (E8.4) ; tarifs confirmés et envoi (E5.1) ;
@@ -57,6 +57,9 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   const chiffrage = await tarifs.lireChiffrage(id);
   const envoi = chiffrage ? etatEnvoi(chiffrage) : null;
   const modifiable = proposition.statut === 'a_verifier' || proposition.statut === 'prete';
+  // E7.4 : après le dépôt, une ligne pas encore réservée peut devenir indisponible, puis être remplacée ou retirée
+  const apresDepot = proposition.statut === 'depot_recu';
+  const ligneAjustable = (statut: string) => modifiable || (apresDepot && ['a_verifier', 'confirme', 'indisponible'].includes(statut));
   const alertes = modifiable && envoi ? envoi.chiffrage.alertes : proposition.alertes;
   const total = modifiable && envoi ? envoi.chiffrage.total_cents : proposition.total_cents;
   const resume = resumerProposition({ total_cents: total, budget_reference_cents: proposition.budget_reference_cents, alertes });
@@ -72,10 +75,13 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   // E6.2 : ce qui a changé depuis la version précédente, recalculé à chaque lecture
   const precedente = proposition.version > 1 ? await lecture.versionDuDossier(proposition.dossier_id, proposition.version - 1) : null;
   const ecartsVersions = precedente ? comparerVersions(precedente, proposition) : null;
+  // une fois toutes les prestations réservées, c'est la confirmation qui part au client (même modèle que la fiche du dossier)
+  const reservee = proposition.statut === 'reservee';
   let mail: { sujet: string; corps: string; mailto: string } | null = null;
   if (dossier && envoyee) {
     try {
-      const m = mailProposition(sejourDe(dossier, conseiller.nomAffiche), lignesPourMail(proposition));
+      const sejour = sejourDe(dossier, conseiller.nomAffiche);
+      const m = reservee ? mailConfirmation(sejour, lignesPourMail(proposition)) : mailProposition(sejour, lignesPourMail(proposition));
       mail = { ...m, mailto: lienMailto(dossier.demande.client.email, m) };
     } catch (e) {
       if (!(e instanceof MailImpossibleErreur)) throw e;
@@ -85,7 +91,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
     proposition.lignes.map(async (ligne) => {
       const verification = await lecture.verificationDeLigne(ligne.id);
       // E5.2 : les prestations de remplacement ne sont cherchées que pour une ligne indisponible
-      const remplacantes = modifiable && ligne.statut === 'indisponible' ? await tarifs.prestationsRemplacantes(ligne.id) : [];
+      const remplacantes = ligneAjustable(ligne.statut) && ligne.statut === 'indisponible' ? await tarifs.prestationsRemplacantes(ligne.id) : [];
       return { ligne, verification, remplacantes, ecart: verification && ecartPrix(ligne, verification) };
     }),
   );
@@ -93,11 +99,11 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   // E6.6 : prestations du catalogue qu'on peut ajouter, seulement tant que la proposition est modifiable
   const ajoutables = modifiable ? await tarifs.prestationsAjoutables(proposition.id) : [];
 
-  const comptees = proposition.lignes.filter((l) => l.statut !== 'remplacee');
+  const comptees = proposition.lignes.filter((l) => l.statut !== 'remplacee' && l.statut !== 'retiree');
   const confirmees = comptees.filter((l) => l.statut === 'confirme' || l.statut === 'reservee').length;
   const jauge = resume.budget ? Math.min(resume.budget.part_pourcent, 100) : 0;
   // colonne de droite seulement s'il y a quelque chose à faire : envoyer, ou enregistrer la réponse du client
-  const aCote = (modifiable && envoi !== null) || attendReponse || ['acceptee', 'depot_recu'].includes(proposition.statut);
+  const aCote = (modifiable && envoi !== null) || attendReponse || ['acceptee', 'depot_recu', 'reservee'].includes(proposition.statut);
   const retenues = proposition.lignes.filter((l) => !HORS_TOTAL.includes(l.statut));
   const lignesNonVerifiees = retenues.filter((l) => l.prix_confirme === null).length;
   const verifieDepuis = retenues.map((l) => l.prix_confirme?.le).filter((d): d is string => !!d).sort()[0] ?? null;
@@ -259,7 +265,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
             </thead>
             <tbody className="divide-y divide-trait">
               {lignes.map(({ ligne, verification, remplacantes, ecart }) => (
-                <tr key={ligne.id} className={`align-top ${ligne.statut === 'remplacee' ? 'text-encre-doux line-through' : ''}`}>
+                <tr key={ligne.id} className={`align-top ${ligne.statut === 'remplacee' || ligne.statut === 'retiree' ? 'text-encre-doux line-through' : ''}`}>
                   <td className="px-3 py-3 font-semibold">
                     {ligne.prestation.nom}
                     {resume.parLigne.get(ligne.id)?.map((a, i) => (
@@ -323,7 +329,8 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                         propositionId={proposition.id}
                         ligneId={ligne.id}
                         statut={ligne.statut}
-                        figee={!modifiable}
+                        figee={!ligneAjustable(ligne.statut)}
+                        apresDepot={apresDepot}
                         verification={ligne.derniere_verification}
                         remplacantes={remplacantes}
                         prestationId={ligne.prestation.id}
@@ -404,13 +411,13 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
             <CarteMail
               dossierId={proposition.dossier_id}
               propositionId={proposition.id}
-              modele="proposition"
-              titre="Mail « Proposition »"
+              modele={reservee ? 'confirmation' : 'proposition'}
+              titre={reservee ? 'Mail « Confirmation de réservation »' : 'Mail « Proposition »'}
               sujet={mail.sujet}
               corps={mail.corps}
               mailto={mail.mailto}
               imprimer={`/conseiller/propositions/${proposition.id}/imprimer`}
-              ouvert={attendReponse}
+              ouvert={attendReponse || reservee}
             />
           </section>
         )}

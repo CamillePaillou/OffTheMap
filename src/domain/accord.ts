@@ -11,7 +11,8 @@ import { LIMITES } from '../../types/enums';
 
 export type RefusAccord =
   | 'proposition_pas_au_depot' // l'accord n'a de sens qu'après l'acceptation du client et le dépôt
-  | 'ligne_non_confirmee' // la ligne n'est pas « confirmée » par l'agent (à vérifier, indisponible, remplacée, réservée)
+  | 'ligne_indisponible' // E7.4 : à remplacer ou retirer depuis la proposition
+  | 'ligne_non_confirmee' // la ligne n'est pas « confirmée » par l'agent (à vérifier, remplacée, retirée, réservée)
   | 'prestation_inactive'
   | 'verification_absente'
   | 'verification_non_ok' // échec ou indisponible : aucun prix fiable
@@ -41,6 +42,7 @@ export function prixReverifieCents(ligne: LigneProposition): number | null {
 export function evaluerAccord(d: DemandeAccord): VerdictAccord {
   if (d.statutProposition !== 'depot_recu') return { ok: false, raison: 'proposition_pas_au_depot' };
   if (!d.ligne.prestation.actif) return { ok: false, raison: 'prestation_inactive' };
+  if (d.ligne.statut === 'indisponible') return { ok: false, raison: 'ligne_indisponible' };
   if (d.ligne.statut !== 'confirme') return { ok: false, raison: 'ligne_non_confirmee' };
   if (!d.ligne.derniere_verification) return { ok: false, raison: 'verification_absente' };
   const prix = prixReverifieCents(d.ligne);
@@ -58,6 +60,7 @@ export function evaluerAccord(d: DemandeAccord): VerdictAccord {
 
 export const MESSAGES_REFUS_ACCORD: Record<RefusAccord | 'ligne_introuvable' | 'proposition_introuvable' | 'conseiller_non_identifie', string> = {
   proposition_pas_au_depot: 'L’accord n’est possible qu’après l’acceptation du client et le dépôt reçu.',
+  ligne_indisponible: 'Prestation indisponible : remplacez-la ou retirez-la depuis la proposition, avec l’accord du client.',
   ligne_non_confirmee: 'Cette ligne n’est pas confirmée par l’agent.',
   prestation_inactive: 'Cette prestation n’est plus proposée au catalogue.',
   verification_absente: 'Le prix de cette ligne n’a pas encore été vérifié.',
@@ -67,4 +70,16 @@ export const MESSAGES_REFUS_ACCORD: Record<RefusAccord | 'ligne_introuvable' | '
   ligne_introuvable: 'Ligne introuvable dans cette proposition.',
   proposition_introuvable: 'Proposition introuvable.',
   conseiller_non_identifie: 'Conseiller non identifié.',
+};
+
+/** Raisons d'un échec de pose de l'option (E9.4), affichées au clic et tant que l'échec est la dernière démarche de la ligne. */
+export const MESSAGES_POSE_OPTION: Record<string, string> = {
+  conseiller_non_identifie: 'Conseiller non identifié.',
+  ligne_introuvable: 'Ligne introuvable.',
+  accord_absent_ou_expire: 'Aucun accord valide et non utilisé pour cette prestation.',
+  accord_incoherent: 'L’accord ne correspond plus à la prestation ou au prix revérifié.',
+  simulateur_delai: 'Le prestataire n’a pas répondu à temps. Par sécurité, l’accord est consommé : regardez la trace avant de recommencer.',
+  simulateur_erreur: 'Le prestataire n’a pas pu poser l’option. Par sécurité, l’accord est consommé : regardez la trace avant de recommencer.',
+  simulateur_refus: 'Le prestataire a refusé l’option : cette prestation n’est plus disponible à ces conditions.',
+  reponse_serveur_incoherente: 'La réponse du prestataire ne correspond pas à l’accord (prix, date ou participants) : l’option n’est pas retenue. Revérifiez le prix de la ligne, puis donnez un nouvel accord.',
 };

@@ -45,6 +45,6 @@ export async function confirmerReservation(repo: AccordsRepository, prestataires
     await repo.terminerConfirmation(option.option_id, { ok: false, raison: 'reponse_serveur_incoherente', reponse_serveur: reservation });
     return refuser('reponse_serveur_incoherente', { reponse_serveur: reservation });
   }
-  await repo.terminerConfirmation(option.option_id, { ok: true, reservation_id_simulateur: reservation.reservation_id, reponse_serveur: reservation });
+  await repo.terminerConfirmation(option.option_id, { ok: true, reservation_id_simulateur: reservation.reservation_id, reponse_serveur: reservation, confirme_par: d.conseiller.id });
   return { ok: true, reservation_id: reservation.reservation_id, reponse_serveur: reservation };
 }

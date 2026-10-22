@@ -17,7 +17,7 @@
 | Prix unitaire utilisé | `prix_confirme_cents` s'il existe, sinon `prix_unitaire_catalogue_cents` (copie figée à la création). |
 | Total de ligne | prix unitaire utilisé × participants. Identique à la colonne calculée `total_ligne_cents` en base. |
 | Hébergement | Prix par personne **et par nuit** : une ligne par nuit. Deux nuits = deux lignes. |
-| Total de la proposition | Somme des totaux de ligne, lignes `remplacee` et `indisponible` exclues : une prestation qu'on ne peut pas vendre n'entre pas dans le prix. Leur total de ligne reste calculé, comme en base. Une ligne indisponible bloque de toute façon l'envoi. |
+| Total de la proposition | Somme des totaux de ligne, lignes `remplacee`, `retiree` (E7.4) et `indisponible` exclues : une prestation qu'on ne peut pas vendre n'entre pas dans le prix. Leur total de ligne reste calculé, comme en base. Une ligne indisponible bloque de toute façon l'envoi. |
 | Budget | **Global, pour tout le groupe**, jamais par personne. Le formulaire demande « Budget total pour tout le groupe ». Le total de la proposition est comparé tel quel à ce budget. |
 | Marge | **Aucune** (décidé). |
 | Frais, taxes, remises | Aucun. Les prix fictifs du simulateur sont pris tels quels ; les taxes ne sont pas modélisées (limite, section 5). |

@@ -1,20 +1,21 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { PROPOSITION_DEPOT_RECU } from '@/fixtures/dashboard';
 import { exigerConseiller } from '@/lib/auth/conseiller';
 import { LIMITES } from '@/types/enums';
-import { MESSAGES_REFUS_ACCORD, evaluerAccord, prixReverifieCents } from '@/src/domain/accord';
+import { MESSAGES_POSE_OPTION, MESSAGES_REFUS_ACCORD, evaluerAccord, prixReverifieCents } from '@/src/domain/accord';
 import { BoutonAccord } from './bouton-accord';
 import { BoutonOption } from './bouton-option';
 import { BoutonConfirmation } from './bouton-confirmation';
 import { BoutonAnnulation } from './bouton-annulation';
-import { accordsDemo } from './depot';
 import { ReservationConfirmee } from './reservation-confirmee';
+import { AccordsSupabase } from '@/src/infrastructure/db/accordsSupabase';
+import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
 import { Fil } from '../../../_composants/fil';
 import { dateDeVerification } from '../../../_composants/libelles';
 
 // Écran d'accord (E9.3) : prestations, prix revérifié et conditions, puis autorisation d'UNE écriture précise.
-// Données : fixtures du dashboard en attendant la route GET /api/propositions/{id} (E4.5).
+// Données : la proposition et ses démarches (accord, option, réservation, annulation) lues en base (E7.4).
 export default function PageAccord({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
@@ -32,14 +33,29 @@ const prenom = (nom: unknown) => (typeof nom === 'string' && nom.trim() ? nom.tr
 const jour = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' });
 
 async function Contenu({ params }: { params: Promise<{ id: string }> }) {
-  await exigerConseiller();
   const { id } = await params;
-  const proposition = PROPOSITION_DEPOT_RECU;
-  if (proposition.id !== id) notFound();
+  await exigerConseiller(`/conseiller/propositions/${id}/accord`);
+  const proposition = await new PropositionsSupabase().proposition(id);
+  if (!proposition) notFound();
   const maintenant = new Date();
+  const accords = new AccordsSupabase();
+  const lignes = await Promise.all(
+    proposition.lignes.filter((ligne) => ligne.statut !== 'remplacee' && ligne.statut !== 'retiree').map(async (ligne) => {
+      const [accord, option, reservationConfirmee, reservationAnnulee, echecPose] = await Promise.all([
+        accords.accordValable(ligne.id, maintenant), accords.optionPosee(ligne.id), accords.reservationConfirmee(ligne.id), accords.reservationAnnulee(ligne.id),
+        accords.dernierEchecPose(ligne.id),
+      ]);
+      // une option expirée n'est plus confirmable : la ligne repasse par l'accord
+      const optionPosee = option?.statut === 'posee' && option.expire_option_le && Date.parse(option.expire_option_le) > maintenant.getTime() ? option : undefined;
+      return { ligne, accord, optionPosee, reservationConfirmee, reservationAnnulee, echecPose };
+    }),
+  );
 
   // un seul O par écran : le monogramme va à la dernière réservation confirmée (celle qui vient de l'être)
-  const derniereConfirmee = accordsDemo.accords.filter((a) => a.statut === 'confirmee').at(-1)?.ligne_id;
+  const derniereConfirmee = lignes
+    .filter((l) => l.reservationConfirmee?.confirme_le)
+    .sort((a, b) => a.reservationConfirmee!.confirme_le!.localeCompare(b.reservationConfirmee!.confirme_le!))
+    .at(-1)?.ligne.id;
 
   return (
     <>
@@ -68,12 +84,8 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       <ul className="flex flex-col gap-4">
-        {proposition.lignes.map((ligne) => {
+        {lignes.map(({ ligne, accord, optionPosee, reservationConfirmee, reservationAnnulee, echecPose }) => {
           const prix = prixReverifieCents(ligne);
-          const accord = accordsDemo.accordValable(ligne.id, maintenant);
-          const optionPosee = accordsDemo.accords.find((a) => a.ligne_id === ligne.id && a.statut === 'posee');
-          const reservationConfirmee = accordsDemo.accords.find((a) => a.ligne_id === ligne.id && a.statut === 'confirmee');
-          const reservationAnnulee = accordsDemo.accords.find((a) => a.ligne_id === ligne.id && a.statut === 'annulee');
           const verdict = evaluerAccord({
             statutProposition: proposition.statut,
             ligne,
@@ -99,6 +111,11 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
               {reservationAnnulee && !reservationConfirmee && (
                 <p className="mt-4 rounded-lg bg-ciel-pale px-3 py-2 text-sm text-encre" role="status">
                   Réservation annulée : {reservationAnnulee.reservation_id_simulateur ?? 'identifiant non renseigné'}. Les places sont libérées ; un nouvel accord reste possible.
+                </p>
+              )}
+              {echecPose && !reservationConfirmee && !optionPosee && !accord && (
+                <p className="mt-4 rounded-lg bg-brique-pale px-3 py-2 text-sm text-brique-texte" role="status">
+                  Dernière pose de l’option échouée à {heure(echecPose.le)} : {MESSAGES_POSE_OPTION[echecPose.raison] ?? 'consultez la trace.'}
                 </p>
               )}
               {reservationConfirmee ? (
@@ -129,7 +146,15 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
               ) : verdict.ok && prix !== null ? (
                 <BoutonAccord propositionId={proposition.id} ligneId={ligne.id} prixAfficheCents={prix} prixAffiche={euros(prix)} />
               ) : (
-                <p className="mt-4 rounded-lg bg-ciel-pale px-3 py-2 text-sm text-encre">{!verdict.ok ? MESSAGES_REFUS_ACCORD[verdict.raison] : ''}</p>
+                <p className="mt-4 rounded-lg bg-ciel-pale px-3 py-2 text-sm text-encre">
+                  {!verdict.ok ? MESSAGES_REFUS_ACCORD[verdict.raison] : ''}
+                  {!verdict.ok && verdict.raison === 'ligne_indisponible' && (
+                    <>
+                      {' '}
+                      <Link href={`/conseiller/propositions/${proposition.id}`} className="underline underline-offset-4">Ouvrir la proposition</Link>
+                    </>
+                  )}
+                </p>
               )}
             </li>
           );
