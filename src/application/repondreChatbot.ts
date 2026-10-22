@@ -11,9 +11,12 @@
  * - La réponse du modèle passe par `sansPrix` : aucun montant ne sort, même inventé.
  * - Rien n'est stocké : la conversation vit dans le navigateur, le serveur ne garde ni message ni trace.
  * - La suggestion de préremplissage (destination, date, voyageurs) vient des appels d'outil validés, jamais du texte libre.
+ * - Sur la page du formulaire, le navigateur joint l'état de la fiche (des clés, aucune valeur) : les questions sur
+ *   le formulaire reçoivent une réponse écrite par le code (aideFormulaire), les autres vont au modèle avec cet état.
  */
 import { z } from 'zod';
 import { LIMITES } from '../../types/enums';
+import { aideFormulaire, consignesFormulaire, EtatFormulaire, relancesFormulaire } from '../domain/chatbot/aideFormulaire';
 import { CONSIGNES_CHATBOT } from '../domain/chatbot/connaissances';
 import { minimiser } from '../domain/chatbot/minimiser';
 import { ArgsChercher, argsVerifier, filtrerCatalogue, OUTILS_CHATBOT, type PrestationSansPrix, type PrestationVisible } from '../domain/chatbot/outils';
@@ -45,6 +48,8 @@ export const ConversationChatbot = z
       )
       .min(1)
       .max(LIMITES_CHATBOT.messagesMax * 2),
+    /** Seulement depuis la page du formulaire de demande. */
+    formulaire: EtatFormulaire.optional(),
   })
   .strict()
   .refine((c) => c.messages.at(-1)?.role === 'user', { message: 'le dernier message doit venir du visiteur' })
@@ -109,8 +114,15 @@ export function couper(texte: string, max: number): string {
 export async function repondreChatbot(conversation: ConversationChatbot, deps: DependancesChatbot): Promise<ReponseChatbot> {
   const maintenant = deps.maintenant?.() ?? new Date();
   const historique = conversation.messages.slice(-LIMITES_CHATBOT.messagesMax);
+  const formulaire = conversation.formulaire;
+  // une question sur le formulaire : réponse du code, sans modèle ni catalogue
+  if (formulaire) {
+    const aide = aideFormulaire(minimiser(historique.at(-1)!.content), formulaire);
+    if (aide) return { texte: aide, verification: null, suggestion: null, prestations: [], relances: relancesFormulaire(formulaire) };
+  }
+  const consignes = formulaire ? `${CONSIGNES_CHATBOT}\n\n${consignesFormulaire(formulaire)}` : CONSIGNES_CHATBOT;
   const messages: MessageChat[] = [
-    { role: 'system', content: `${CONSIGNES_CHATBOT}\n\nAujourd’hui : ${maintenant.toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })}.` },
+    { role: 'system', content: `${consignes}\n\nAujourd’hui : ${maintenant.toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })}.` },
     // minimisation : les messages du visiteur, mais aussi ceux de l'assistant, qui ont pu les reprendre
     ...historique.map((m): MessageChat => ({ role: m.role, content: minimiser(m.content) })),
   ];
