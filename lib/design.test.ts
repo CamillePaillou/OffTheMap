@@ -58,6 +58,21 @@ describe('charte DÉTOUR 2026', () => {
     expect(contraste(couleur('detour-encre-doux'), CRAIE())).toBeGreaterThanOrEqual(4.5);
   });
 
+  // pastilles de statut (types/statuts-famille.ts) : texte de 13 px, donc AA texte normal (RGAA 3.2)
+  it.each([
+    ['moi', 'detour-craie', 'detour-encre'],
+    ['client', 'detour-orange-texte', 'detour-orange-pale'],
+    ['valide', 'detour-vert-texte', 'detour-vert-pale'],
+    ['conclue', 'detour-craie', 'detour-vert'],
+    ['erreur', 'detour-craie', 'detour-rouge'],
+    ['auto', 'detour-encre-doux', 'detour-ciel-pale'],
+    ['proposition', 'detour-encre', 'detour-ciel'],
+    ['clos (sur la carte)', 'detour-encre-doux', 'detour-carte'],
+    ['clos (sur la craie)', 'detour-encre-doux', 'detour-craie'],
+  ])('pastille %s : texte lisible (≥ 4,5:1)', (_, texte, fond) => {
+    expect(contraste(couleur(texte), couleur(fond))).toBeGreaterThanOrEqual(4.5);
+  });
+
   it('« la ligne » et les traits restent visibles : l’encre sur la craie (≥ 3:1, élément graphique)', () => {
     expect(contraste(couleur('detour-encre'), CRAIE())).toBeGreaterThanOrEqual(3);
   });

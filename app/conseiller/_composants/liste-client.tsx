@@ -4,6 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import type { StatutDossier } from '@/types/enums';
+import { PastilleStatut } from './statut';
 
 export interface ElementListe {
   id: string;
@@ -11,6 +13,7 @@ export interface ElementListe {
   destination: string | null;
   photo: string | null;
   etape: string;
+  statut: StatutDossier;
   groupe: 'traiter' | 'attente' | 'clos';
   depart: string;
   proche: boolean;
@@ -88,27 +91,32 @@ export function ListeClient({ elements, total }: { elements: ElementListe[]; tot
         <ul className="flex flex-col gap-0.5">
           {visibles.map((e) => {
             const courant = chemin === `/conseiller/dossiers/${e.id}`;
+            // un dossier clos s'efface, sauf sa pastille : atténuée, elle passerait sous 4,5:1
+            const attenue = e.groupe === 'clos' ? 'opacity-70' : '';
             return (
               <li key={e.id}>
                 <Link
                   href={`/conseiller/dossiers/${e.id}`}
                   aria-current={courant ? 'page' : undefined}
-                  className={`flex gap-3 rounded-[14px] p-3 text-encre! no-underline transition-colors duration-200 ${courant ? 'bg-ciel-pale' : 'hover:bg-craie'} ${e.groupe === 'clos' ? 'opacity-70' : ''}`}
+                  className={`flex gap-3 rounded-[14px] p-3 text-encre! no-underline transition-colors duration-200 ${courant ? 'bg-ciel-pale' : 'hover:bg-craie'}`}
                 >
                   {e.photo ? (
-                    <Image src={e.photo} alt="" width={88} height={88} className="size-11 shrink-0 rounded-xl object-cover" />
+                    <Image src={e.photo} alt="" width={88} height={88} className={`size-11 shrink-0 rounded-xl object-cover ${attenue}`} />
                   ) : (
-                    <span aria-hidden className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-ciel-pale font-semibold text-encre-doux">
+                    <span aria-hidden className={`flex size-11 shrink-0 items-center justify-center rounded-xl bg-ciel-pale font-semibold text-encre-doux ${attenue}`}>
                       {e.nom.charAt(0)}
                     </span>
                   )}
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="flex justify-between gap-2">
+                    <span className={`flex justify-between gap-2 ${attenue}`}>
                       <span className="truncate font-semibold">{e.nom}</span>
                       <span className={`shrink-0 text-[13px] ${e.proche ? 'font-semibold text-brique-texte' : 'text-encre-doux'}`}>{e.depart}</span>
                     </span>
-                    <span className="truncate text-sm text-encre-doux">
-                      {e.destination ?? 'Destination à proposer'} · {e.etape}
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className={`min-w-0 flex-1 truncate text-sm text-encre-doux ${attenue}`}>
+                        {e.destination ?? 'Destination à proposer'} · {e.etape}
+                      </span>
+                      <PastilleStatut statut={e.statut} />
                     </span>
                   </span>
                 </Link>

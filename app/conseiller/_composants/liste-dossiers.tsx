@@ -19,6 +19,7 @@ export async function ListeDossiers() {
         destination: d.demande.destination,
         photo: photoDestination(d.demande.destination),
         etape: etape.texte,
+        statut: d.statut,
         groupe: etape.acteur === 'conseiller' ? ('traiter' as const) : etape.acteur === null ? ('clos' as const) : ('attente' as const),
         depart: texteDepart(jours),
         proche: etape.acteur !== null && jours >= 0 && jours < 15,

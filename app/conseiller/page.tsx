@@ -8,7 +8,7 @@ import { JOUR_ABANDON, joursDepuis } from '@/src/domain/rappels';
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import { RappelsSupabase } from '@/src/infrastructure/db/rappelsSupabase';
 import { instantParis, jour } from './_composants/libelles';
-import { joursAvantDepart, photoDestination, prochaineEtape, texteDepart } from './_composants/statut';
+import { joursAvantDepart, PastilleStatut, photoDestination, prochaineEtape, texteDepart } from './_composants/statut';
 
 export const metadata: Metadata = { title: 'Dossiers' };
 
@@ -62,6 +62,7 @@ async function Apercu() {
                     {d.client.nom} · {d.demande.destination ?? 'destination à proposer'} · {texteDepart(jours)}
                   </span>
                 </span>
+                <PastilleStatut statut={d.statut} />
                 <Link href={`/conseiller/dossiers/${d.dossier_id}`} className="bo-btn-2 shrink-0 text-sm">
                   Ouvrir
                 </Link>

@@ -1,7 +1,7 @@
 /**
  * Enregistrer l'acceptation du client puis le dépôt reçu (E7.1). Spécification : docs/specs/acceptation-depot.md.
  * Deux clics du conseiller : envoyee → acceptee, puis acceptee → depot_recu, chacun journalisé à son nom.
- * Le dossier sera « gagné » quand toutes les lignes seront réservées (transition du système, E9.5).
+ * Le dossier sera « conclu » (`gagnee`) quand toutes les lignes seront réservées (transition du système, E9.5).
  */
 import { TRANSITIONS_PROPOSITION, trouverTransition } from '../../types/transitions';
 import { DejaAccepteeErreur, type ReponseClientRepository } from '../ports/reponseClient';
