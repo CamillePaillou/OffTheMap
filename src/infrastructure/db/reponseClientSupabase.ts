@@ -3,6 +3,14 @@ import type { StatutProposition } from '../../../types';
 import { clientService } from '../../../lib/supabase/service';
 import { DejaAccepteeErreur, type ReponseClientRepository } from '../../ports/reponseClient';
 import { StatutModifieErreur } from '../../ports/statuts';
+import type { ReponseEnLigne } from '../../ports/espaceClient';
+
+/** Réponse donnée en ligne par le client dans son espace (table reponses_client), à montrer au conseiller. */
+export async function lireReponseEnLigne(propositionId: string): Promise<ReponseEnLigne | null> {
+  const { data, error } = await clientService().from('reponses_client').select('type, message, cree_le').eq('proposition_id', propositionId).maybeSingle();
+  if (error) throw new Error(`réponse en ligne : ${error.message}`);
+  return data;
+}
 
 /** Réponse du client par la fonction SQL enregistrer_reponse_client, avec la clé service_role, après exigerConseiller(). */
 export class ReponseClientSupabase implements ReponseClientRepository {

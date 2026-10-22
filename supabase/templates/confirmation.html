@@ -1,0 +1,14 @@
+<!-- Mail de confirmation de l'adresse (espace client). Variables de Supabase Auth : {{ .SiteURL }}, {{ .TokenHash }}. -->
+<div style="font-family: Arial, sans-serif; color: #16233f; background: #f6f1e7; padding: 24px; line-height: 1.5;">
+  <p>Bonjour,</p>
+  <p>Vous venez de créer votre espace DÉTOUR. Un clic pour confirmer votre adresse, et vos demandes faites avec elle y apparaîtront :</p>
+  <p>
+    <a href="{{ .SiteURL }}/compte/confirmer?token_hash={{ .TokenHash }}&type=email&suite=/compte"
+       style="display: inline-block; background: #16233f; color: #f6f1e7; padding: 12px 20px; border-radius: 999px; text-decoration: none; font-weight: bold;">
+      Confirmer mon adresse
+    </a>
+  </p>
+  <p>Le lien vaut une heure. Si vous n’avez rien demandé, ignorez ce message : aucun espace ne sera ouvert.</p>
+  <p>À bientôt,<br />DÉTOUR · Prenez le pas de côté.</p>
+  <p style="font-size: 12px; color: #5b6480;">Projet pédagogique Off the Map. Agence, prestataires et prix fictifs.</p>
+</div>

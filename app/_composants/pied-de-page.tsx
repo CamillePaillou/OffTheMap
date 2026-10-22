@@ -34,7 +34,14 @@ function PiedDePagePublic() {
           <p>Du mardi au samedi, 10 h – 19 h</p>
         </div>
         <div>
-          <p className="font-semibold text-craie">Vous êtes conseiller ?</p>
+          <p className="font-semibold text-craie">Votre voyage</p>
+          <p className="mt-1">
+            <Link href="/suivi" className="text-craie! underline">Suivre ma demande</Link>
+          </p>
+          <p className="mt-1">
+            <Link href="/compte" className="text-craie! underline">Mon espace</Link>
+          </p>
+          <p className="mt-5 font-semibold text-craie">Vous êtes conseiller ?</p>
           <p className="mt-1">
             <Link href="/conseiller" className="text-craie! underline">Ouvrir l’espace conseiller</Link>
           </p>

@@ -1,9 +1,10 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { estProtege, urlConnexion } from '@/lib/auth/redirection';
+import { estProtege, estProtegeClient, urlConnexion, urlConnexionClient } from '@/lib/auth/redirection';
 
-// Protection de /conseiller (E0.11) : rafraîchit la session Supabase et renvoie vers /connexion sans session.
-// Contrôle rapide seulement ; le contrôle sûr (profil conseiller) est fait par exigerConseiller().
+// Protection de /conseiller (E0.11) et de l'espace client /compte : rafraîchit la session Supabase et renvoie vers la
+// page de connexion sans session. Contrôle rapide seulement ; le contrôle sûr est fait par exigerConseiller() et
+// exigerClient(), et la propriété d'un dossier par les fonctions SQL de l'espace client.
 export async function proxy(request: NextRequest) {
   let reponse = NextResponse.next({ request });
 
@@ -27,9 +28,12 @@ export async function proxy(request: NextRequest) {
   if (!data?.claims && estProtege(pathname)) {
     return NextResponse.redirect(new URL(urlConnexion(pathname + search), request.url));
   }
+  if (!data?.claims && estProtegeClient(pathname)) {
+    return NextResponse.redirect(new URL(urlConnexionClient(pathname + search), request.url));
+  }
   return reponse;
 }
 
 export const config = {
-  matcher: ['/conseiller/:path*'],
+  matcher: ['/conseiller/:path*', '/compte/:path*'],
 };
