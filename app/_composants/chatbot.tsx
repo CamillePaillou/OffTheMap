@@ -34,10 +34,39 @@ const HISTORIQUE_MAX = 12;
 const IDEES = ['Que faire à Nantes ?', 'Où dormir à Lyon ?', 'Une activité quand il pleut ?', 'Quels sont vos horaires ?'];
 const BONJOUR = 'Bonjour ! Je peux vous parler de nos destinations et vérifier si une activité est disponible à une date. Les prix, c’est un conseiller qui vous les envoie.';
 const HORS_LIGNE = 'L’assistant ne répond pas pour le moment. Vous pouvez composer votre week-end directement : un conseiller vous répondra.';
+// sur la page du formulaire : il accompagne le remplissage de la fiche
+const IDEES_FORMULAIRE = ['Qu’est-ce qu’il me manque ?', 'Combien de nuits mettre ?', 'Que mettre dans mes envies ?', 'Que faire à Lyon ?'];
+const BONJOUR_FORMULAIRE =
+  'Bonjour ! Je vous aide à remplir votre demande : ce que veut dire un champ, ce qu’il vous reste à remplir, pourquoi un champ est en rouge. Je peux aussi vous parler de nos destinations.';
+const HORS_LIGNE_FORMULAIRE = 'L’assistant ne répond pas pour le moment. Vous pouvez envoyer votre demande telle quelle : un conseiller vous écrira si un point est à préciser.';
 
-/** Le chatbot n'apparaît que sur le site public, et pas sur le formulaire (il y mène). */
+/** Une prestation ajoutée ou retirée depuis le chatbot de la page du formulaire, que le formulaire reçoit. */
+export const EVENEMENT_PRESTATION = 'detour:prestation';
+export interface DetailPrestation {
+  prestation: Pick<Carte, 'id' | 'nom' | 'type' | 'destination'>;
+  ajoutee: boolean;
+}
+
+/**
+ * L'état du formulaire tel que le formulaire le publie (app/demande/formulaire.tsx) : des clés, aucune valeur.
+ * Le serveur le revalide ; illisible ou absent, le chatbot répond sans lui.
+ */
+function etatFormulaire(): unknown {
+  try {
+    const brut = document.getElementById('formulaire-demande')?.dataset.assistant;
+    return brut ? JSON.parse(brut) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Le chatbot n'apparaît que sur le site public. Sur le formulaire de demande, il accompagne le remplissage ; il
+ * n'apparaît pas sur la confirmation ni sur la correction d'une demande.
+ */
 export function ChatbotSite() {
   const chemin = usePathname();
+  if (chemin === '/demande') return <Chatbot surFormulaire />;
   if (chemin.startsWith('/conseiller') || chemin.startsWith('/connexion') || chemin.startsWith('/demande')) return null;
   return <Chatbot />;
 }
@@ -62,7 +91,7 @@ function lienDemande(s: Reponse['suggestion'], choix: readonly Carte[]) {
  * Chatbot du site (E1.3). La conversation reste dans cette page : rien n'est stocké, ni ici ni sur le serveur.
  * Accessible au clavier (Échap ferme et rend le focus au bouton), réponses annoncées aux lecteurs d'écran.
  */
-function Chatbot() {
+function Chatbot({ surFormulaire = false }: { surFormulaire?: boolean }) {
   const [ouvert, setOuvert] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [saisie, setSaisie] = useState('');
@@ -70,8 +99,16 @@ function Chatbot() {
   const [suggestion, setSuggestion] = useState<Reponse['suggestion']>(null);
   // prestations ajoutées au week-end depuis les cartes (E1.4), 6 au plus
   const [choix, setChoix] = useState<Carte[]>([]);
-  const basculer = (c: Carte) =>
-    setChoix((liste) => (liste.some((x) => x.id === c.id) ? liste.filter((x) => x.id !== c.id) : [...liste, c].slice(-6)));
+  const basculer = (c: Carte) => {
+    const ajoutee = !choix.some((x) => x.id === c.id);
+    setChoix((liste) => (ajoutee ? [...liste, c].slice(-6) : liste.filter((x) => x.id !== c.id)));
+    // sur le formulaire, la prestation va directement dans « Ce qui vous tente »
+    if (surFormulaire) {
+      const detail: DetailPrestation = { prestation: { id: c.id, nom: c.nom, type: c.type, destination: c.destination }, ajoutee };
+      window.dispatchEvent(new CustomEvent(EVENEMENT_PRESTATION, { detail }));
+    }
+  };
+  const horsLigne = surFormulaire ? HORS_LIGNE_FORMULAIRE : HORS_LIGNE;
   const [annonce, setAnnonce] = useState('');
   const idPanneau = useId();
   const bouton = useRef<HTMLButtonElement>(null);
@@ -102,11 +139,14 @@ function Chatbot() {
       const r = await fetch('/api/chatbot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: suite.slice(-HISTORIQUE_MAX).map(({ role, content }) => ({ role, content })) }),
+        body: JSON.stringify({
+          messages: suite.slice(-HISTORIQUE_MAX).map(({ role, content }) => ({ role, content })),
+          ...(surFormulaire ? { formulaire: etatFormulaire() } : {}),
+        }),
       });
-      reponse = r.ok ? ((await r.json()) as Reponse) : { texte: HORS_LIGNE, verification: null, suggestion: null };
+      reponse = r.ok ? ((await r.json()) as Reponse) : { texte: horsLigne, verification: null, suggestion: null };
     } catch {
-      reponse = { texte: HORS_LIGNE, verification: null, suggestion: null };
+      reponse = { texte: horsLigne, verification: null, suggestion: null };
     }
     setMessages([
       ...suite,
@@ -136,12 +176,12 @@ function Chatbot() {
           id={idPanneau}
           role="dialog"
           aria-label="Assistant DÉTOUR"
-          className="chatbot-entre fixed inset-x-3 bottom-20 z-40 flex max-h-[min(36rem,calc(100dvh-7rem))] flex-col overflow-hidden rounded-2xl border border-trait bg-carte shadow-[0_18px_48px_rgb(22_35_63/0.22)] sm:inset-x-auto sm:right-6 sm:w-[24rem]"
+          className={`chatbot-entre fixed inset-x-3 ${surFormulaire ? 'bottom-36 lg:bottom-20' : 'bottom-20'} z-40 flex max-h-[min(36rem,calc(100dvh-7rem))] flex-col overflow-hidden rounded-2xl border border-trait bg-carte shadow-[0_18px_48px_rgb(22_35_63/0.22)] sm:inset-x-auto sm:right-6 sm:w-[24rem]`}
         >
           <header className="sur-encre flex items-start justify-between gap-3 bg-encre px-5 py-4 text-craie">
             <div>
-              <h2 className="text-lg text-craie!">Une question sur votre week-end ?</h2>
-              <p className="text-sm text-craie-sur-encre">Destinations, idées, disponibilités</p>
+              <h2 className="text-lg text-craie!">{surFormulaire ? 'Besoin d’aide pour votre demande ?' : 'Une question sur votre week-end ?'}</h2>
+              <p className="text-sm text-craie-sur-encre">{surFormulaire ? 'Les champs, ce qui manque, nos destinations' : 'Destinations, idées, disponibilités'}</p>
             </div>
             <button type="button" onClick={fermer} aria-label="Fermer l’assistant" className="-mr-1 rounded-md p-1.5 text-craie hover:bg-craie/10">
               <svg aria-hidden width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -151,10 +191,10 @@ function Chatbot() {
           </header>
 
           <div ref={fil} role="log" aria-label="Conversation" className="flex flex-1 flex-col gap-3 overflow-y-auto bg-craie px-4 py-4">
-            <Bulle role="assistant" content={BONJOUR} />
+            <Bulle role="assistant" content={surFormulaire ? BONJOUR_FORMULAIRE : BONJOUR} />
             {messages.length === 0 && (
               <ul aria-label="Idées de questions" className="flex flex-wrap gap-2">
-                {IDEES.map((idee) => (
+                {(surFormulaire ? IDEES_FORMULAIRE : IDEES).map((idee) => (
                   <li key={idee}>
                     <button
                       type="button"
@@ -174,7 +214,7 @@ function Chatbot() {
                   <ul aria-label="Prestations proposées" className="chatbot-entre flex flex-col gap-2">
                     {m.prestations.map((c) => (
                       <li key={c.id}>
-                        <CartePrestation carte={c} ajoutee={choix.some((x) => x.id === c.id)} basculer={() => basculer(c)} />
+                        <CartePrestation carte={c} ajoutee={choix.some((x) => x.id === c.id)} basculer={() => basculer(c)} surFormulaire={surFormulaire} />
                       </li>
                     ))}
                   </ul>
@@ -211,12 +251,16 @@ function Chatbot() {
           <div className="border-t border-trait bg-carte px-4 pt-3 pb-4">
             {choix.length > 0 && (
               <p className="mb-2 text-sm text-encre-doux" aria-live="polite">
-                {choix.length === 1 ? '1 prestation ajoutée' : `${choix.length} prestations ajoutées`} : {choix.map((c) => c.nom).join(', ')}.
+                {choix.length === 1 ? '1 prestation ajoutée' : `${choix.length} prestations ajoutées`}
+                {surFormulaire ? ' à votre demande' : ''} : {choix.map((c) => c.nom).join(', ')}.
               </p>
             )}
-            <Link href={lienDemande(suggestion, choix)} className="btn-principal mb-3 w-full py-2.5! text-[0.95rem]">
-              Composer mon week-end
-            </Link>
+            {/* sur le formulaire, le client y est déjà */}
+            {!surFormulaire && (
+              <Link href={lienDemande(suggestion, choix)} className="btn-principal mb-3 w-full py-2.5! text-[0.95rem]">
+                Composer mon week-end
+              </Link>
+            )}
             <form onSubmit={soumettre} className="flex items-end gap-2">
               <label htmlFor={`${idPanneau}-champ`} className="sr-only">
                 Votre question
@@ -257,12 +301,12 @@ function Chatbot() {
         onClick={() => (ouvert ? fermer() : setOuvert(true))}
         aria-expanded={ouvert}
         aria-controls={ouvert ? idPanneau : undefined}
-        className="fixed right-4 bottom-4 z-40 flex items-center gap-2 rounded-full bg-encre py-3 pr-5 pl-4 font-semibold text-craie shadow-[0_10px_28px_rgb(22_35_63/0.35)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-encre-clair sm:right-6 sm:bottom-6"
+        className={`fixed right-4 ${surFormulaire ? 'bottom-20 lg:bottom-6' : 'bottom-4 sm:bottom-6'} z-40 flex items-center gap-2 rounded-full bg-encre py-3 pr-5 pl-4 font-semibold text-craie shadow-[0_10px_28px_rgb(22_35_63/0.35)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-encre-clair sm:right-6`}
       >
         <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           {ouvert ? <path d="M6 9l6 6 6-6" /> : <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />}
         </svg>
-        {ouvert ? 'Fermer' : 'Une question ?'}
+        {ouvert ? 'Fermer' : surFormulaire ? 'Besoin d’aide ?' : 'Une question ?'}
       </button>
     </div>
   );
@@ -328,7 +372,7 @@ const jour = (iso: string) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 /** Une prestation du catalogue : ce qu'on y fait, et le chemin vers le formulaire prérempli avec elle. */
-function CartePrestation({ carte, ajoutee, basculer }: { carte: Carte; ajoutee: boolean; basculer: () => void }) {
+function CartePrestation({ carte, ajoutee, basculer, surFormulaire }: { carte: Carte; ajoutee: boolean; basculer: () => void; surFormulaire: boolean }) {
   const d = carte.disponibilite;
   return (
     <div className={`flex flex-col gap-0.5 rounded-xl border bg-carte px-3.5 py-2.5 transition-colors ${ajoutee ? 'border-encre' : 'border-trait'}`}>
@@ -351,7 +395,7 @@ function CartePrestation({ carte, ajoutee, basculer }: { carte: Carte; ajoutee: 
           ajoutee ? 'bg-encre text-craie hover:bg-encre-clair' : 'border-[1.5px] border-encre text-encre hover:bg-encre hover:text-craie'
         }`}
       >
-        {ajoutee ? 'Ajoutée ✓ · retirer' : 'Ajouter à mon week-end'}
+        {ajoutee ? 'Ajoutée ✓ · retirer' : surFormulaire ? 'Ajouter à ma demande' : 'Ajouter à mon week-end'}
       </button>
     </div>
   );
