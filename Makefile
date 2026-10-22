@@ -67,9 +67,9 @@ essai-chatbot: .env node_modules ## Chatbot réel : OpenRouter + simulateur loca
 campagne: .env node_modules ## Campagne E11.2 (simulateur local) : V=v2 APPROBATION=… FORMATEUR=… VERIFICATEUR=prénom [SANS_MODELE=1]
 	@test -n "$(APPROBATION)" -a -n "$(FORMATEUR)" || (echo "Préciser APPROBATION=<clé d'approbation> FORMATEUR=<clé formateur> (en local : voir evaluation/README.md)" && exit 1)
 	@SIMULATEUR_URL=http://localhost:$(or $(SIMULATEUR_PORT),8765) CAMPAGNE_CLE_APPROBATION=$(APPROBATION) CAMPAGNE_CLE_FORMATEUR=$(FORMATEUR) CAMPAGNE_SANS_MODELE=$(SANS_MODELE) \
-	  node --env-file=.env node_modules/vite-node/vite-node.mjs evaluation/campagne.ts -- --version $(or $(V),v2)
+	  node --env-file=.env node_modules/vite-node/vite-node.mjs -c evaluation/vite.config.mts evaluation/campagne.ts -- --version $(or $(V),v2)
 	@SIMULATEUR_URL=http://localhost:$(or $(SIMULATEUR_PORT),8765) CAMPAGNE_CLE_APPROBATION=$(APPROBATION) CAMPAGNE_CLE_FORMATEUR=$(FORMATEUR) CAMPAGNE_SANS_MODELE=$(SANS_MODELE) \
-	  node --env-file=.env node_modules/vite-node/vite-node.mjs evaluation/campagne.ts -- --version $(or $(V),v2) \
+	  node --env-file=.env node_modules/vite-node/vite-node.mjs -c evaluation/vite.config.mts evaluation/campagne.ts -- --version $(or $(V),v2) \
 	  --jeu evaluation/jeu-v1-rejeu.json --sortie evaluation/resultats-$(or $(V),v2)-rejeu.jsonl
 
 lint: node_modules ## Lint

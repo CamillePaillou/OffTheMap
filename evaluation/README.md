@@ -32,16 +32,18 @@ Aucune clé dans les fichiers de résultats ni dans les traces conservées.
 `evaluation/campagne.ts` exécute chaque cas dans son mode prévu, contre le programme réel et le simulateur du formateur, puis écrit une ligne JSONL et une trace par essai (`traces/<version>/<cas>-<essai>.json`). Il **propose** un verdict par critère, calculé sur l'oracle du cas : le vérificateur relit la trace et met son prénom dans le champ `verificateur` (variable `VERIFICATEUR`) avant que les nombres servent de preuve.
 
 ```sh
-make up                                   # le simulateur tourne sur le port 8765
-make campagne V=v2 APPROBATION=demo-approval FORMATEUR=demo-instructor VERIFICATEUR=Callista
-python3 <dépôt du formateur>/content/j4/synthese.py evaluation/jeu-v1.json evaluation/resultats-v2.jsonl
-python3 <dépôt du formateur>/content/j4/synthese.py evaluation/jeu-v1-rejeu.json evaluation/resultats-v2-rejeu.jsonl
+make reset                                # base locale propre (seed), puis make up : Supabase et simulateur
+make campagne V=v3 APPROBATION=demo-approval FORMATEUR=demo-instructor VERIFICATEUR=Callista
+python3 <dépôt du formateur>/content/j4/synthese.py evaluation/jeu-v1.json evaluation/resultats-v3.jsonl
+python3 <dépôt du formateur>/content/j4/synthese.py evaluation/jeu-v1-rejeu.json evaluation/resultats-v3-rejeu.jsonl
 ```
 
 `demo-approval` et `demo-instructor` sont les clés de démonstration du simulateur local (`--demo`) ; avec le serveur du formateur, utiliser celles qu'il fournit, sur la ligne de commande, jamais dans un fichier. La clé formateur sert à réinitialiser l'espace d'équipe avant chaque essai et à créer les incidents (E01, E02).
 
 - **Agent direct** (N01, A01 à A03, E01, X01) : il faut `LLM_API_KEY` dans `.env`. Sans clé, la campagne s'arrête avant d'écrire ; `SANS_MODELE=1` l'accepte, et ces essais sont alors écrits `non_execute` avec la raison.
-- **Simulateur seulement** : la campagne n'a pas besoin de Supabase. `docker compose up -d simulateur` suffit ; s'il ne répond pas, rien n'est écrit.
+- **Base locale** (depuis v3) : N03 et E02 passent par les dépôts de l'application (`AccordsSupabase`, `PropositionsSupabase`) sur la proposition au dépôt reçu du seed (`b0b05100-…012000000`, ligne du train), avec la clé de `.env.supabase` écrite par `make up`. La base est remise en l'état après chaque essai. Sans base, ces deux essais sont `non_execute`. Écart assumé au manifeste : les montants d'E02 sont ceux du train (accord à 9600 centimes, option renvoyée à 12000) au lieu de 7000 et 8000 pour l'atelier ; les critères ne changent pas.
+- **Simulateur** : s'il ne répond pas, la campagne s'arrête avant d'écrire.
+- `vite.config.mts` remplace pour la campagne les modules réservés à Next.js (`server-only`, la session par cookies) : les lectures se font avec la clé service_role, comme le serveur.
 - **Manifeste complémentaire** `jeu-v1-rejeu.json` (N01R, X01R), figé avant la campagne : le programme réel reçoit des messages du modèle enregistrés. Il ne remplace pas N01 et X01, qui gardent leur ligne en agent direct.
 
 ### Résultats
