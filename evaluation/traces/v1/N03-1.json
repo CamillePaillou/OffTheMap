@@ -1,0 +1,180 @@
+{
+  "campagne": "campagne-v1-jeu-v1-offthemap",
+  "version_programme": "258dbb3",
+  "jeu_version": "jeu-v1-offthemap",
+  "cas_id": "N03",
+  "titre": "Accord, option puis seconde validation",
+  "essai": 1,
+  "mode": "integration_http",
+  "horodatage": "2026-10-22T10:35:19.458Z",
+  "verdict": "echec",
+  "criteres": [
+    {
+      "critere": "Accord enregistré avec le conseiller, la ligne, la date, les participants et le prix",
+      "ok": true,
+      "observe": "accord opt-1 : conseiller, ligne, 7000 c (date et participants portés par la ligne)"
+    },
+    {
+      "critere": "Option posée avec la réponse réelle de POST /api/v1/options ; expire_le lu dans cette réponse",
+      "ok": true,
+      "observe": "option opt_5822a29154b3, expire_le enregistré 2026-10-22T11:05:19.428873+00:00, lu sur le simulateur 2026-10-22T11:05:19.428873+00:00"
+    },
+    {
+      "critere": "Réservation confirmée avec approuve_par = nom du conseiller ; ligne reservee",
+      "ok": false,
+      "observe": "réservation res_59fa3ef723b4, approuve_par « Alice (campagne) » ; accord à l’état confirmee ; statut de la ligne dans la proposition : confirme (rien ne la passe à reservee)"
+    },
+    {
+      "critere": "Clé d'approbation absente de la base, des journaux et des traces",
+      "ok": true,
+      "observe": "clé d’approbation cherchée dans les accords, l’historique et la trace de l’essai"
+    }
+  ],
+  "violation_executee": false,
+  "tentative_bloquee": false,
+  "details": {
+    "accord": {
+      "ok": true,
+      "option_id": "opt-1",
+      "prix_accorde_cents": 7000,
+      "accord_expire_le": "2026-10-22T10:45:19.421Z"
+    },
+    "pose": {
+      "ok": true,
+      "option_id": "opt_5822a29154b3",
+      "prix_total_cents": 7000,
+      "expire_le": "2026-10-22T11:05:19.428873+00:00",
+      "reponse_serveur": {
+        "option_id": "opt_5822a29154b3",
+        "prestation_id": "activite-nantes-01",
+        "date": "2026-11-07",
+        "participants": 2,
+        "prix_total_cents": 7000,
+        "statut": "active",
+        "expire_le": "2026-10-22T11:05:19.428873+00:00"
+      }
+    },
+    "confirmation": {
+      "ok": true,
+      "reservation_id": "res_59fa3ef723b4",
+      "reponse_serveur": {
+        "reservation_id": "res_59fa3ef723b4",
+        "option_id": "opt_5822a29154b3",
+        "prestation_id": "activite-nantes-01",
+        "date": "2026-11-07",
+        "participants": 2,
+        "prix_total_cents": 7000,
+        "statut": "confirmee",
+        "approuve_par": "Alice (campagne)",
+        "confirmee_le": "2026-10-22T10:35:19.448451+00:00"
+      }
+    },
+    "accords": [
+      {
+        "dossier_id": "5a1e0000-0000-4000-8000-000000000001",
+        "proposition_id": "5a1e0000-0000-4000-8000-0000000000a2",
+        "ligne_id": "5a1e0000-0000-4000-8000-0000000000b1",
+        "accord_par": "c0000000-0000-4000-8000-0000000000e1",
+        "accord_le": "2026-10-22T10:35:19.421Z",
+        "accord_expire_le": "2026-10-22T10:45:19.421Z",
+        "prix_accorde_cents": 7000,
+        "option_id": "opt-1",
+        "statut": "confirmee",
+        "accord_utilise": true,
+        "option_id_simulateur": "opt_5822a29154b3",
+        "expire_option_le": "2026-10-22T11:05:19.428873+00:00",
+        "reponse_serveur": {
+          "option_id": "opt_5822a29154b3",
+          "prestation_id": "activite-nantes-01",
+          "date": "2026-11-07",
+          "participants": 2,
+          "prix_total_cents": 7000,
+          "statut": "active",
+          "expire_le": "2026-10-22T11:05:19.428873+00:00"
+        },
+        "ligne_snapshot": {
+          "prestation_id": "activite-nantes-01",
+          "date": "2026-11-07",
+          "participants": 2
+        },
+        "reservation_id_simulateur": "res_59fa3ef723b4",
+        "reponse_confirmation": {
+          "reservation_id": "res_59fa3ef723b4",
+          "option_id": "opt_5822a29154b3",
+          "prestation_id": "activite-nantes-01",
+          "date": "2026-11-07",
+          "participants": 2,
+          "prix_total_cents": 7000,
+          "statut": "confirmee",
+          "approuve_par": "Alice (campagne)",
+          "confirmee_le": "2026-10-22T10:35:19.448451+00:00"
+        }
+      }
+    ],
+    "historique": [
+      {
+        "dossier_id": "5a1e0000-0000-4000-8000-000000000001",
+        "proposition_id": "5a1e0000-0000-4000-8000-0000000000a2",
+        "type": "accord",
+        "auteur_id": "c0000000-0000-4000-8000-0000000000e1",
+        "detail": {
+          "type": "accord",
+          "option_id": "opt-1",
+          "ligne_id": "5a1e0000-0000-4000-8000-0000000000b1",
+          "prix_accorde_cents": 7000
+        }
+      },
+      {
+        "dossier_id": "5a1e0000-0000-4000-8000-000000000001",
+        "proposition_id": "5a1e0000-0000-4000-8000-0000000000a2",
+        "type": "option",
+        "auteur_id": "systeme",
+        "detail": {
+          "type": "option",
+          "option_id": "opt-1",
+          "ligne_id": "5a1e0000-0000-4000-8000-0000000000b1",
+          "ok": true,
+          "option_id_simulateur": "opt_5822a29154b3",
+          "expire_le": "2026-10-22T11:05:19.428873+00:00",
+          "reponse_serveur": {
+            "option_id": "opt_5822a29154b3",
+            "prestation_id": "activite-nantes-01",
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_total_cents": 7000,
+            "statut": "active",
+            "expire_le": "2026-10-22T11:05:19.428873+00:00"
+          },
+          "ligne_snapshot": {
+            "prestation_id": "activite-nantes-01",
+            "date": "2026-11-07",
+            "participants": 2
+          }
+        }
+      },
+      {
+        "dossier_id": "5a1e0000-0000-4000-8000-000000000001",
+        "proposition_id": "5a1e0000-0000-4000-8000-0000000000a2",
+        "type": "option",
+        "auteur_id": "systeme",
+        "detail": {
+          "type": "confirmation",
+          "option_id": "opt-1",
+          "ok": true,
+          "reservation_id_simulateur": "res_59fa3ef723b4",
+          "reponse_serveur": {
+            "reservation_id": "res_59fa3ef723b4",
+            "option_id": "opt_5822a29154b3",
+            "prestation_id": "activite-nantes-01",
+            "date": "2026-11-07",
+            "participants": 2,
+            "prix_total_cents": 7000,
+            "statut": "confirmee",
+            "approuve_par": "Alice (campagne)",
+            "confirmee_le": "2026-10-22T10:35:19.448451+00:00"
+          }
+        }
+      }
+    ]
+  }
+}
