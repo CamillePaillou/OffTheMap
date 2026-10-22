@@ -19,12 +19,32 @@ export function premiereFoisDeLaVisite(): boolean {
 /**
  * Joue le saut du O une fois, si `doitSauter()` le dit au montage. La classe est posée directement sur le tracé
  * (aucun rendu de plus) ; rien si l'ordinateur demande moins d'animations.
+ * Le saut attend que la page soit chargée et visible : sinon, sur une machine lente (serveur de développement,
+ * premier chargement), il se jouait pendant le chargement et personne ne le voyait.
  */
 function useSaut(doitSauter: (() => boolean) | undefined) {
   const o = useRef<SVGPathElement>(null);
+  // décidé une seule fois par montage : en développement, React rejoue l'effet, et la marque de visite est déjà posée
+  const decision = useRef<boolean | null>(null);
   useEffect(() => {
     if (!doitSauter || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (doitSauter()) o.current?.classList.add('o-saute');
+    decision.current ??= doitSauter();
+    if (!decision.current) return;
+    let minuterie: number | undefined;
+    const jouer = () => {
+      if (document.visibilityState !== 'visible') return; // onglet en arrière-plan : on attend qu'il soit montré
+      document.removeEventListener('visibilitychange', jouer);
+      window.removeEventListener('load', jouer);
+      minuterie = window.setTimeout(() => o.current?.classList.add('o-saute'), 250); // le temps que la page s'affiche
+    };
+    document.addEventListener('visibilitychange', jouer);
+    if (document.readyState === 'complete') jouer();
+    else window.addEventListener('load', jouer);
+    return () => {
+      document.removeEventListener('visibilitychange', jouer);
+      window.removeEventListener('load', jouer);
+      window.clearTimeout(minuterie);
+    };
   }, [doitSauter]);
   return o;
 }
