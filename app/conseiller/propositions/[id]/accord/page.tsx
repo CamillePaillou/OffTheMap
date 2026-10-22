@@ -83,23 +83,21 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
                 <div><dt className="text-ardoise">Prix du catalogue</dt><dd>{euros(ligne.prix_unitaire_catalogue_cents)} / pers.</dd></div>
                 <div><dt className="text-ardoise">Prix revérifié</dt><dd>{v && v.prix_unitaire_cents !== null ? `${euros(v.prix_unitaire_cents)} / pers.` : 'indisponible'}</dd></div>
                 <div><dt className="text-ardoise">Places restantes</dt><dd>{v && v.places_restantes !== null ? v.places_restantes : 'inconnues'}</dd></div>
-                <div><dt className="text-ardoise">Total de la ligne</dt><dd className=" text-lg font-semibold text-encre">{prix !== null ? euros(prix) : '—'}</dd></div>
+                <div><dt className="text-ardoise">Total de la ligne</dt><dd className="text-lg font-semibold text-encre">{prix !== null ? euros(prix) : '—'}</dd></div>
               </dl>
               {v && <p className="mt-1 text-xs text-ardoise">Vérifié par l’agent à {heure(v.le)}.</p>}
 
               {reservationConfirmee ? (
-                <p className="mt-3 rounded bg-green-50 px-3 py-2 text-sm text-green-800" role="status">Réservation confirmée : {reservationConfirmee.reservation_id_simulateur ?? 'identifiant non renseigné'}.</p>
+                <p className="mt-4 rounded-lg bg-sauge-pale px-3 py-2 text-sm text-sauge" role="status">
+                  Réservation confirmée : {reservationConfirmee.reservation_id_simulateur ?? 'identifiant non renseigné'}.
+                </p>
               ) : optionPosee ? (
                 <>
-                  <p className="mt-3 rounded bg-green-50 px-3 py-2 text-sm text-green-800" role="status">
+                  <p className="mt-4 rounded-lg bg-sauge-pale px-3 py-2 text-sm text-sauge" role="status">
                     Option posée : {optionPosee.option_id_simulateur}. Expiration confirmée par le simulateur : {optionPosee.expire_option_le ? new Date(optionPosee.expire_option_le).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }) : 'non renseignée'}.
                   </p>
                   <BoutonConfirmation propositionId={proposition.id} ligneId={ligne.id} />
                 </>
-              {optionPosee ? (
-                <p className="mt-4 rounded-lg bg-sauge-pale px-3 py-2 text-sm text-sauge" role="status">
-                  Option posée : {optionPosee.option_id_simulateur}. Expiration confirmée par le simulateur : {optionPosee.expire_option_le ? new Date(optionPosee.expire_option_le).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }) : 'non renseignée'}.
-                </p>
               ) : accord ? (
                 <>
                   <p className="mt-4 rounded-lg bg-sauge-pale px-3 py-2 text-sm text-sauge" role="status">
