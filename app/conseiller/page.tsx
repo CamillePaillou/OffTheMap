@@ -44,7 +44,7 @@ async function Apercu() {
     <div className="bo-entre flex max-w-4xl flex-col gap-6">
       <div>
         <h2 className="text-[32px] leading-tight">Bonjour {prenom}</h2>
-        <p className="mt-1 text-ardoise">
+        <p className="mt-1 text-encre-doux">
           {aFaire.length === 0 ? 'Rien ne vous attend : tout avance.' : `${aFaire.length} dossier${aFaire.length > 1 ? 's attendent' : ' attend'} votre réponse.`}{' '}
           {enAttente > 0 && `${enAttente} avance${enAttente > 1 ? 'nt' : ''} sans vous.`}
         </p>
@@ -58,7 +58,7 @@ async function Apercu() {
               <li key={d.dossier_id} className="flex items-center gap-4 py-3">
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="font-semibold">{etape.texte}</span>
-                  <span className="truncate text-sm text-ardoise">
+                  <span className="truncate text-sm text-encre-doux">
                     {d.client.nom} · {d.demande.destination ?? 'destination à proposer'} · {texteDepart(jours)}
                   </span>
                 </span>
@@ -72,13 +72,13 @@ async function Apercu() {
       )}
 
       {aRelancer.length > 0 && (
-        <section aria-labelledby="titre-relancer" className="rounded-[18px] bg-miel-pale p-5 text-[#5c3d0c]">
-          <h3 id="titre-relancer" className="text-base text-[#5c3d0c]!">Clients à relancer ({aRelancer.length})</h3>
+        <section aria-labelledby="titre-relancer" className="rounded-[18px] bg-ciel-pale p-5 text-encre">
+          <h3 id="titre-relancer" className="text-base text-encre!">Clients à relancer ({aRelancer.length})</h3>
           <p className="mt-1 text-sm">
             Propositions envoyées restées sans réponse : relancez le client, puis enregistrez sa réponse. À J+{JOUR_ABANDON}, vous pouvez
             abandonner le dossier depuis la proposition.
           </p>
-          <ul className="mt-3 flex flex-col divide-y divide-[#eedfc2]">
+          <ul className="mt-3 flex flex-col divide-y divide-trait">
             {aRelancer.map((p) => (
               <li key={p.proposition_id} className="flex items-center gap-4 py-3">
                 <span className="flex min-w-0 flex-1 flex-col">
@@ -102,7 +102,7 @@ async function Apercu() {
       <section aria-labelledby="titre-departs">
         <h3 id="titre-departs" className="text-base">Départs des 30 prochains jours</h3>
         {departs.length === 0 ? (
-          <p className="bo-carte mt-3 p-5 text-ardoise">Aucun départ prévu d’ici un mois.</p>
+          <p className="bo-carte mt-3 p-5 text-encre-doux">Aucun départ prévu d’ici un mois.</p>
         ) : (
           <ul className="mt-3 grid grid-cols-3 gap-4">
             {departs.slice(0, 6).map(({ d, jours }) => {
@@ -111,16 +111,16 @@ async function Apercu() {
                 <li key={d.dossier_id}>
                   <Link href={`/conseiller/dossiers/${d.dossier_id}`} className="bo-carte group block overflow-hidden text-encre! no-underline">
                     {photo ? (
-                      <Image src={photo} alt="" width={400} height={240} className="h-28 w-full object-cover transition-transform duration-500 ease-bo group-hover:scale-[1.03]" />
+                      <Image src={photo} alt="" width={400} height={240} className="h-28 w-full object-cover transition-transform duration-500 ease-detour group-hover:scale-[1.03]" />
                     ) : (
-                      <span className="flex h-28 items-center justify-center bg-[#f1eee8] text-sm text-[#7a5a2a]">Destination à proposer</span>
+                      <span className="flex h-28 items-center justify-center bg-ciel-pale text-sm text-encre-doux">Destination à proposer</span>
                     )}
                     <span className="flex flex-col gap-0.5 p-4">
                       <span className="font-semibold">{d.demande.destination ?? 'À proposer'}</span>
-                      <span className="text-sm text-ardoise">
+                      <span className="text-sm text-encre-doux">
                         {d.client.nom} · {jour(d.demande.date_debut)}
                       </span>
-                      <span className={`text-sm ${jours < 15 ? 'font-semibold text-miel-fonce' : 'text-ardoise'}`}>{texteDepart(jours, true)}</span>
+                      <span className={`text-sm ${jours < 15 ? 'font-semibold text-brique-texte' : 'text-encre-doux'}`}>{texteDepart(jours, true)}</span>
                     </span>
                   </Link>
                 </li>

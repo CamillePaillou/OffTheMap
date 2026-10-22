@@ -5,6 +5,7 @@ import { ecartPrix, euros } from '@/src/domain/ecartPrix';
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
 import { Fil } from '../../../../_composants/fil';
+import { dateDeVerification, jourCourt } from '../../../../_composants/libelles';
 import { Ecart } from '../../../../_composants/ecart';
 import { BoutonReverifier } from './bouton-reverifier';
 
@@ -21,7 +22,7 @@ const ARRETS: Record<string, string> = {
 export default function VerificationPage({ params }: Props) {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-      <Suspense fallback={<p className="text-ardoise">Chargement…</p>}>
+      <Suspense fallback={<p className="text-encre-doux">Chargement…</p>}>
         <Contenu params={params} />
       </Suspense>
     </main>
@@ -53,8 +54,8 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
       <div className="mt-3 flex flex-wrap items-end justify-between gap-4 border-b border-trait pb-6">
         <div>
           <h1 className="text-3xl sm:text-4xl">{ligne.prestation.nom}</h1>
-          <p className="mt-1 text-ardoise">
-            {ligne.date} · {ligne.participants} participant{ligne.participants > 1 ? 's' : ''} · réf. {ligne.prestation.id}
+          <p className="mt-1 text-encre-doux">
+            {jourCourt(ligne.date)} · {ligne.participants} participant{ligne.participants > 1 ? 's' : ''} · réf. {ligne.prestation.id}
           </p>
         </div>
         <BoutonReverifier propositionId={id} ligneId={ligne.id} deja={verification !== null} />
@@ -63,7 +64,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
       {!verification ? (
         <div className="bo-carte mt-8 p-6">
           <h2 className="text-xl">Pas encore vérifiée</h2>
-          <p className="mt-2 max-w-2xl text-ardoise">
+          <p className="mt-2 max-w-2xl text-encre-doux">
             L’agent interroge le prestataire et compare son prix à celui de la proposition. Le résultat, la réponse du serveur et chaque étape de
             l’agent s’afficheront ici.
           </p>
@@ -75,7 +76,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
             <Chiffre
               titre="Prix revérifié"
               valeur={verification.prix_unitaire_cents === null ? 'non obtenu' : euros(verification.prix_unitaire_cents)}
-              detail="par personne"
+              detail={`par personne, vérifié ${dateDeVerification(verification.le)}`}
               accent
             />
             <Chiffre titre="Écart par personne" valeur={<Ecart ecart={ecart} />} />
@@ -86,7 +87,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
             <div className="flex flex-col gap-6">
               {verification.resume && (
                 <blockquote className="bo-carte p-5 leading-relaxed">
-                  <p className="text-sm text-ardoise">Conclusion de l’agent</p>
+                  <p className="text-sm text-encre-doux">Conclusion de l’agent</p>
                   <p className="mt-1">« {verification.resume} »</p>
                 </blockquote>
               )}
@@ -96,7 +97,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
                   Étapes de l’agent
                 </h2>
                 <table className="mt-3 w-full min-w-[40rem] text-left text-sm">
-                  <thead className="bg-brume text-ardoise">
+                  <thead className="bg-craie text-encre-doux">
                     <tr>
                       <th scope="col" className="px-4 py-2 font-semibold">Tour</th>
                       <th scope="col" className="px-4 py-2 font-semibold">Appel</th>
@@ -109,14 +110,14 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
                     {verification.trace.map((t) => (
                       <tr key={t.numero} className="align-top">
                         <td className="px-4 py-2">{t.numero}</td>
-                        <td className="px-4 py-2 font-mono text-xs break-all">
+                        <td className="px-4 py-2 text-xs tabular-nums break-all">
                           {t.appel ? `${t.appel.nom}(${JSON.stringify(t.appel.arguments)})` : `conclusion : ${JSON.stringify(t.conclusion)}`}
                         </td>
                         <td className="px-4 py-2">
                           {t.decision.statut}
                           {t.decision.raison && ` : ${t.decision.raison}`}
                           {t.decision.ecarts.map((e) => (
-                            <span key={e.champ} className="block text-xs text-grenade">
+                            <span key={e.champ} className="block text-xs text-brique-texte">
                               {e.champ} : annoncé {String(e.annonce)}, serveur {e.serveur === null ? '—' : String(e.serveur)}
                             </span>
                           ))}
@@ -132,9 +133,9 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
               <details className="bo-carte p-5">
                 <summary className="cursor-pointer font-semibold text-encre">Réponse brute du serveur</summary>
                 {verification.reponse_serveur == null ? (
-                  <p className="mt-3 text-ardoise">Aucune réponse : le serveur n’a pas répondu.</p>
+                  <p className="mt-3 text-encre-doux">Aucune réponse : le serveur n’a pas répondu.</p>
                 ) : (
-                  <pre className="mt-3 overflow-x-auto rounded-lg bg-brume p-4 text-xs">{JSON.stringify(verification.reponse_serveur, null, 2)}</pre>
+                  <pre className="mt-3 overflow-x-auto rounded-lg bg-craie p-4 text-xs">{JSON.stringify(verification.reponse_serveur, null, 2)}</pre>
                 )}
               </details>
             </div>
@@ -161,7 +162,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
 function Info({ terme, valeur }: { terme: string; valeur: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-3 py-2">
-      <dt className="text-ardoise">{terme}</dt>
+      <dt className="text-encre-doux">{terme}</dt>
       <dd className="text-right font-semibold break-all">{valeur}</dd>
     </div>
   );
@@ -170,9 +171,9 @@ function Info({ terme, valeur }: { terme: string; valeur: React.ReactNode }) {
 function Chiffre({ titre, valeur, detail, accent = false }: { titre: string; valeur: React.ReactNode; detail?: string; accent?: boolean }) {
   return (
     <div className={`bo-carte p-4 ${accent ? '' : ''}`}>
-      <dt className="text-sm text-ardoise">{titre}</dt>
-      <dd className="mt-1 text-xl font-semibold text-encre">{valeur}</dd>
-      {detail && <dd className="text-sm text-ardoise">{detail}</dd>}
+      <dt className="text-sm text-encre-doux">{titre}</dt>
+      <dd className="mt-1 font-titre text-2xl font-extrabold tracking-[-0.025em] text-encre">{valeur}</dd>
+      {detail && <dd className="text-sm text-encre-doux">{detail}</dd>}
     </div>
   );
 }

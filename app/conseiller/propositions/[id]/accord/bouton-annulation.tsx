@@ -7,7 +7,7 @@ import { annuler, type EtatAccord } from './actions';
 export function BoutonAnnulation(props: { propositionId: string; ligneId: string }) {
   const [etat, action, enCours] = useActionState<EtatAccord, FormData>(annuler, {});
   return (
-    <form action={action} className="mt-4 flex flex-col items-start gap-2 border-t border-ardoise/20 pt-4">
+    <form action={action} className="mt-4 flex flex-col items-start gap-2 border-t border-encre-doux/20 pt-4">
       <input type="hidden" name="propositionId" value={props.propositionId} />
       <input type="hidden" name="ligneId" value={props.ligneId} />
       <p className="text-sm font-semibold">Annuler cette réservation (libère les places)</p>
@@ -21,8 +21,8 @@ export function BoutonAnnulation(props: { propositionId: string; ligneId: string
       <button type="submit" disabled={enCours} className="bo-btn">
         {enCours ? 'Annulation…' : 'Annuler la réservation'}
       </button>
-      {etat.erreur && <p role="alert" className="text-sm text-grenade">{etat.erreur}</p>}
-      {etat.ok && <p role="status" className="text-sm text-sauge">Réservation annulée par le simulateur. Les places sont libérées.</p>}
+      {etat.erreur && <p role="alert" className="text-sm text-brique-texte">{etat.erreur}</p>}
+      {etat.ok && <p role="status" className="text-sm text-encre">Réservation annulée par le simulateur. Les places sont libérées.</p>}
     </form>
   );
 }

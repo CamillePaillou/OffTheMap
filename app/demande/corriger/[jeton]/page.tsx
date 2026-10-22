@@ -19,7 +19,7 @@ export default function CorrigerPage({ params }: PageProps<'/demande/corriger/[j
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
       <h1 className="text-4xl">Corriger ma demande</h1>
-      <Suspense fallback={<p className="mt-4 text-doux">Chargement…</p>}>
+      <Suspense fallback={<p className="mt-4 text-encre-doux">Chargement…</p>}>
         <Contenu params={params} />
       </Suspense>
     </main>
@@ -48,10 +48,10 @@ async function Contenu({ params }: { params: PageProps<'/demande/corriger/[jeton
   return (
     <>
       <div className="mt-6 grid max-w-6xl gap-6 md:grid-cols-[3fr_2fr]">
-      <section id="points-a-revoir" className="rounded-xl border border-amber-300 border-l-[6px] border-l-amber-500 bg-amber-50 px-5 py-5 text-amber-950">
-        <h2 className="text-xl text-amber-950!">Pourquoi votre conseiller vous recontacte</h2>
+      <section id="points-a-revoir" className="rounded-xl border border-ciel border-l-[6px] border-l-encre bg-ciel-pale px-5 py-5 text-encre">
+        <h2 className="text-xl text-encre!">Pourquoi votre conseiller vous recontacte</h2>
         <p className="mt-2 whitespace-pre-line text-sm">{lecture.motif}</p>
-        <h3 className="mt-4 text-base text-amber-950!">Les points à revoir</h3>
+        <h3 className="mt-4 text-base text-encre!">Les points à revoir</h3>
         <ul className="mt-1 list-inside list-disc text-sm">
           {lecture.champs.map((c) => (
             <li key={c}>
@@ -68,7 +68,7 @@ async function Contenu({ params }: { params: PageProps<'/demande/corriger/[jeton
           <li>Si une information signalée est exacte telle quelle, vous pourrez le confirmer au moment de l’envoi.</li>
           <li>Envoyez : votre conseiller reprend votre demande et vous répond par e-mail.</li>
         </ol>
-        <p className="mt-3 text-doux">Ce lien ne sert qu’une fois et reste valable jusqu’au {expire}.</p>
+        <p className="mt-3 text-encre-doux">Ce lien ne sert qu’une fois et reste valable jusqu’au {expire}.</p>
       </section>
       </div>
       <FormulaireDemande

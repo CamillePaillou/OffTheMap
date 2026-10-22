@@ -21,7 +21,7 @@ export function FormulaireCorrection({ dossierId, valeurs }: { dossierId: string
   const v: ValeursCorrection = { ...valeurs, ...etat.valeurs };
   const erreur = (nom: string) =>
     e[nom] ? (
-      <span id={`${nom}-erreur`} role="alert" className="text-sm text-grenade">
+      <span id={`${nom}-erreur`} role="alert" className="text-sm text-brique-texte">
         {e[nom]}
       </span>
     ) : null;
@@ -31,7 +31,7 @@ export function FormulaireCorrection({ dossierId, valeurs }: { dossierId: string
     // La clé remonte le formulaire quand les valeurs changent : defaultValue n'est lu qu'au montage.
     <form key={JSON.stringify(v)} action={action} noValidate className="mt-4 flex flex-col gap-4">
       {e.formulaire && (
-        <p role="alert" className="rounded-lg bg-grenade-pale px-3 py-2 text-sm text-grenade">
+        <p role="alert" className="rounded-lg bg-brique-pale px-3 py-2 text-sm text-brique-texte">
           {e.formulaire}
         </p>
       )}
@@ -67,7 +67,7 @@ export function FormulaireCorrection({ dossierId, valeurs }: { dossierId: string
           {enCours ? 'Enregistrement…' : 'Enregistrer'}
         </button>
         {etat.enregistre && !enCours && (
-          <span role="status" className="text-sm text-sauge">
+          <span role="status" className="text-sm text-encre">
             Correction enregistrée.
           </span>
         )}
@@ -84,7 +84,7 @@ export function BoutonRelancer({ dossierId }: { dossierId: string }) {
         {enCours ? 'Relance…' : 'Relancer'}
       </button>
       {etat.erreur && (
-        <span role="alert" className="text-sm text-grenade">
+        <span role="alert" className="text-sm text-brique-texte">
           {etat.erreur}
         </span>
       )}
@@ -101,7 +101,7 @@ export function BoutonBrouillon({ dossierId, valideFiche }: { dossierId: string;
         {enCours ? 'Lancement…' : valideFiche ? 'Valider la fiche et générer le brouillon' : 'Générer le brouillon'}
       </button>
       {etat.erreur && !enCours && (
-        <span role="alert" className="text-sm text-grenade">
+        <span role="alert" className="text-sm text-brique-texte">
           {etat.erreur}
         </span>
       )}
@@ -118,7 +118,7 @@ export function BoutonEntretienFait({ dossierId }: { dossierId: string }) {
         {enCours ? 'Enregistrement…' : 'Entretien fait'}
       </button>
       {etat.erreur && !enCours && (
-        <span role="alert" className="text-sm text-grenade">
+        <span role="alert" className="text-sm text-brique-texte">
           {etat.erreur}
         </span>
       )}

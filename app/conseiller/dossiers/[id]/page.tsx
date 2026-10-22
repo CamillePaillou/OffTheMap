@@ -31,7 +31,7 @@ const REGIME: Record<string, string> = {
 // Fiche d'un dossier (E2.1) : la demande du client, la fiche de l'IA, le tri (E3.1) et ce que le conseiller corrige après l'entretien.
 export default function DossierPage({ params }: Props) {
   return (
-    <Suspense fallback={<p className="px-9 pt-7 text-ardoise">Chargement…</p>}>
+    <Suspense fallback={<p className="px-9 pt-7 text-encre-doux">Chargement…</p>}>
       <Contenu params={params} />
     </Suspense>
   );
@@ -79,7 +79,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   const nuits = demande.dates.nb_nuits;
 
   // le bloc « Maintenant » : ce qu'il faut faire, avec l'action sur place ; sa couleur dit qui doit agir
-  const ton = enErreur ? 'bg-grenade-pale' : etape.acteur === 'conseiller' ? 'bg-pervenche-pale' : etape.acteur === 'client' ? 'bg-miel-pale' : 'bg-white';
+  const ton = enErreur ? 'bg-brique-pale' : etape.acteur === 'conseiller' ? 'bg-ciel' : etape.acteur === 'client' ? 'bg-ciel-pale' : 'bg-carte';
   const titreMaintenant = enErreur ? 'La fiche n’a pas pu être préparée' : etape.acteur === null ? 'Dossier clos' : etape.texte;
 
   return (
@@ -95,21 +95,21 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
         {photo ? (
           <Image src={photo} alt="" width={600} height={400} priority className="h-[200px] w-full rounded-2xl object-cover sm:w-[300px]" />
         ) : (
-          <div className="flex h-[200px] w-full items-center justify-center rounded-2xl bg-[#f1eee8] p-6 text-center text-[#7a5a2a] sm:w-[300px]">
+          <div className="flex h-[200px] w-full items-center justify-center rounded-2xl bg-ciel-pale p-6 text-center text-encre-doux sm:w-[300px]">
             Destination à proposer après l’entretien
           </div>
         )}
         <div className="min-w-0 flex-[1_1_320px] pb-2 sm:pb-0">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-ardoise">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-encre-doux">
             <span>
               {demande.client.nom} · {nbVoyageurs} voyageur{nbVoyageurs > 1 ? 's' : ''}
             </span>
             <PastilleStatut statut={dossier.statut} />
           </div>
-          <h1 id="titre-sejour" className="mt-1.5 text-[32px] leading-tight tracking-[-0.02em] sm:text-[40px]">
+          <h1 id="titre-sejour" className="mt-1.5 text-[32px] leading-tight tracking-[-0.025em] sm:text-[40px]">
             {demande.destination ? `Paris → ${demande.destination}` : 'Destination à proposer'}
           </h1>
-          <p className="mt-1.5 text-ardoise">
+          <p className="mt-1.5 text-encre-doux">
             {jour(demande.dates.debut)} → {jour(demande.dates.fin)} · {nuits} nuit{nuits > 1 ? 's' : ''}
           </p>
           <div className="mt-6">
@@ -127,7 +127,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
         </div>
         {enErreur ? (
           <>
-            <p className="mt-1 text-sm text-[#5a2a26]">{fiche?.erreur ?? 'Le service de résumé n’a pas répondu.'} La demande du client est intacte.</p>
+            <p className="mt-1 text-sm text-brique-texte">{fiche?.erreur ?? 'Le service de résumé n’a pas répondu.'} La demande du client est intacte.</p>
             {dossier.statut === 'erreur' && (
               <div className="mt-4">
                 <BoutonRelancer dossierId={dossier.dossier_id} />
@@ -147,11 +147,11 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
               <BoutonBrouillon dossierId={dossier.dossier_id} valideFiche={dossier.statut === 'entretien_fait'} />
             </div>
           ) : (
-            <p className="mt-1 text-sm text-[#3d4570]">Renseignez le budget réel et les dates fixes dans « Après l’entretien », plus bas, pour générer le brouillon.</p>
+            <p className="mt-1 text-sm text-encre">Renseignez le budget réel et les dates fixes dans « Après l’entretien », plus bas, pour générer le brouillon.</p>
           )
         ) : (
           <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
-            <p className="text-sm text-[#3d4570]">
+            <p className="text-sm text-encre">
               {derniere
                 ? `Proposition version ${derniere.version} : ${STATUT_PROPOSITION[derniere.statut].toLowerCase()}${derniere.total_cents !== null ? `, ${euros(derniere.total_cents)}` : ''}.`
                 : etape.acteur === 'client'
@@ -178,30 +178,30 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="bo-carte px-5 py-4">
-          <p className="text-sm text-ardoise">{total !== null ? 'Total proposé' : fiche?.budget_reel_cents != null ? 'Budget réel' : 'Budget annoncé'}</p>
-          <p className="mt-1.5 text-[28px] font-semibold">{total !== null ? euros(total) : budget !== null ? euros(budget) : 'Non précisé'}</p>
+          <p className="text-sm text-encre-doux">{total !== null ? 'Total proposé' : fiche?.budget_reel_cents != null ? 'Budget réel' : 'Budget annoncé'}</p>
+          <p className="mt-1.5 font-titre text-[28px] font-extrabold tracking-[-0.025em]">{total !== null ? euros(total) : budget !== null ? euros(budget) : 'Non précisé'}</p>
           {part !== null && (
             <>
-              <div aria-hidden className="mt-3 h-1.5 overflow-hidden rounded-full bg-brume">
-                <div className={`bo-glisse h-full rounded-full ${part > 100 ? 'bg-grenade' : 'bg-miel'}`} style={{ width: `${Math.min(part, 100)}%` }} />
+              <div aria-hidden className="mt-3 h-1.5 overflow-hidden rounded-full bg-craie">
+                <div className={`bo-glisse h-full rounded-full ${part > 100 ? 'bg-brique' : 'bg-encre'}`} style={{ width: `${Math.min(part, 100)}%` }} />
               </div>
-              <p className={`mt-1.5 text-[13px] ${part > 100 ? 'font-semibold text-grenade' : 'text-ardoise'}`}>
+              <p className={`mt-1.5 text-[13px] ${part > 100 ? 'font-semibold text-brique-texte' : 'text-encre-doux'}`}>
                 {part} % du budget de {euros(budget!)}
               </p>
             </>
           )}
-          {part === null && <p className="mt-1.5 text-[13px] text-ardoise">{budget === null ? 'À demander pendant l’entretien' : 'Pour tout le groupe'}</p>}
+          {part === null && <p className="mt-1.5 text-[13px] text-encre-doux">{budget === null ? 'À demander pendant l’entretien' : 'Pour tout le groupe'}</p>}
         </div>
         <div className="bo-carte px-5 py-4">
-          <p className="text-sm text-ardoise">Départ</p>
+          <p className="text-sm text-encre-doux">Départ</p>
           <p className="mt-1.5 text-[28px] font-semibold">
             <Depart jours={jours} ouvert={ouvert} long />
           </p>
-          <p className="mt-1.5 text-[13px] text-ardoise">{jour(demande.dates.debut)}</p>
+          <p className="mt-1.5 text-[13px] text-encre-doux">{jour(demande.dates.debut)}</p>
         </div>
         <div className="bo-carte px-5 py-4">
-          <p className="text-sm text-ardoise">Envies</p>
-          <p className="mt-2 line-clamp-3 leading-relaxed">{demande.envies ? `« ${demande.envies} »` : <span className="text-ardoise">Non précisées</span>}</p>
+          <p className="text-sm text-encre-doux">Envies</p>
+          <p className="mt-2 line-clamp-3 leading-relaxed">{demande.envies ? `« ${demande.envies} »` : <span className="text-encre-doux">Non précisées</span>}</p>
         </div>
       </div>
 
@@ -210,15 +210,15 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
           <section aria-labelledby="titre-demande" className="bo-carte p-5 sm:p-6">
             <h2 id="titre-demande" className="text-base">Demande du client</h2>
             <dl className="mt-4 grid gap-x-6 gap-y-2.5 text-sm sm:grid-cols-[9rem_1fr]">
-              <dt className="text-ardoise">E-mail</dt>
+              <dt className="text-encre-doux">E-mail</dt>
               <dd>{demande.client.email}</dd>
-              <dt className="text-ardoise">Voyageurs</dt>
+              <dt className="text-encre-doux">Voyageurs</dt>
               <dd>{voyageurs(demande.voyageurs)}</dd>
-              <dt className="text-ardoise">Budget annoncé</dt>
+              <dt className="text-encre-doux">Budget annoncé</dt>
               <dd>{demande.budget_annonce ? `${euros(demande.budget_annonce.montant_cents)} pour le groupe` : 'non précisé'}</dd>
-              <dt className="text-ardoise">Contraintes</dt>
+              <dt className="text-encre-doux">Contraintes</dt>
               <dd className="whitespace-pre-line">{demande.contraintes ?? '—'}</dd>
-              <dt className="text-ardoise">Reçue le</dt>
+              <dt className="text-encre-doux">Reçue le</dt>
               <dd>
                 {instantParis(dossier.cree_le)}
                 {demande.version > 1 && ` (version ${demande.version})`}
@@ -229,39 +229,39 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
           <section aria-labelledby="titre-fiche" className="bo-carte p-5 sm:p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 id="titre-fiche" className="text-base">Fiche</h2>
-              {fiche && <span className="text-sm text-ardoise">{ETAT_FICHE[fiche.etat]}</span>}
+              {fiche && <span className="text-sm text-encre-doux">{ETAT_FICHE[fiche.etat]}</span>}
             </div>
             {!fiche ? (
-              <p className="mt-2 text-ardoise">{dossier.statut === 'fiche_en_cours' ? 'En préparation…' : 'La fiche n’a pas encore été préparée.'}</p>
+              <p className="mt-2 text-encre-doux">{dossier.statut === 'fiche_en_cours' ? 'En préparation…' : 'La fiche n’a pas encore été préparée.'}</p>
             ) : (
               <>
                 {fiche.points_flous.length > 0 && (
-                  <div className="mt-4 rounded-[14px] bg-miel-pale px-4 py-3 text-sm text-[#5c3d0c]">
+                  <div className="mt-4 rounded-[14px] bg-ciel-pale px-4 py-3 text-sm text-encre">
                     <p className="font-semibold">Points flous à éclaircir</p>
                     <Liste items={fiche.points_flous} />
                   </div>
                 )}
                 <dl className="mt-4 grid gap-x-6 gap-y-2.5 text-sm sm:grid-cols-[9rem_1fr]">
-                  <dt className="text-ardoise">Envies</dt>
+                  <dt className="text-encre-doux">Envies</dt>
                   <dd><Liste items={fiche.envies} /></dd>
-                  <dt className="text-ardoise">Contraintes</dt>
+                  <dt className="text-encre-doux">Contraintes</dt>
                   <dd><Liste items={fiche.contraintes} /></dd>
-                  <dt className="text-ardoise">Régimes</dt>
+                  <dt className="text-encre-doux">Régimes</dt>
                   <dd>{fiche.regimes.length ? fiche.regimes.map((r) => REGIME[r]).join(', ') : 'aucun'}</dd>
-                  <dt className="text-ardoise">Mobilité</dt>
+                  <dt className="text-encre-doux">Mobilité</dt>
                   <dd>{fiche.mobilite === 'reduite' ? 'réduite' : 'sans contrainte signalée'}</dd>
-                  <dt className="text-ardoise">Niveau physique</dt>
+                  <dt className="text-encre-doux">Niveau physique</dt>
                   <dd>{fiche.niveau_physique ?? '—'}</dd>
-                  <dt className="text-ardoise">Décision</dt>
+                  <dt className="text-encre-doux">Décision</dt>
                   <dd>
                     {fiche.decision ? DECISION[fiche.decision] : 'pas encore triée'}
-                    {fiche.validee_le && <span className="text-ardoise"> · {instantParis(fiche.validee_le)}</span>}
+                    {fiche.validee_le && <span className="text-encre-doux"> · {instantParis(fiche.validee_le)}</span>}
                   </dd>
                 </dl>
 
                 <div className="mt-6 border-t border-trait pt-5">
                   <h3 className="text-base">Après l’entretien</h3>
-                  <p className="mt-1 text-sm text-ardoise">Ces champs sont gardés si la fiche est régénérée.</p>
+                  <p className="mt-1 text-sm text-encre-doux">Ces champs sont gardés si la fiche est régénérée.</p>
                   <FormulaireCorrection
                     dossierId={dossier.dossier_id}
                     valeurs={{
@@ -285,11 +285,11 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
               <ul className="mt-2 flex flex-col">
                 {[...dossier.propositions].reverse().map((p) => (
                   <li key={p.id}>
-                    <Link href={`/conseiller/propositions/${p.id}`} className="-mx-2 flex items-center justify-between gap-3 rounded-[10px] px-2 py-2.5 text-sm text-encre! no-underline transition-colors hover:bg-brume">
+                    <Link href={`/conseiller/propositions/${p.id}`} className="-mx-2 flex items-center justify-between gap-3 rounded-[10px] px-2 py-2.5 text-sm text-encre! no-underline transition-colors hover:bg-craie">
                       <span className="font-semibold">Version {p.version}</span>
                       <span className="text-right">
                         <span className="block">{STATUT_PROPOSITION[p.statut]}</span>
-                        <span className="text-ardoise">{p.total_cents === null ? 'total à calculer' : euros(p.total_cents)}</span>
+                        <span className="text-encre-doux">{p.total_cents === null ? 'total à calculer' : euros(p.total_cents)}</span>
                       </span>
                     </Link>
                   </li>
@@ -327,9 +327,9 @@ function Historique({ evenements }: { evenements: DetailDossier['historique'] })
     <ol className="flex flex-col gap-3 text-sm">
       {items.map((h, i) => (
         <li key={i} className="flex flex-col">
-          <span className="text-[13px] text-ardoise">{instantParis(h.date)}</span>
+          <span className="text-[13px] text-encre-doux">{instantParis(h.date)}</span>
           <span>
-            {evenement(h)} <span className="text-ardoise">· {h.auteur_nom ?? 'système'}</span>
+            {evenement(h)} <span className="text-encre-doux">· {h.auteur_nom ?? 'système'}</span>
           </span>
         </li>
       ))}
@@ -340,7 +340,7 @@ function Historique({ evenements }: { evenements: DetailDossier['historique'] })
       {liste(evenements.slice(0, HISTORIQUE_VISIBLE))}
       {evenements.length > HISTORIQUE_VISIBLE && (
         <details className="mt-3">
-          <summary className="cursor-pointer text-sm font-semibold text-pervenche-fonce">Voir les {evenements.length - HISTORIQUE_VISIBLE} événements plus anciens</summary>
+          <summary className="cursor-pointer text-sm font-semibold text-encre">Voir les {evenements.length - HISTORIQUE_VISIBLE} événements plus anciens</summary>
           <div className="mt-3">{liste(evenements.slice(HISTORIQUE_VISIBLE))}</div>
         </details>
       )}

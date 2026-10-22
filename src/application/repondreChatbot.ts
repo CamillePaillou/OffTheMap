@@ -87,10 +87,10 @@ export interface DependancesChatbot {
 
 export const MESSAGES_FIXES = {
   nonVerifie:
-    'Je n’ai pas pu joindre nos prestataires à l’instant, donc rien de vérifié. Décrivez votre week-end : un conseiller vérifiera pour vous et vous répondra par e-mail.',
+    'Je n’ai pas pu joindre nos prestataires à l’instant, donc rien de vérifié. Composez votre week-end : un conseiller vérifiera pour vous et vous répondra par e-mail.',
   modeleIndisponible:
-    'L’assistant ne répond pas pour le moment. Vous pouvez décrire votre week-end directement : un conseiller vous répondra par e-mail.',
-  tropDOutils: 'Je n’ai pas réussi à tout vérifier. Décrivez votre week-end : un conseiller s’en occupe et vous répond par e-mail.',
+    'L’assistant ne répond pas pour le moment. Vous pouvez composer votre week-end directement : un conseiller vous répondra par e-mail.',
+  tropDOutils: 'Je n’ai pas réussi à tout vérifier. Composez votre week-end : un conseiller s’en occupe et vous répond par e-mail.',
 } as const;
 
 /**

@@ -24,7 +24,7 @@ export function FormulaireConnexion({ suite, erreurInitiale }: { suite: string; 
         />
       </label>
       {etat.erreur && (
-        <p role="alert" className="rounded-[10px] bg-grenade-pale px-3 py-2 text-sm text-grenade">
+        <p role="alert" className="rounded-[10px] bg-brique-pale px-3 py-2 text-sm text-brique-texte">
           {etat.erreur}
         </p>
       )}

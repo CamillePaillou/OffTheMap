@@ -6,10 +6,10 @@ import { STATUT_DOSSIER } from './libelles';
  * pastilles : la couleur suit le groupe, le libellé exact reste écrit (jamais la couleur seule).
  */
 export const GROUPES = [
-  { id: 'a_trier', libelle: 'À trier', statuts: ['nouvelle', 'fiche_en_cours', 'fiche_prete', 'erreur'], ton: 'bg-pervenche-pale text-pervenche-fonce' },
-  { id: 'attente_client', libelle: 'En attente du client', statuts: ['a_corriger', 'rdv_propose'], ton: 'bg-miel-pale text-miel-fonce' },
-  { id: 'en_cours', libelle: 'En cours', statuts: ['validee', 'entretien_fait', 'en_proposition'], ton: 'bg-pervenche-pale text-pervenche-fonce' },
-  { id: 'clos', libelle: 'Clos', statuts: ['gagnee', 'refusee', 'abandonnee'], ton: 'bg-brume text-ardoise' },
+  { id: 'a_trier', libelle: 'À trier', statuts: ['nouvelle', 'fiche_en_cours', 'fiche_prete', 'erreur'], ton: 'bg-ciel text-encre' },
+  { id: 'attente_client', libelle: 'En attente du client', statuts: ['a_corriger', 'rdv_propose'], ton: 'bg-encre/[0.07] text-encre' },
+  { id: 'en_cours', libelle: 'En cours', statuts: ['validee', 'entretien_fait', 'en_proposition'], ton: 'bg-ciel text-encre' },
+  { id: 'clos', libelle: 'Clos', statuts: ['gagnee', 'refusee', 'abandonnee'], ton: 'bg-encre/[0.07] text-encre-doux' },
 ] as const satisfies readonly { id: string; libelle: string; statuts: readonly StatutDossier[]; ton: string }[];
 
 export const groupeDe = (s: StatutDossier) => GROUPES.find((g) => (g.statuts as readonly string[]).includes(s))!;
@@ -17,7 +17,7 @@ export const groupeDe = (s: StatutDossier) => GROUPES.find((g) => (g.statuts as 
 export function PastilleStatut({ statut }: { statut: StatutDossier }) {
   const g = groupeDe(statut);
   return (
-    <span className={`bo-puce ${statut === 'erreur' ? 'bg-grenade-pale text-grenade' : statut === 'gagnee' ? 'bg-sauge-pale text-sauge' : g.ton}`}>
+    <span className={`bo-puce ${statut === 'erreur' ? 'bg-brique-pale text-brique-texte' : statut === 'gagnee' ? 'bg-encre text-craie' : g.ton}`}>
       {STATUT_DOSSIER[statut]}
     </span>
   );
@@ -38,19 +38,19 @@ const POSITION: Partial<Record<StatutDossier, number>> = {
 export function Avancement({ statut }: { statut: StatutDossier }) {
   const position = POSITION[statut];
   if (position === undefined)
-    return <p className="rounded-[14px] bg-brume px-4 py-3 text-ardoise">Dossier clos : {STATUT_DOSSIER[statut].toLowerCase()}.</p>;
+    return <p className="rounded-[14px] bg-craie px-4 py-3 text-encre-doux">Dossier clos : {STATUT_DOSSIER[statut].toLowerCase()}.</p>;
   // points et libellés placés au même pourcentage : chaque libellé est sous son point (sur téléphone, l'étape actuelle seule)
   const place = (i: number) => (i === 0 ? 'translate-x-0' : i === 4 ? '-translate-x-full' : '-translate-x-1/2');
   return (
     <div>
       <div aria-hidden className="relative h-[18px]">
         <div className="absolute inset-x-0 top-2 h-0.5 bg-trait" />
-        <div className="bo-glisse absolute left-0 top-2 h-0.5 bg-pervenche" style={{ width: `${(position / 4) * 100}%` }} />
+        <div className="bo-glisse absolute left-0 top-2 h-0.5 bg-encre" style={{ width: `${(position / 4) * 100}%` }} />
         {ETAPES_DOSSIER.map((e, i) => (
           <span
             key={e}
             style={{ left: `${(i / 4) * 100}%` }}
-            className={`bo-glisse absolute top-1/2 box-border -translate-y-1/2 rounded-full border-[3px] ${place(i)} ${i === position ? 'size-[18px] border-pervenche bg-white' : i < position ? 'size-3 border-pervenche bg-pervenche' : 'size-3 border-trait bg-white'}`}
+            className={`bo-glisse absolute top-1/2 box-border -translate-y-1/2 rounded-full border-[3px] ${place(i)} ${i === position ? 'size-[18px] border-encre bg-carte' : i < position ? 'size-3 border-encre bg-encre' : 'size-3 border-trait bg-carte'}`}
           />
         ))}
       </div>
@@ -60,7 +60,7 @@ export function Avancement({ statut }: { statut: StatutDossier }) {
             key={e}
             aria-current={i === position ? 'step' : undefined}
             style={{ left: `${(i / 4) * 100}%` }}
-            className={`absolute top-0 whitespace-nowrap ${place(i)} ${i === position ? 'font-semibold text-pervenche-fonce' : 'hidden text-ardoise sm:block'}`}
+            className={`absolute top-0 whitespace-nowrap ${place(i)} ${i === position ? 'font-semibold text-encre' : 'hidden text-encre-doux sm:block'}`}
           >
             {e}
             <span className="sr-only">{i < position ? ' (fait)' : i === position ? ' (étape actuelle)' : ' (à venir)'}</span>
@@ -150,9 +150,9 @@ function etapeProposition(p?: { statut: StatutProposition; lignes_a_verifier?: n
 }
 
 const ACTEUR: Record<Exclude<Acteur, null>, { libelle: string; ton: string }> = {
-  conseiller: { libelle: 'À vous', ton: 'bg-pervenche-pale text-pervenche-fonce' },
-  client: { libelle: 'Client', ton: 'bg-miel-pale text-miel-fonce' },
-  systeme: { libelle: 'Auto', ton: 'bg-brume text-ardoise' },
+  conseiller: { libelle: 'À vous', ton: 'bg-encre text-craie' },
+  client: { libelle: 'Client', ton: 'bg-ciel text-encre' },
+  systeme: { libelle: 'Auto', ton: 'bg-encre/[0.07] text-encre-doux' },
 };
 
 /** La pastille seule : « À vous », « Client » ou « Auto ». */
@@ -164,12 +164,12 @@ export function PastilleActeur({ acteur }: { acteur: Acteur }) {
 
 /** « À vous · Trier la demande » : qui agit, puis quoi. */
 export function ProchaineEtape({ etape }: { etape: Etape }) {
-  if (!etape.acteur) return <span className="text-ardoise">—</span>;
+  if (!etape.acteur) return <span className="text-encre-doux">—</span>;
   const a = ACTEUR[etape.acteur];
   return (
     <span className="inline-flex items-center gap-2">
       <span className={`bo-puce ${a.ton}`}>{a.libelle}</span>
-      <span className={etape.acteur === 'conseiller' ? 'font-semibold text-encre' : 'text-ardoise'}>{etape.texte}</span>
+      <span className={etape.acteur === 'conseiller' ? 'font-semibold text-encre' : 'text-encre-doux'}>{etape.texte}</span>
     </span>
   );
 }
@@ -180,11 +180,11 @@ export function joursAvantDepart(dateDebut: string, maintenant = new Date()): nu
   return Math.round((Date.parse(`${dateDebut}T00:00:00Z`) - Date.parse(`${aujourdhui}T00:00:00Z`)) / 86_400_000);
 }
 
-/** « dans 12 j » ; en miel sous 15 jours pour un dossier encore ouvert : le temps de réserver se réduit. */
+/** « dans 12 j » ; en brique sous 15 jours pour un dossier encore ouvert : le temps de réserver se réduit. */
 export const texteDepart = (jours: number, long = false) =>
   jours < 0 ? 'départ passé' : jours === 0 ? 'aujourd’hui' : long ? `dans ${jours} jour${jours > 1 ? 's' : ''}` : `dans ${jours} j`;
 
 export function Depart({ jours, ouvert, long = false }: { jours: number; ouvert: boolean; long?: boolean }) {
   const proche = ouvert && jours >= 0 && jours < 15;
-  return <span className={proche ? 'font-semibold text-miel-fonce' : ''}>{texteDepart(jours, long)}</span>;
+  return <span className={proche ? 'font-semibold text-brique-texte' : ''}>{texteDepart(jours, long)}</span>;
 }

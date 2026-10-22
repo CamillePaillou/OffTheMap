@@ -18,7 +18,7 @@ Briques réutilisées : port `ModeleAgent` et adaptateur OpenRouter (E0.13, E0.1
 2. Le serveur minimise chaque message (`minimiser`) puis appelle le modèle avec deux outils.
 3. Le code valide chaque appel d'outil avant de toucher au simulateur, puis renvoie au modèle un résultat **sans prix ni nombre de places**.
 4. La réponse du modèle passe par `sansPrix`, puis repart vers le navigateur avec, s'il y a lieu, le résultat de la vérification et une suggestion de préremplissage.
-5. Le bouton « Décrire mon week-end » ouvre `/demande?destination=…&date_debut=…&adultes=…` ; la page contrôle ces valeurs, le client relit et complète.
+5. Le bouton « Composer mon week-end » ouvre `/demande?destination=…&date_debut=…&adultes=…` ; la page contrôle ces valeurs, le client relit et complète.
 
 ## Outils
 

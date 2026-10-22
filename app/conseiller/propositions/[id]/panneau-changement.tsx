@@ -13,7 +13,7 @@ export function PanneauChangement({ propositionId, version }: { propositionId: s
     <details className="bo-carte p-5" open={etat.erreur !== undefined}>
       <summary className="cursor-pointer font-semibold text-encre">Le client demande un changement</summary>
       <form action={action} className="mt-3 flex flex-col gap-2">
-        <p className="text-sm text-ardoise">
+        <p className="text-sm text-encre-doux">
           La version {version} reste telle qu’elle a été envoyée. Une version {version + 1} est créée à partir d’elle : ses lignes
           repartent « à vérifier », au prix actuel du catalogue.
         </p>
@@ -24,7 +24,7 @@ export function PanneauChangement({ propositionId, version }: { propositionId: s
             rows={3}
             maxLength={1000}
             defaultValue={etat.motif}
-            className="rounded-lg border border-[#d5d9df] bg-white px-3 py-2"
+            className="bo-champ"
             {...(etat.erreur ? { 'aria-invalid': true, 'aria-describedby': 'motif-erreur' } : {})}
           />
         </label>
@@ -32,7 +32,7 @@ export function PanneauChangement({ propositionId, version }: { propositionId: s
           {enCours ? 'Création…' : `Créer la version ${version + 1}`}
         </button>
         {etat.erreur && (
-          <p id="motif-erreur" role="alert" className="text-sm text-grenade">
+          <p id="motif-erreur" role="alert" className="text-sm text-brique-texte">
             {etat.erreur}
           </p>
         )}

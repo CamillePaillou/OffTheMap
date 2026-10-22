@@ -1,95 +1,84 @@
 @import "tailwindcss";
 
 /*
- * DÉTOUR : logo et couleurs du site de l'agence (dépôt PANDORMedia/detour), nuancés ; typographie et agencement
- * repensés. Fil conducteur : « la ligne », un plan de ligne de train qui montre où l'on en est.
- * Contrastes vérifiés par lib/design.test.ts (texte ≥ 4,5:1).
+ * DÉTOUR, charte 2026 (brief client « Nous avons changé de visage », brand kit PANDORMedia/detour, branche
+ * rebrand-2026, dossier brand-2026/). Une seule identité pour le site public et l'espace conseiller, pas de mode sombre.
+ * Encre et craie font le travail ; le jaune est réservé au O (logo et saut typographique) : un accent par écran.
+ * Contrastes vérifiés par lib/design.test.ts. Écarts à la charte : docs/specs/design.md, « Écarts ».
  */
 :root {
-  --detour-nuit: #0e4a6e; /* titres, texte fort, boutons secondaires */
-  --detour-bleu: #1a7fb5; /* bleu du logo : liens, état actif, ligne parcourue */
-  --detour-lien: #136a99; /* liens sur blanc */
-  --detour-orange: #ff8a1e; /* orange du logo, nuancé : ligne, repères, jamais sous du texte */
-  --detour-orange-fonce: #ad4d00; /* bouton principal, texte blanc */
-  --detour-fond: #f4f7fa; /* fond froid très clair */
-  --detour-filet: #d9e4ec;
-  --detour-texte: #22313c;
-  --detour-doux: #556673; /* texte secondaire */
-  --detour-ciel: #e8f2f9; /* aplats légers */
-}
+  /* les six couleurs de la charte */
+  --detour-encre: #16233f; /* texte, logo, aplats, bouton principal */
+  --detour-craie: #f6f1e7; /* fond principal */
+  --detour-jaune: #f2b705; /* le O. Jamais une couleur de texte sur fond clair (1,9:1) */
+  --detour-ciel: #bcd3ea; /* fonds secondaires */
+  --detour-brique: #c4553a; /* alertes, prix modifié (aplats, traits) */
+  --detour-ballast: #6b7385; /* texte secondaire en grand, traits, icônes */
 
-/*
- * Espace conseiller : son propre design system, clair et calme (docs/specs/design.md, « Back-office »).
- * Une seule couleur d'action (pervenche) ; la couleur vient des photos des destinations.
- */
-:root {
-  --bo-encre: #1f2430; /* texte */
-  --bo-ardoise: #5b6270; /* texte secondaire */
-  --bo-trait: #e7e9ec; /* bordures */
-  --bo-brume: #f5f6f7; /* fond */
-  --bo-pervenche: #4f5fd6; /* action */
-  --bo-pervenche-fonce: #3a48b8; /* texte d'action, survol */
-  --bo-pervenche-pale: #eef0fb; /* sélection */
-  --bo-miel: #e3a34b; /* jauges (jamais du texte) */
-  --bo-miel-fonce: #8a5a12; /* attente, texte */
-  --bo-miel-pale: #fbf4e6;
-  --bo-sauge: #2f7a52; /* confirmé */
-  --bo-sauge-pale: #e8f3ec;
-  --bo-grenade: #b03a33; /* bloquant */
-  --bo-grenade-pale: #fbedec;
-  --bo-courbe: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* nuances tirées de la charte (brand kit : --muted, --card, --line) ou calculées pour le contraste */
+  --detour-encre-doux: #5b6480; /* texte secondaire courant (« muted » du brand kit) : ballast n'a que 4,2:1 sur craie */
+  --detour-encre-clair: #24365c; /* survol du bouton principal */
+  --detour-carte: #fbf8f1; /* surface posée sur la craie (« card » du brand kit) */
+  --detour-trait: #d2d0cc; /* filets et bordures : encre à 16 % sur craie (« line » du brand kit) */
+  --detour-ciel-pale: #e2e7e8; /* ciel à 35 % sur craie : sélection, pastilles calmes */
+  --detour-brique-texte: #9e3f28; /* brique assombrie pour du texte (≥ 4,5:1) */
+  --detour-brique-pale: #efdbcf; /* brique à 14 % sur craie : fond d'alerte */
+  --detour-craie-sur-encre: #d7dce8; /* texte courant sur l'encre (navigation du brand kit) */
+  --detour-craie-sourde: #aeb6ca; /* texte secondaire sur l'encre (« muted » des bandes encre du brand kit) */
+
+  --detour-courbe: cubic-bezier(0.3, 0.7, 0.4, 1); /* la courbe du saut du O, reprise partout */
 }
 
 @theme inline {
-  --color-encre: var(--bo-encre);
-  --color-ardoise: var(--bo-ardoise);
-  --color-trait: var(--bo-trait);
-  --color-brume: var(--bo-brume);
-  --color-pervenche: var(--bo-pervenche);
-  --color-pervenche-fonce: var(--bo-pervenche-fonce);
-  --color-pervenche-pale: var(--bo-pervenche-pale);
-  --color-miel: var(--bo-miel);
-  --color-miel-fonce: var(--bo-miel-fonce);
-  --color-miel-pale: var(--bo-miel-pale);
-  --color-sauge: var(--bo-sauge);
-  --color-sauge-pale: var(--bo-sauge-pale);
-  --color-grenade: var(--bo-grenade);
-  --color-grenade-pale: var(--bo-grenade-pale);
-  --font-bo: var(--font-instrument), system-ui, sans-serif;
-  --ease-bo: var(--bo-courbe);
-
-  --color-nuit: var(--detour-nuit);
-  --color-bleu: var(--detour-bleu);
-  --color-lien: var(--detour-lien);
-  --color-orange: var(--detour-orange);
-  --color-orange-fonce: var(--detour-orange-fonce);
-  --color-fond: var(--detour-fond);
-  --color-filet: var(--detour-filet);
-  --color-texte: var(--detour-texte);
-  --color-doux: var(--detour-doux);
+  --color-encre: var(--detour-encre);
+  --color-craie: var(--detour-craie);
+  --color-jaune: var(--detour-jaune);
   --color-ciel: var(--detour-ciel);
-  --font-sans: var(--font-atkinson), "Segoe UI", Arial, sans-serif;
-  --font-titre: var(--font-bricolage), "Segoe UI", Arial, sans-serif;
+  --color-brique: var(--detour-brique);
+  --color-ballast: var(--detour-ballast);
+  --color-encre-doux: var(--detour-encre-doux);
+  --color-encre-clair: var(--detour-encre-clair);
+  --color-carte: var(--detour-carte);
+  --color-trait: var(--detour-trait);
+  --color-ciel-pale: var(--detour-ciel-pale);
+  --color-brique-texte: var(--detour-brique-texte);
+  --color-brique-pale: var(--detour-brique-pale);
+  --color-craie-sur-encre: var(--detour-craie-sur-encre);
+  --color-craie-sourde: var(--detour-craie-sourde);
+  --font-sans: var(--font-instrument), "Helvetica Neue", Arial, sans-serif;
+  --font-titre: var(--font-bricolage), "Arial Black", system-ui, sans-serif;
+  --ease-detour: var(--detour-courbe);
 }
 
 @layer base {
   body {
-    color: var(--detour-texte);
-    background: var(--detour-fond);
+    color: var(--detour-encre);
+    background: var(--detour-craie);
+    font-size: 17px;
+    line-height: 1.6;
     font-feature-settings: "tnum" 1; /* chiffres alignés : dates, montants */
   }
+  /* Bricolage Grotesque 600 et 800 : titres, prix, accroches. Minuscules (pas de capitales), approche serrée −2,5 %. */
   h1, h2, h3 {
     font-family: var(--font-titre);
-    color: var(--detour-nuit);
-    letter-spacing: -0.01em;
+    color: var(--detour-encre);
+    letter-spacing: -0.025em;
+    line-height: 1.05;
     text-wrap: balance;
   }
-  h1 { font-weight: 700; line-height: 1.1; }
-  h2, h3 { font-weight: 650; line-height: 1.25; }
-  a { color: var(--detour-lien); }
+  h1, h2 { font-weight: 800; }
+  h3 { font-weight: 600; line-height: 1.2; }
+  a { color: var(--detour-encre); text-underline-offset: 0.2em; }
+  /* focus : un trait encre sur les fonds clairs ; jaune seulement sur l'encre, comme dans le brand kit (jamais de
+     jaune sur fond clair : 1,9:1) */
   :focus-visible {
-    outline: 3px solid var(--detour-orange);
-    outline-offset: 2px;
+    outline: 3px solid var(--detour-encre);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  .sur-encre :focus-visible,
+  .sur-encre:focus-visible {
+    outline-color: var(--detour-jaune);
   }
   @media print {
     body { background: #fff; }
@@ -97,31 +86,60 @@
 }
 
 @layer components {
-  /* bouton principal : une seule action par écran */
+  /*
+   * Le saut typographique : dans un titre ou une accroche (28 px et plus), UN o, celui du mot qui porte l'idée,
+   * monte d'une demi-hauteur et passe en jaune. Un par écran. Composant : app/_composants/saut.tsx.
+   */
+  .saut {
+    position: relative;
+    top: -0.264em;
+    color: var(--detour-jaune);
+  }
+
+  /* bouton principal : une seule action par écran, encre sur craie (brand kit, « site-btn ») */
   .btn-principal {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.5rem;
-    padding: 0.7rem 1.4rem;
-    background: var(--detour-orange-fonce);
-    color: #fff;
-    font-weight: 700;
+    border-radius: 999px;
+    padding: 0.8rem 1.35rem;
+    background: var(--detour-encre);
+    color: var(--detour-craie);
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.2;
     text-decoration: none;
-    box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.18);
+    transition: background-color 150ms var(--detour-courbe), transform 150ms var(--detour-courbe);
   }
-  .btn-principal:hover { background: #8f3f00; color: #fff; }
-  .btn-principal:disabled { opacity: 0.6; }
+  .btn-principal:hover { background: var(--detour-encre-clair); color: var(--detour-craie); }
+  .btn-principal:active { transform: scale(0.98); }
+  .btn-principal:disabled { opacity: 0.55; transform: none; }
+  /* bouton secondaire : contour encre (brand kit, « btn ») */
+  .btn-second {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    padding: 0.7rem 1.2rem;
+    border: 2px solid currentColor;
+    color: var(--detour-encre);
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.2;
+    text-decoration: none;
+    transition: background-color 150ms var(--detour-courbe), color 150ms var(--detour-courbe);
+  }
+  .btn-second:hover { background: var(--detour-encre); color: var(--detour-craie); border-color: var(--detour-encre); }
 
-  /* surface : un panneau blanc posé sur le fond */
+  /* surface : une carte posée sur la craie, sans bordure ni ombre */
   .panneau {
-    background: #fff;
-    border: 1px solid var(--detour-filet);
-    border-radius: 0.75rem;
+    background: var(--detour-carte);
+    border-radius: 16px;
   }
 
-  /* formulaire en ligne de train : chaque bloc est une station, la station se colore quand elle est remplie */
+  /* formulaire en ligne de train : chaque bloc est une station, la station se remplit d'encre quand le bloc est rempli */
   .ligne-formulaire fieldset {
     position: relative;
     padding-left: 2rem;
@@ -134,7 +152,7 @@
     top: 0.9rem;
     bottom: -2rem;
     width: 3px;
-    background: var(--detour-filet);
+    background: var(--detour-trait);
   }
   .ligne-formulaire fieldset:last-of-type::before { display: none; }
   .ligne-formulaire fieldset > legend::before {
@@ -145,69 +163,86 @@
     width: 1.1rem;
     height: 1.1rem;
     border-radius: 999px;
-    background: #fff;
-    border: 3px solid var(--detour-filet);
+    background: var(--detour-craie);
+    border: 3px solid var(--detour-trait);
   }
-  .ligne-formulaire fieldset[data-rempli="true"]::before { background: var(--detour-bleu); }
+  .ligne-formulaire fieldset[data-rempli="true"]::before { background: var(--detour-encre); }
   .ligne-formulaire fieldset[data-rempli="true"] > legend::before {
-    border-color: var(--detour-bleu);
-    background: var(--detour-bleu);
-    box-shadow: inset 0 0 0 3px #fff;
+    border-color: var(--detour-encre);
+    background: var(--detour-encre);
+    box-shadow: inset 0 0 0 3px var(--detour-craie);
   }
   .ligne-formulaire legend {
     font-family: var(--font-titre);
-    font-weight: 650;
-    color: var(--detour-nuit);
+    font-weight: 600;
+    font-size: 1.25rem;
+    letter-spacing: -0.025em;
+    color: var(--detour-encre);
   }
+}
+
+/*
+ * Le saut du O (brand kit, « Mouvement ») : élan, saut, clic, repos, 1,15 s, courbe cubic-bezier(.3, .7, .4, 1),
+ * pivot au pied du O. Joué une fois par visite à l'ouverture du site, et quand un conseiller confirme une
+ * réservation. Jamais en boucle ; coupé si l'ordinateur demande moins d'animations.
+ * Les valeurs sont en unités du dessin du logo (hauteur de capitale 660, saut 330).
+ */
+.o-saute {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: o-saut 1150ms var(--detour-courbe) both;
+}
+@keyframes o-saut {
+  0% { transform: translate(0, 330px) scale(1, 1); }
+  16% { transform: translate(0, 330px) scale(1.08, 0.86); }
+  44% { transform: translate(0, -150px) scale(0.95, 1.07); }
+  64% { transform: translate(0, 12px) scale(1.08, 0.9); }
+  76% { transform: translate(0, -10px) scale(0.98, 1.02); }
+  100% { transform: translate(0, 0) scale(1, 1); }
 }
 
 /* ---------------------------------------------------------------- espace conseiller */
+/* Même charte que le site : la classe `bo` ne règle que la densité d'un outil de travail (texte à 15 px). */
 @layer base {
   .bo {
-    font-family: var(--font-instrument), system-ui, sans-serif;
     font-size: 15px;
-    color: var(--bo-encre);
-    background: var(--bo-brume);
+    line-height: 1.5;
+    color: var(--detour-encre);
+    background: var(--detour-craie);
   }
-  .bo h1, .bo h2, .bo h3 {
-    font-family: inherit;
-    color: var(--bo-encre);
-    font-weight: 600;
-    letter-spacing: -0.01em;
-  }
-  .bo a { color: var(--bo-pervenche-fonce); }
-  .bo :focus-visible { outline: 2px solid var(--bo-pervenche); outline-offset: 2px; }
+  .bo h1, .bo h2 { font-weight: 800; }
 }
 
 @layer components {
-  /* surfaces : plus un élément est grand, plus il est arrondi (10 bouton, 14 ligne, 18 tuile, 22 bloc principal) */
-  .bo-carte { background: #fff; border-radius: 18px; }
-  .bo-bloc { background: #fff; border-radius: 22px; }
+  /* surfaces : plus un élément est grand, plus il est arrondi (10 champ, 14 ligne, 16 tuile, 20 bloc principal) */
+  .bo-carte { background: var(--detour-carte); border-radius: 16px; }
+  .bo-bloc { background: var(--detour-carte); border-radius: 20px; }
   .bo-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-    border-radius: 10px; padding: 0.6rem 1.1rem; font-weight: 600; text-decoration: none;
-    background: var(--bo-pervenche); color: #fff;
-    transition: background-color 150ms var(--bo-courbe), transform 150ms var(--bo-courbe);
+    border-radius: 999px; padding: 0.6rem 1.15rem; font-weight: 600; text-decoration: none;
+    background: var(--detour-encre); color: var(--detour-craie);
+    transition: background-color 150ms var(--detour-courbe), transform 150ms var(--detour-courbe);
   }
-  .bo-btn:hover { background: var(--bo-pervenche-fonce); color: #fff; }
+  .bo-btn:hover { background: var(--detour-encre-clair); color: var(--detour-craie); }
   .bo-btn:active { transform: scale(0.98); }
-  .bo-btn:disabled { background: #b7bdcc; cursor: not-allowed; transform: none; }
+  .bo-btn:disabled { background: var(--detour-ballast); color: var(--detour-craie); cursor: not-allowed; transform: none; opacity: 0.7; }
   .bo-btn-2 {
     display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-    border-radius: 10px; padding: 0.55rem 1rem; text-decoration: none;
-    background: #fff; color: var(--bo-encre); border: 1px solid var(--bo-trait);
-    transition: background-color 150ms var(--bo-courbe);
+    border-radius: 999px; padding: 0.5rem 1rem; text-decoration: none; font-weight: 500;
+    background: transparent; color: var(--detour-encre); border: 1.5px solid var(--detour-encre);
+    transition: background-color 150ms var(--detour-courbe), color 150ms var(--detour-courbe);
   }
-  .bo-btn-2:hover { background: var(--bo-brume); color: var(--bo-encre); }
-  .bo-btn-2:disabled { opacity: 0.55; }
+  .bo-btn-2:hover { background: var(--detour-encre); color: var(--detour-craie); }
+  .bo-btn-2:disabled { opacity: 0.5; }
+  .bo-btn-2:disabled:hover { background: transparent; color: var(--detour-encre); }
   .bo-champ {
-    border-radius: 10px; border: 1px solid #d5d9df; background: #fff; padding: 0.55rem 0.75rem;
-    transition: border-color 150ms var(--bo-courbe);
+    border-radius: 10px; border: 1.5px solid var(--detour-ballast); background: var(--detour-carte); padding: 0.55rem 0.75rem;
+    transition: border-color 150ms var(--detour-courbe);
   }
-  .bo-champ:hover { border-color: var(--bo-ardoise); }
+  .bo-champ:hover { border-color: var(--detour-encre); }
   .bo-puce { display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 13px; font-weight: 600; white-space: nowrap; }
-  .bo-entre { animation: bo-entre 450ms var(--bo-courbe) both; }
-  .bo-glisse { transition: width 600ms var(--bo-courbe), background-color 300ms var(--bo-courbe), border-color 300ms var(--bo-courbe); }
+  .bo-entre { animation: bo-entre 450ms var(--detour-courbe) both; }
+  .bo-glisse { transition: width 600ms var(--detour-courbe), background-color 300ms var(--detour-courbe), border-color 300ms var(--detour-courbe); }
 }
 
 @keyframes bo-entre {
@@ -217,6 +252,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .bo *, .bo { animation: none !important; transition: none !important; }
+  .o-saute { animation: none; }
 }
 
 /* ---------------------------------------------------------------- chatbot du site (E1.3) */

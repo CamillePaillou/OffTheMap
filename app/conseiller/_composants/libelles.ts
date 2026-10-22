@@ -48,5 +48,17 @@ export const euros = (cents: number) => FORMAT_EUROS.format(cents / 100);
 export const jour = (date: string) =>
   new Date(`${date}T12:00:00Z`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 
+/** AAAA-MM-JJ → « sam. 7 nov. » : la date d'une prestation, avec son jour. */
+export const jourCourt = (date: string) =>
+  new Date(`${date}T12:00:00Z`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+/** « le 21/10 à 16:42 » : un prix est toujours daté (charte DÉTOUR, ton de voix). */
+export const dateDeVerification = (instant: string) => {
+  const d = new Date(instant);
+  const jj = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Paris' });
+  const hh = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
+  return `le ${jj} à ${hh}`;
+};
+
 export const instantParis = (instant: string) =>
   new Date(instant).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Paris' });

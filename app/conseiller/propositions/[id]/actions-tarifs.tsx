@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import type { StatutLigne, StatutVerification } from '@/types';
 import { accepter, envoyer, indisponible, remplacer, revoir, saisirTarif, type EtatAction } from './tarifs';
 
-const champ = 'rounded-lg border border-[#d5d9df] bg-white px-2 py-1';
+const champ = 'rounded-lg border-[1.5px] border-ballast bg-carte px-2 py-1';
 const SOURCES = [
   { id: 'telephone', libelle: 'Téléphone' },
   { id: 'mail', libelle: 'Mail' },
@@ -39,7 +39,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
   const erreur = [etatAccepter, etatSaisie, etatIndispo, etatRevoir, etatRemplacer].map((e) => e.erreurs?.formulaire).find(Boolean);
   const e = etatSaisie.erreurs ?? {};
   const v = etatSaisie.valeurs ?? {};
-  const bouton = 'rounded-lg border border-[#d5d9df] bg-white px-2 py-1 text-xs hover:bg-brume disabled:opacity-50';
+  const bouton = 'rounded-full border border-encre/30 bg-carte px-2.5 py-1 text-xs font-medium hover:bg-encre hover:text-craie disabled:opacity-50';
 
   if (statut === 'confirme' || statut === 'indisponible') {
     const er = etatRemplacer.erreurs ?? {};
@@ -50,7 +50,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
           <details open={Object.keys(er).length > 0} className="text-right">
             <summary className="cursor-pointer text-xs underline underline-offset-4">Remplacer la prestation</summary>
             {remplacantes.length === 0 ? (
-              <p className="mt-2 text-xs text-ardoise">Aucune prestation active à cette destination.</p>
+              <p className="mt-2 text-xs text-encre-doux">Aucune prestation active à cette destination.</p>
             ) : (
               <form key={JSON.stringify(vr)} action={actionRemplacer} noValidate className="mt-2 flex flex-col items-end gap-1">
                 <label className="flex items-center gap-1 text-xs">
@@ -66,12 +66,12 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
                     ))}
                   </select>
                 </label>
-                {er.prestationId && <span role="alert" className="text-xs text-grenade">{er.prestationId}</span>}
+                {er.prestationId && <span role="alert" className="text-xs text-brique-texte">{er.prestationId}</span>}
                 <label className="flex items-center gap-1 text-xs">
                   Date
                   <input type="date" name="date" defaultValue={vr.date ?? date} className={champ} aria-invalid={!!er.date} />
                 </label>
-                {er.date && <span role="alert" className="text-xs text-grenade">{er.date}</span>}
+                {er.date && <span role="alert" className="text-xs text-brique-texte">{er.date}</span>}
                 <button type="submit" disabled={remplacerEnCours} className="bo-btn px-2.5! py-1! text-xs">
                   Remplacer (nouvelle ligne à vérifier)
                 </button>
@@ -84,7 +84,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
             Repasser à vérifier
           </button>
         </form>
-        {erreur && <span role="alert" className="text-xs text-grenade">{erreur}</span>}
+        {erreur && <span role="alert" className="text-xs text-brique-texte">{erreur}</span>}
       </div>
     );
   }
@@ -106,7 +106,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
             Prix par personne (€)
             <input name="montant" inputMode="decimal" defaultValue={v.montant} className={`${champ} w-20 text-right`} aria-invalid={!!e.montant} />
           </label>
-          {e.montant && <span role="alert" className="text-xs text-grenade">{e.montant}</span>}
+          {e.montant && <span role="alert" className="text-xs text-brique-texte">{e.montant}</span>}
           <label className="flex items-center gap-1 text-xs">
             Source
             <select name="source" defaultValue={v.source ?? ''} className={champ} aria-invalid={!!e.source}>
@@ -120,7 +120,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
               ))}
             </select>
           </label>
-          {e.source && <span role="alert" className="text-xs text-grenade">{e.source}</span>}
+          {e.source && <span role="alert" className="text-xs text-brique-texte">{e.source}</span>}
           <button type="submit" disabled={saisieEnCours} className="bo-btn px-2.5! py-1! text-xs">
             Confirmer ce tarif
           </button>
@@ -131,7 +131,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
           {verification?.statut === 'indisponible' ? 'Accepter : indisponible' : 'Marquer indisponible'}
         </button>
       </form>
-      {erreur && <span role="alert" className="text-xs text-grenade">{erreur}</span>}
+      {erreur && <span role="alert" className="text-xs text-brique-texte">{erreur}</span>}
     </div>
   );
 }
@@ -153,7 +153,7 @@ export function PanneauEnvoi({ propositionId, bloquants }: { propositionId: stri
         {enCours ? 'Envoi…' : 'Envoyer au client'}
       </button>
       {bloque ? (
-        <div id="envoi-bloque" className="text-sm text-[#5c3d0c]">
+        <div id="envoi-bloque" className="text-sm text-encre">
           <p>Envoi impossible tant que :</p>
           <ul className="list-inside list-disc">
             {raisons.map((r) => (
@@ -162,9 +162,9 @@ export function PanneauEnvoi({ propositionId, bloquants }: { propositionId: stri
           </ul>
         </div>
       ) : (
-        <p className="text-sm text-ardoise">Tous les prix sont vérifiés. L’envoi marque la proposition « envoyée » à votre nom.</p>
+        <p className="text-sm text-encre-doux">Tous les prix sont vérifiés. L’envoi marque la proposition « envoyée » à votre nom.</p>
       )}
-      {etat.erreurs?.formulaire && <p role="alert" className="text-sm text-grenade">{etat.erreurs.formulaire}</p>}
+      {etat.erreurs?.formulaire && <p role="alert" className="text-sm text-brique-texte">{etat.erreurs.formulaire}</p>}
     </form>
   );
 }

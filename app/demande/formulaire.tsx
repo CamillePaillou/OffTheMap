@@ -13,7 +13,7 @@ const REGIMES = [
   { id: 'autre', libelle: 'Autre' },
 ] as const;
 
-const champ = 'rounded-lg border border-[#b7c7d3] bg-white px-3 py-2.5 hover:border-doux';
+const champ = 'rounded-[10px] border-[1.5px] border-ballast bg-carte px-3 py-2.5 hover:border-encre';
 
 const APRES_ENVOI = [
   { libelle: 'Demande envoyée', detail: 'Vous recevez la confirmation à l’écran.' },
@@ -80,19 +80,19 @@ export function FormulaireDemande({
   const faites = OBLIGATOIRES.filter((o) => STATIONS[o]!(courant)).length;
   const aRevoir = (nom: string) => surlignes.includes(nom);
   // champ signalé par le conseiller : bordure et fond ambre, et annonce pour les lecteurs d'écran
-  const c = (nom: string) => (aRevoir(nom) ? `${champ} border-amber-500! bg-amber-50 ring-2 ring-amber-300` : champ);
+  const c = (nom: string) => (aRevoir(nom) ? `${champ} border-encre! bg-ciel-pale ring-2 ring-ciel` : champ);
   const note = (point: ChampCorrigeable) =>
     commentaires[point] ? (
-      <p id={`note-${point}`} className="rounded-lg border-l-4 border-amber-500 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+      <p id={`note-${point}`} className="rounded-lg border-l-4 border-encre bg-ciel-pale px-3 py-2 text-sm text-encre">
         <span className="font-medium">Votre conseiller : </span>
         {commentaires[point]}
       </p>
     ) : null;
   const groupe = (prefixe: string) =>
-    surlignes.some((n) => n.startsWith(prefixe)) ? 'rounded-lg p-3 ring-2 ring-amber-300 bg-amber-50' : '';
+    surlignes.some((n) => n.startsWith(prefixe)) ? 'rounded-lg p-3 ring-2 ring-ciel bg-ciel-pale' : '';
   const erreur = (nom: string) =>
     e[nom] ? (
-      <span id={`${nom}-erreur`} role="alert" className="text-sm font-semibold text-red-700">
+      <span id={`${nom}-erreur`} role="alert" className="text-sm font-semibold text-brique-texte">
         {e[nom]}
       </span>
     ) : null;
@@ -104,7 +104,7 @@ export function FormulaireDemande({
     <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
     <form key={JSON.stringify(v)} action={action} onInput={suivre} onChange={suivre} noValidate className="panneau ligne-formulaire flex flex-col gap-8 p-5 sm:p-8">
       {e.formulaire && (
-        <p role="alert" className="rounded-lg border-l-4 border-red-700 bg-red-50 px-3 py-2 text-sm text-red-800">
+        <p role="alert" className="rounded-lg border-l-4 border-brique bg-brique-pale px-3 py-2 text-sm text-brique-texte">
           {e.formulaire}
         </p>
       )}
@@ -173,7 +173,7 @@ export function FormulaireDemande({
         <legend className="mb-3 text-xl">Budget (facultatif)</legend>
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium">Budget total pour tout le groupe, en euros</span>
-          <span className="text-sm text-doux">Le conseiller compose le séjour dans cette enveloppe, transport compris.</span>
+          <span className="text-sm text-encre-doux">Le conseiller compose le séjour dans cette enveloppe, transport compris.</span>
           <input name="budget_euros" type="number" min={1} step={1} defaultValue={v.budget_euros} className={c('budget_euros')} {...decrit('budget_euros')} />
           {erreur('budget_euros')}
         </label>
@@ -182,7 +182,7 @@ export function FormulaireDemande({
 
       <fieldset data-rempli={rempli('envies')} className="flex flex-col gap-4">
         <legend className="mb-3 text-xl">Vos envies</legend>
-        <p className="text-sm text-doux">N’indiquez ici aucune information de santé : cochez plutôt les cases plus bas.</p>
+        <p className="text-sm text-encre-doux">N’indiquez ici aucune information de santé : cochez plutôt les cases plus bas.</p>
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium">Ce qui vous ferait plaisir</span>
           <textarea name="envies" rows={4} defaultValue={v.envies} className={c('envies')} {...decrit('envies')} />
@@ -199,7 +199,7 @@ export function FormulaireDemande({
 
       <fieldset data-rempli={rempli('besoins')} className="flex flex-col gap-4">
         <legend className="mb-3 text-xl">Alimentation et mobilité (facultatif)</legend>
-        <p className="text-sm text-doux">
+        <p className="text-sm text-encre-doux">
           Elles servent à choisir des repas et des activités adaptés. Le conseiller vous contactera pour les détails.
         </p>
         <div className={`flex flex-wrap gap-4 ${groupe('regime_')}`}>
@@ -238,7 +238,7 @@ export function FormulaireDemande({
       </fieldset>
 
       {etat.inchanges && etat.inchanges.length > 0 && (
-        <div role="alert" className="flex flex-col gap-2 rounded-lg border border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div role="alert" className="flex flex-col gap-2 rounded-lg border border-ciel bg-ciel-pale px-4 py-3 text-sm text-encre">
           <p className="font-medium">Ces points n’ont pas changé : {etat.inchanges.join(', ')}.</p>
           <p>Le conseiller vous a demandé de les revoir. S’ils sont exacts tels quels, confirmez-le avant d’envoyer.</p>
           <label className="flex items-center gap-2">
@@ -250,19 +250,19 @@ export function FormulaireDemande({
 
       {/* sur téléphone, le billet est sous le formulaire : un rappel reste collé en bas pendant la saisie */}
       <div aria-hidden className="sticky bottom-3 z-10 -mx-2 lg:hidden">
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-nuit px-4 py-3 text-sm text-white shadow-[0_8px_24px_rgb(14_74_110/0.3)]">
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-encre px-4 py-3 text-sm text-craie shadow-[0_8px_24px_rgb(22_35_63/0.3)]">
           <span className="truncate font-semibold">Paris → {courant.destination?.trim() || 'à proposer'}</span>
-          <span className="shrink-0 text-[#d8e6f0]">
+          <span className="shrink-0 text-craie-sur-encre">
             {faites} / {OBLIGATOIRES.length} étapes
           </span>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-filet pt-6 sm:flex-row sm:items-center sm:gap-5">
+      <div className="flex flex-col gap-2 border-t border-trait pt-6 sm:flex-row sm:items-center sm:gap-5">
         <button type="submit" disabled={enCours} className="btn-principal self-start text-lg">
           {enCours ? 'Envoi…' : libelleEnvoi}
         </button>
-        <p className="text-sm text-doux">Gratuit et sans engagement.</p>
+        <p className="text-sm text-encre-doux">Gratuit et sans engagement.</p>
       </div>
     </form>
 
@@ -287,23 +287,23 @@ function Billet({ v, faites }: { v: Record<string, string>; faites: number }) {
   const budget = Number(v.budget_euros);
   const ligne = (terme: string, valeur: string | null, vide: string) => (
     <div className="flex justify-between gap-3 py-2">
-      <dt className="text-doux">{terme}</dt>
-      <dd className={`text-right ${valeur ? 'font-semibold text-nuit' : 'text-doux italic'}`}>{valeur || vide}</dd>
+      <dt className="text-encre-doux">{terme}</dt>
+      <dd className={`text-right ${valeur ? 'font-semibold text-encre' : 'text-encre-doux italic'}`}>{valeur || vide}</dd>
     </div>
   );
   return (
-    <section className="overflow-hidden rounded-xl border border-filet bg-white shadow-[0_8px_24px_rgb(14_74_110/0.08)]">
-      <div className="flex items-center justify-between bg-nuit px-5 py-3 text-white">
-        <h2 className="text-lg text-white!">Votre billet</h2>
-        <span className="text-sm text-[#d8e6f0]" aria-live="polite">
+    <section className="overflow-hidden rounded-xl border border-trait bg-carte shadow-[0_8px_24px_rgb(22_35_63/0.08)]">
+      <div className="flex items-center justify-between bg-encre px-5 py-3 text-craie">
+        <h2 className="text-lg text-craie!">Votre billet</h2>
+        <span className="text-sm text-craie-sur-encre" aria-live="polite">
           {faites} / {OBLIGATOIRES.length} étapes obligatoires
         </span>
       </div>
       <div className="px-5 pt-4">
-        <p className="text-sm text-doux">Paris</p>
-        <p className="font-titre text-2xl font-semibold text-nuit">→ {v.destination?.trim() || 'Destination à proposer'}</p>
+        <p className="text-sm text-encre-doux">Paris</p>
+        <p className="font-titre text-2xl font-semibold text-encre">→ {v.destination?.trim() || 'Destination à proposer'}</p>
       </div>
-      <dl className="divide-y divide-dashed divide-filet px-5 pb-2 pt-2 text-sm">
+      <dl className="divide-y divide-dashed divide-trait px-5 pb-2 pt-2 text-sm">
         {ligne('Aller', v.date_debut ? dateLongue(v.date_debut) : null, 'à choisir')}
         {ligne('Retour', v.date_fin ? dateLongue(v.date_fin) : null, 'à choisir')}
         {ligne('Nuits', nuits === null ? null : pluriel(nuits, 'nuit'), 'à préciser')}
@@ -315,10 +315,10 @@ function Billet({ v, faites }: { v: Record<string, string>; faites: number }) {
         {ligne('Budget', budget > 0 ? `${budget.toLocaleString('fr-FR')} € pour le groupe` : null, 'non précisé')}
       </dl>
       {v.envies?.trim() && (
-        <p className="mx-5 mb-4 line-clamp-3 border-t border-filet pt-3 text-sm italic text-texte">« {v.envies.trim()} »</p>
+        <p className="mx-5 mb-4 line-clamp-3 border-t border-trait pt-3 text-sm italic text-encre">« {v.envies.trim()} »</p>
       )}
       {/* talon du billet : perforation */}
-      <div aria-hidden className="h-3 bg-[radial-gradient(circle_at_6px_0,var(--detour-fond)_5px,transparent_6px)] bg-[length:12px_12px] bg-repeat-x" />
+      <div aria-hidden className="h-3 bg-[radial-gradient(circle_at_6px_0,var(--detour-craie)_5px,transparent_6px)] bg-[length:12px_12px] bg-repeat-x" />
     </section>
   );
 }

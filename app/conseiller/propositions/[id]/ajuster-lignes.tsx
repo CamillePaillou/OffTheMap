@@ -3,9 +3,9 @@
 import { startTransition, useActionState } from 'react';
 import { ajouter, ajusterNuits, changerBudget, changerParticipants, modifier, type EtatAction } from './tarifs';
 
-const champ = 'rounded-lg border border-[#d5d9df] bg-white px-2 py-1';
+const champ = 'rounded-lg border border-trait bg-carte px-2 py-1';
 const euros = (cents: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(cents / 100);
-const pastille = 'inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#d5d9df] bg-white text-base font-semibold leading-none text-encre hover:bg-brume disabled:opacity-40';
+const pastille = 'inline-flex h-7 w-7 items-center justify-center rounded-full border border-trait bg-carte text-base font-semibold leading-none text-encre hover:bg-craie disabled:opacity-40';
 
 /** AAAA-MM-JJ → « 7 nov. », sans décalage de fuseau. */
 const jourCourt = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -21,7 +21,7 @@ export function SejourPlusMoins({ propositionId, debut, fin, nuits }: { proposit
   const enCours = moinsEnCours || plusEnCours;
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-      <span className="text-ardoise">Séjour :</span>
+      <span className="text-encre-doux">Séjour :</span>
       <span className="font-semibold text-encre">
         {jourCourt(debut)} → {jourCourt(fin)} · {nuits} nuit{nuits > 1 ? 's' : ''}
       </span>
@@ -35,7 +35,7 @@ export function SejourPlusMoins({ propositionId, debut, fin, nuits }: { proposit
           +
         </button>
       </form>
-      {erreur && <span role="alert" className="text-grenade">{erreur}</span>}
+      {erreur && <span role="alert" className="text-brique-texte">{erreur}</span>}
     </div>
   );
 }
@@ -70,7 +70,7 @@ export function ModifierBudget({ propositionId, budgetCents }: { propositionId: 
         <button type="submit" disabled={enCours} className="bo-btn-2 px-3! py-1! text-xs">
           {enCours ? 'Enregistrement…' : 'Enregistrer'}
         </button>
-        {(e.budget ?? e.formulaire) && <span role="alert" className="w-full text-xs text-grenade">{e.budget ?? e.formulaire}</span>}
+        {(e.budget ?? e.formulaire) && <span role="alert" className="w-full text-xs text-brique-texte">{e.budget ?? e.formulaire}</span>}
       </form>
     </details>
   );
@@ -100,7 +100,7 @@ export function ParticipantsPlusMoins({ propositionId, ligneId, participants, co
           +
         </button>
       </span>
-      {etat.erreurs?.formulaire && <span role="alert" className="text-xs text-grenade">{etat.erreurs.formulaire}</span>}
+      {etat.erreurs?.formulaire && <span role="alert" className="text-xs text-brique-texte">{etat.erreurs.formulaire}</span>}
     </span>
   );
 }
@@ -125,17 +125,17 @@ export function ModifierLigne({ propositionId, ligneId, date, participants, conf
           Date
           <input type="date" name="date" defaultValue={v.date ?? date} className={champ} aria-invalid={!!e.date} />
         </label>
-        {e.date && <span role="alert" className="text-xs text-grenade">{e.date}</span>}
+        {e.date && <span role="alert" className="text-xs text-brique-texte">{e.date}</span>}
         <label className="flex items-center gap-1 text-xs">
           Participants
           <input type="number" name="participants" min={1} max={20} defaultValue={v.participants ?? participants} className={`${champ} w-16 text-right`} aria-invalid={!!e.participants} />
         </label>
-        {e.participants && <span role="alert" className="text-xs text-grenade">{e.participants}</span>}
-        {confirmee && <span className="max-w-56 text-xs text-ardoise">Le tarif confirmé ne vaudra plus : la ligne repassera à vérifier.</span>}
+        {e.participants && <span role="alert" className="text-xs text-brique-texte">{e.participants}</span>}
+        {confirmee && <span className="max-w-56 text-xs text-encre-doux">Le tarif confirmé ne vaudra plus : la ligne repassera à vérifier.</span>}
         <button type="submit" disabled={enCours} className="bo-btn px-2.5! py-1! text-xs">
           {enCours ? 'Enregistrement…' : 'Enregistrer (ligne à vérifier)'}
         </button>
-        {e.formulaire && <span role="alert" className="text-xs text-grenade">{e.formulaire}</span>}
+        {e.formulaire && <span role="alert" className="text-xs text-brique-texte">{e.formulaire}</span>}
       </form>
     </details>
   );
@@ -156,7 +156,7 @@ export function AjouterLigne({ propositionId, prestations, date, participants }:
     <details open={Object.keys(e).length > 0} className="bo-carte mt-4 p-4">
       <summary className="cursor-pointer font-semibold text-encre">Ajouter une prestation</summary>
       {prestations.length === 0 ? (
-        <p className="mt-2 text-sm text-ardoise">Aucune prestation active à cette destination.</p>
+        <p className="mt-2 text-sm text-encre-doux">Aucune prestation active à cette destination.</p>
       ) : (
         <form key={JSON.stringify(v)} action={action} noValidate className="mt-3 flex flex-wrap items-end gap-3 text-sm">
           <label className="flex flex-col gap-1">
@@ -171,22 +171,22 @@ export function AjouterLigne({ propositionId, prestations, date, participants }:
                 </option>
               ))}
             </select>
-            {e.prestationId && <span role="alert" className="text-xs text-grenade">{e.prestationId}</span>}
+            {e.prestationId && <span role="alert" className="text-xs text-brique-texte">{e.prestationId}</span>}
           </label>
           <label className="flex flex-col gap-1">
             Date
             <input type="date" name="date" defaultValue={v.date ?? date} className={champ} aria-invalid={!!e.date} />
-            {e.date && <span role="alert" className="text-xs text-grenade">{e.date}</span>}
+            {e.date && <span role="alert" className="text-xs text-brique-texte">{e.date}</span>}
           </label>
           <label className="flex flex-col gap-1">
             Participants
             <input type="number" name="participants" min={1} max={20} defaultValue={v.participants ?? participants} className={`${champ} w-20 text-right`} aria-invalid={!!e.participants} />
-            {e.participants && <span role="alert" className="text-xs text-grenade">{e.participants}</span>}
+            {e.participants && <span role="alert" className="text-xs text-brique-texte">{e.participants}</span>}
           </label>
           <button type="submit" disabled={enCours} className="bo-btn-2 text-sm">
             {enCours ? 'Ajout…' : 'Ajouter (ligne à vérifier, prix catalogue)'}
           </button>
-          {e.formulaire && <span role="alert" className="w-full text-sm text-grenade">{e.formulaire}</span>}
+          {e.formulaire && <span role="alert" className="w-full text-sm text-brique-texte">{e.formulaire}</span>}
         </form>
       )}
     </details>

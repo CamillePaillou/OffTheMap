@@ -58,6 +58,7 @@ Une nouvelle migration se crée avec `npx supabase migration new <nom>`.
 | `src/domain/chiffrage/chiffrer.ts` | Chiffrage d'une proposition (E4.2) : totaux en centimes, alertes de `propositions.alertes`, envoi bloqué ou non. Un tarif absent lève une erreur, jamais 0 (`docs/specs/chiffrage.md`) |
 | `src/application/repondreChatbot.ts` | Chatbot du site (E1.3) : catalogue et disponibilités du simulateur en lecture seule, sans prix ni donnée personnelle vers le modèle (`docs/specs/chatbot.md`). Essai réel : `make essai-chatbot` |
 | `src/application/verifierPrestation.ts` | Boucle de l'agent de vérification (E8.3) : un seul outil en lecture, 3 tours, prix et places repris du simulateur, trace expurgée (`docs/agent/contrat-agent.md`). Essai réel : `make essai-agent` |
+| `app/globals.css` · `app/_composants/logo.tsx` | Charte DÉTOUR 2026 (brief de rebranding) : six couleurs, Bricolage Grotesque et Instrument Sans, logo tracé depuis le brand kit, saut du O à l'ouverture et à la confirmation d'une réservation (`docs/specs/design.md`, écarts justifiés) |
 | `types/dashboard.ts` · `fixtures/dashboard/` | Payloads du back-office (liste, détail, proposition) et fixtures validées, pour afficher les écrans sans la base (`docs/specs/dashboard.md`) |
 
 `npm test` lance les tests des types (Vitest). Les règles portées par la base se vérifient sur la base locale :

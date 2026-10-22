@@ -12,8 +12,8 @@ export function BoutonOption(props: { propositionId: string; ligneId: string }) 
       <button type="submit" disabled={enCours} className="bo-btn self-start">
         {enCours ? 'Pose de l’option…' : 'Poser l’option'}
       </button>
-      {etat.erreur && <p role="alert" className="text-sm text-grenade">{etat.erreur}</p>}
-      {etat.ok && <p role="status" className="text-sm text-sauge">Option posée. L’expiration affichée provient de la réponse du simulateur.</p>}
+      {etat.erreur && <p role="alert" className="text-sm text-brique-texte">{etat.erreur}</p>}
+      {etat.ok && <p role="status" className="text-sm text-encre">Option posée. L’expiration affichée provient de la réponse du simulateur.</p>}
     </form>
   );
 }

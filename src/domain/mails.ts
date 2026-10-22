@@ -3,7 +3,9 @@
  * Ils s'ouvrent dans la messagerie du conseiller (mailto) : il les relit, les complète et les envoie lui-même,
  * puis marque le mail « envoyé » dans l'application (journal).
  * Règle : rien ne part avec un prix non vérifié. Les mails de proposition et de confirmation n'acceptent que
- * des lignes au tarif confirmé (ou réservées) : sinon `MailImpossibleErreur`.
+ * des lignes au tarif confirmé (ou réservées) et datées : sinon `MailImpossibleErreur`.
+ * Ton de voix DÉTOUR (charte 2026) : précis d'abord ; « je » pour le conseiller, qui signe de son prénom, « nous »
+ * pour l'agence ; chaque prix avec l'heure de sa vérification ; une pointe d'humour au plus, jamais sur un prix.
  */
 import { LIBELLES_CHAMPS, type ChampCorrigeable, type Commentaires } from '../../types/correction';
 import type { StatutLigne } from '../../types/enums';
@@ -27,7 +29,16 @@ export class MailImpossibleErreur extends Error {}
 
 const date = (iso: string) => new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'Europe/Paris' }).format(new Date(`${iso.slice(0, 10)}T12:00:00Z`));
 const euros = (cents: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(cents / 100);
-const signature = (conseiller: string) => ['', 'Bien cordialement,', conseiller, 'DÉTOUR'];
+/** « Camille Martin » → « Camille » : le conseiller signe de son prénom. */
+export const prenomDe = (conseiller: string) => conseiller.trim().split(/\s+/)[0] || conseiller;
+const signature = (conseiller: string) => ['', 'À bientôt,', prenomDe(conseiller), 'DÉTOUR · Prenez le pas de côté.'];
+/** « le 21/10 à 16:42 » */
+const verifieLe = (iso: string) => {
+  const d = new Date(iso);
+  const jour = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Paris' });
+  const heure = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }).replace(':', ' h ');
+  return `le ${jour} à ${heure}`;
+};
 const texte = (lignes: (string | false | null | undefined)[]) => lignes.filter((l): l is string => typeof l === 'string').join('\n');
 
 export interface Sejour {
@@ -41,16 +52,16 @@ export interface Sejour {
 /** Après la validation de la demande : proposer un entretien de cadrage. Les créneaux sont à compléter. */
 export function mailRendezVous(s: Sejour): Mail {
   return {
-    sujet: 'Votre projet de voyage DÉTOUR : prenons rendez-vous',
+    sujet: `Votre week-end${s.destination ? ` à ${s.destination}` : ''} : prenons rendez-vous`,
     corps: texte([
       `Bonjour ${s.nom},`,
       '',
       `Merci pour votre demande${s.destination ? ` de séjour à ${s.destination}` : ''}, du ${date(s.date_debut)} au ${date(s.date_fin)}.`,
-      'Nous pouvons construire votre voyage. Pour le préparer avec vous, je vous propose un court entretien téléphonique (20 minutes environ).',
+      'Je peux vous composer ce voyage. Pour le faire avec vous, je vous propose un court entretien téléphonique, une vingtaine de minutes.',
       '',
-      'Voici mes disponibilités : [créneaux à compléter]',
+      'Mes disponibilités : [créneaux à compléter]',
       '',
-      'Répondez simplement à ce mail avec le créneau qui vous convient, ou proposez-en un autre.',
+      'Répondez simplement à ce mail avec le créneau qui vous va, ou proposez-en un autre.',
       ...signature(s.conseiller),
     ]),
   };
@@ -69,11 +80,11 @@ export interface MailCorrection {
 /** Demande à corriger (E3.1) : chaque point à revoir, avec le commentaire du conseiller, et le lien de correction. */
 export function mailACorriger(m: MailCorrection): Mail {
   return {
-    sujet: 'Votre demande de voyage DÉTOUR : quelques précisions',
+    sujet: 'Votre demande DÉTOUR : quelques précisions',
     corps: texte([
       `Bonjour ${m.nom},`,
       '',
-      'Merci pour votre demande de voyage. Avant de vous proposer un programme, nous avons besoin de quelques précisions.',
+      'Merci pour votre demande. Avant de vous composer un programme, j’ai besoin de quelques précisions.',
       '',
       m.motif,
       '',
@@ -96,6 +107,8 @@ export interface LigneMail {
   statut: StatutLigne;
   /** Tarif confirmé par personne : obligatoire, aucun prix catalogue ni estimé n'est écrit. */
   prix_confirme_cents: number | null;
+  /** Quand ce tarif a été vérifié (ISO) : obligatoire aussi, un prix est toujours daté. */
+  verifie_le: string | null;
 }
 
 /** Lignes et total à prix vérifiés uniquement. Les lignes remplacées ou indisponibles ne figurent pas. */
@@ -106,10 +119,13 @@ function lignesVerifiees(lignes: readonly LigneMail[], statutsAttendus: readonly
     if (!statutsAttendus.includes(l.statut) || l.prix_confirme_cents === null) {
       throw new MailImpossibleErreur(`${l.nom} : prix non vérifié`);
     }
+    if (!l.verifie_le) throw new MailImpossibleErreur(`${l.nom} : prix sans date de vérification`);
   }
   const total = retenues.reduce((s, l) => s + l.prix_confirme_cents! * l.participants, 0);
   const texteLignes = retenues.map(
-    (l) => `- ${date(l.date)} · ${l.nom} · ${l.participants} pers. × ${euros(l.prix_confirme_cents!)} = ${euros(l.prix_confirme_cents! * l.participants)}`,
+    (l) =>
+      `- ${date(l.date)} · ${l.nom} · ${l.participants} pers. × ${euros(l.prix_confirme_cents!)} = ${euros(l.prix_confirme_cents! * l.participants)}` +
+      ` (prix vérifié ${verifieLe(l.verifie_le!)})`,
   );
   return { texteLignes, total };
 }
@@ -118,18 +134,18 @@ function lignesVerifiees(lignes: readonly LigneMail[], statutsAttendus: readonly
 export function mailProposition(s: Sejour, lignes: readonly LigneMail[]): Mail {
   const { texteLignes, total } = lignesVerifiees(lignes, ['confirme', 'reservee']);
   return {
-    sujet: `Votre proposition de voyage DÉTOUR${s.destination ? ` : ${s.destination}` : ''}`,
+    sujet: `Votre week-end${s.destination ? ` à ${s.destination}` : ''} : ma proposition`,
     corps: texte([
       `Bonjour ${s.nom},`,
       '',
-      `Voici notre proposition pour votre séjour du ${date(s.date_debut)} au ${date(s.date_fin)}. Tous les prix ont été vérifiés auprès de nos prestataires.`,
+      `Voici le séjour que je vous ai composé, du ${date(s.date_debut)} au ${date(s.date_fin)}. J’ai vérifié chaque prix auprès de nos partenaires ; l’heure de la vérification est indiquée.`,
       '',
       ...texteLignes,
       '',
       `Total pour le groupe : ${euros(total)}`,
       '',
-      'Vous trouverez le programme complet dans le document joint.',
-      'Pour accepter cette proposition, répondez simplement à ce mail. Nous vous indiquerons alors le montant du dépôt de garantie.',
+      'Le programme jour par jour est dans le document joint.',
+      'Pour accepter, répondez simplement à ce mail : je vous indiquerai alors le montant du dépôt de garantie.',
       ...signature(s.conseiller),
     ]),
   };
@@ -139,17 +155,18 @@ export function mailProposition(s: Sejour, lignes: readonly LigneMail[]): Mail {
 export function mailConfirmation(s: Sejour, lignes: readonly LigneMail[]): Mail {
   const { texteLignes, total } = lignesVerifiees(lignes, ['reservee']);
   return {
-    sujet: 'Votre voyage DÉTOUR est réservé',
+    sujet: `Votre week-end${s.destination ? ` à ${s.destination}` : ''} est réservé`,
     corps: texte([
       `Bonjour ${s.nom},`,
       '',
-      `Bonne nouvelle : votre séjour du ${date(s.date_debut)} au ${date(s.date_fin)} est réservé.`,
+      `C’est confirmé : votre séjour du ${date(s.date_debut)} au ${date(s.date_fin)} est réservé.`,
       '',
       ...texteLignes,
       '',
       `Total pour le groupe : ${euros(total)}`,
       '',
-      'Nous vous enverrons les derniers détails pratiques avant le départ. N’hésitez pas à répondre à ce mail pour toute question.',
+      'Je vous envoie les derniers détails pratiques avant le départ. D’ici là, une question : répondez à ce mail.',
+      'Il ne vous restera qu’à monter dans le train.',
       ...signature(s.conseiller),
     ]),
   };
