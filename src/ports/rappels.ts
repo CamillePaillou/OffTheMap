@@ -1,5 +1,5 @@
 /**
- * Port des rappels (E6.4). L'adaptateur PostgreSQL lit les propositions qui attendent une réponse et journalise un
+ * Port des rappels (E6.4, E6.5). L'adaptateur PostgreSQL lit les propositions qui attendent une réponse et journalise un
  * rappel par enregistrer_rappel : au premier rappel, envoyee → sans_reponse et rappel écrits ensemble, ou rien.
  */
 import type { JourRappel } from '../domain/rappels';
@@ -33,6 +33,6 @@ export interface PropositionARelancer {
 }
 
 export interface RappelsLecture {
-  /** Propositions sans_reponse, de la plus anciennement envoyée à la plus récente. */
+  /** Propositions sans_reponse d'un dossier non abandonné, de la plus anciennement envoyée à la plus récente. */
   aRelancer(): Promise<PropositionARelancer[]>;
 }

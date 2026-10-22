@@ -13,12 +13,15 @@ import { resumerProposition } from '@/src/domain/proposition/resumeProposition';
 import { comparerVersions } from '@/src/domain/proposition/ecartsVersions';
 import { REGLES_CHIFFRAGE } from '@/types/chiffrage';
 import { ActionsLigne, PanneauEnvoi } from './actions-tarifs';
+import { PanneauAbandon } from './panneau-abandon';
 import { PanneauChangement } from './panneau-changement';
 import { PanneauReponse } from './panneau-reponse';
 import { CarteMail } from '../../_composants/carte-mail';
 import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
 import { lienMailto, mailProposition, MailImpossibleErreur } from '@/src/domain/mails';
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
+import { AbandonSupabase } from '@/src/infrastructure/db/abandonSupabase';
+import { abandonPropose } from '@/src/domain/rappels';
 import { BoutonRelancerBrouillon, RafraichirPendantGeneration } from './suivi-brouillon';
 import { EcartsVersionsCarte } from './ecarts-versions';
 
@@ -28,7 +31,7 @@ const SOURCE = { agent: 'agent', telephone: 'téléphone', mail: 'mail', lien: '
 const instant = (iso: string) => new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' });
 
 // Proposition : prix proposé, prix revérifié par l'agent et écart (E8.4) ; tarifs confirmés et envoi (E5.1) ;
-// remplacement d'une ligne indisponible (E5.2) ; écarts avec la version précédente (E6.2).
+// remplacement d'une ligne indisponible (E5.2) ; écarts avec la version précédente (E6.2) ; abandon à J+14 sans réponse (E6.5).
 export default function PropositionPage({ params }: PageProps<'/conseiller/propositions/[id]'>) {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
@@ -58,6 +61,11 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   // mail de la proposition (E5.4) : seulement une fois envoyée, donc tous ses prix vérifiés (E5.1)
   const envoyee = ['envoyee', 'sans_reponse', 'changement_demande', 'acceptee', 'depot_recu', 'reservee'].includes(proposition.statut);
   const dossier = await new DossiersSupabase().detail(proposition.dossier_id); // nom du client (fil d'Ariane) et mail
+  // E6.5 : dossier abandonné, clos ; sinon, abandon proposé à J+14 d'une proposition sans réponse
+  const abandonne = dossier?.statut === 'abandonnee';
+  const aAbandonner = proposition.statut === 'sans_reponse' && !abandonne ? await new AbandonSupabase().lire(proposition.id) : null;
+  const proposeAbandon = aAbandonner !== null && aAbandonner.dossier_statut === 'en_proposition' && abandonPropose(aAbandonner, new Date());
+  const attendReponse = !abandonne && (proposition.statut === 'envoyee' || proposition.statut === 'sans_reponse');
   // E6.2 : ce qui a changé depuis la version précédente, recalculé à chaque lecture
   const precedente = proposition.version > 1 ? await lecture.versionDuDossier(proposition.dossier_id, proposition.version - 1) : null;
   const ecartsVersions = precedente ? comparerVersions(precedente, proposition) : null;
@@ -83,7 +91,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   const confirmees = comptees.filter((l) => l.statut === 'confirme' || l.statut === 'reservee').length;
   const jauge = resume.budget ? Math.min(resume.budget.part_pourcent, 100) : 0;
   // colonne de droite seulement s'il y a quelque chose à faire : envoyer, ou enregistrer la réponse du client
-  const aCote = (modifiable && envoi !== null) || ['envoyee', 'sans_reponse', 'acceptee', 'depot_recu'].includes(proposition.statut);
+  const aCote = (modifiable && envoi !== null) || attendReponse || ['acceptee', 'depot_recu'].includes(proposition.statut);
   const tonJauge = resume.budget?.depasse ? 'bg-grenade' : (resume.budget?.part_pourcent ?? 0) >= 90 ? 'bg-miel' : 'bg-pervenche';
 
   return (
@@ -112,10 +120,25 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
           .
         </p>
       )}
-      {proposition.statut === 'sans_reponse' && (
+      {abandonne && (
+        <p role="status" className="mt-6 rounded-[18px] bg-[#eef1f3] p-4 text-sm text-encre">
+          <span className="font-semibold">Dossier abandonné</span> : le client n’a pas répondu à cette proposition. Elle reste telle qu’elle a
+          été envoyée.
+        </p>
+      )}
+      {proposition.statut === 'sans_reponse' && !abandonne && (
         <p role="status" className="mt-6 rounded-[18px] bg-miel-pale p-4 text-sm text-[#5c3d0c]">
-          <span className="font-semibold">Sans réponse du client</span> depuis au moins 3 jours après l’envoi. Relancez-le avec le mail de la
-          proposition ci-dessous, puis enregistrez son acceptation ou le changement qu’il demande.
+          {proposeAbandon ? (
+            <>
+              <span className="font-semibold">Sans réponse du client</span> depuis au moins 14 jours après l’envoi. Vous pouvez abandonner le
+              dossier, ou encore le relancer et enregistrer sa réponse.
+            </>
+          ) : (
+            <>
+              <span className="font-semibold">Sans réponse du client</span> depuis au moins 3 jours après l’envoi. Relancez-le avec le mail de la
+              proposition ci-dessous, puis enregistrez son acceptation ou le changement qu’il demande.
+            </>
+          )}
         </p>
       )}
       {proposition.motif_changement && (
@@ -176,10 +199,9 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
         {aCote && (
           <div className="flex flex-col gap-4">
             {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} />}
-            <PanneauReponse propositionId={proposition.id} statut={proposition.statut} />
-            {(proposition.statut === 'envoyee' || proposition.statut === 'sans_reponse') && (
-              <PanneauChangement propositionId={proposition.id} version={proposition.version} />
-            )}
+            {!abandonne && <PanneauReponse propositionId={proposition.id} statut={proposition.statut} />}
+            {attendReponse && <PanneauChangement propositionId={proposition.id} version={proposition.version} />}
+            {proposeAbandon && <PanneauAbandon propositionId={proposition.id} />}
           </div>
         )}
       </div>
@@ -318,7 +340,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
               corps={mail.corps}
               mailto={mail.mailto}
               imprimer={`/conseiller/propositions/${proposition.id}/imprimer`}
-              ouvert={proposition.statut === 'envoyee' || proposition.statut === 'sans_reponse'}
+              ouvert={attendReponse}
             />
           </section>
         )}

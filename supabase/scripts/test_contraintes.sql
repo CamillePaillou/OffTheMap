@@ -354,6 +354,28 @@ select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000
 select doit_valoir($$select (enregistrer_reponse_client('00000000-0000-0000-0000-0000000064f1', 'acceptee', '00000000-0000-0000-0000-00000000000a') is not null)::int$$,
   1, 'acceptation d''une proposition sans réponse');
 
+-- abandon d'un dossier sans réponse (E6.5) : rappel J+14, puis abandon confirmé par le conseiller ; le dossier est clos
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000065d1', 'en_proposition');
+insert into propositions (id, dossier_id, version, statut, total_cents, envoyee_le, envoyee_par) values
+  ('00000000-0000-0000-0000-0000000065f1', '00000000-0000-0000-0000-0000000065d1', 1, 'envoyee', 8000, now() - interval '13 days', '00000000-0000-0000-0000-00000000000a');
+select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000065f1', 14)$$, 'rappel J+14 avant son jour');
+select doit_valoir($$select (enregistrer_rappel('00000000-0000-0000-0000-0000000065f1', 7) is not null)::int$$, 1, 'rappel J+7 sans J+3 (rattrapage)');
+select doit_echouer($$select abandonner_dossier('00000000-0000-0000-0000-0000000065f1', '00000000-0000-0000-0000-00000000000a')$$, 'abandon avant J+14');
+update propositions set envoyee_le = now() - interval '14 days' where id = '00000000-0000-0000-0000-0000000065f1';
+select doit_valoir($$select (enregistrer_rappel('00000000-0000-0000-0000-0000000065f1', 14) is not null)::int$$, 1, 'rappel J+14 enregistré');
+select doit_valoir($$select count(*) from propositions where id = '00000000-0000-0000-0000-0000000065f1' and statut = 'sans_reponse'$$, 1, 'J+14 ne change pas le statut');
+select doit_echouer($$select abandonner_dossier('00000000-0000-0000-0000-0000000065f1', null)$$, 'abandon sans conseiller identifié');
+select doit_valoir($$select (abandonner_dossier('00000000-0000-0000-0000-0000000065f1', '00000000-0000-0000-0000-00000000000a') is not null)::int$$, 1, 'abandon confirmé');
+select doit_valoir($$select count(*) from historique_dossier where dossier_id = '00000000-0000-0000-0000-0000000065d1' and type = 'statut'
+  and ancien_statut = 'en_proposition' and nouveau_statut = 'abandonnee' and auteur = 'conseiller' and auteur_id = '00000000-0000-0000-0000-00000000000a'$$,
+  1, 'abandon journalisé au nom du conseiller');
+select doit_echouer($$select abandonner_dossier('00000000-0000-0000-0000-0000000065f1', '00000000-0000-0000-0000-00000000000a')$$, 'abandon fait deux fois');
+select doit_echouer($$select enregistrer_reponse_client('00000000-0000-0000-0000-0000000065f1', 'acceptee', '00000000-0000-0000-0000-00000000000a')$$,
+  'acceptation sur un dossier abandonné');
+select doit_echouer($$insert into propositions (dossier_id, version, statut) values ('00000000-0000-0000-0000-0000000065d1', 2, 'brouillon_en_cours')$$,
+  'nouvelle version sur un dossier abandonné');
+select doit_echouer($$select abandonner_dossier('00000000-0000-0000-0000-0000000064f2', '00000000-0000-0000-0000-00000000000a')$$, 'abandon d''une proposition acceptée');
+
 -- remplacer une ligne indisponible (E5.2) : nouvelle ligne à vérifier au prix du catalogue, les autres lignes intactes
 insert into prestations (id, type, nom, destination, prix_unitaire_cents, capacite, actif) values
   ('test-remplacante-01', 'activite', 'Balade de test', 'Nantes', 2900, 12, true),
@@ -401,6 +423,7 @@ select doit_echouer($$select marquer_mail_envoye('00000000-0000-0000-0000-000000
 select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'envoi appelé par un visiteur');
 select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-remplacante-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacement appelé par un visiteur');
 select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel appelé par un visiteur');
+select doit_echouer($$select abandonner_dossier('00000000-0000-0000-0000-0000000065f1', '00000000-0000-0000-0000-00000000000a')$$, 'abandon appelé par un visiteur');
 select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b5', '00000000-0000-0000-0000-00000000000a')$$, 'brouillon démarré par un visiteur');
 select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d9', 'fiche_prete', 'validee', '00000000-0000-0000-0000-00000000000a')$$, 'tri appelé par un visiteur');
 select doit_valoir($$select count(*) from corrections$$, 0, 'un visiteur ne lit pas les liens de correction');
@@ -425,6 +448,7 @@ select doit_echouer($$select demander_correction('00000000-0000-0000-0000-000000
   '00000000-0000-0000-0000-00000000000a', now() + interval '1 day')$$, 'correction demandée en base sans passer par le serveur');
 select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-0000000000d1', 'fiche_en_cours', 'fiche_prete', 'systeme', null)$$, 'fonction de transition appelée par un conseiller');
 select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel appelé par un conseiller');
+select doit_echouer($$select abandonner_dossier('00000000-0000-0000-0000-0000000065f1', '00000000-0000-0000-0000-00000000000a')$$, 'abandon appelé par un conseiller');
 select doit_echouer($$select terminer_brouillon('00000000-0000-0000-0000-0000000000f1', '{"erreur": "x"}')$$, 'brouillon écrit en base directe par un conseiller');
 select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 1, null, null, null, null)$$, 'correction en base directe par un conseiller (passe par le serveur)');
 select doit_echouer($$select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'm', '{}')$$, 'génération écrite par un conseiller');

@@ -43,7 +43,7 @@ export const TRANSITIONS_DOSSIER: Transition<StatutDossier>[] = [
   t('validee', 'abandonnee', 'conseiller', 'abandon confirmé', undefined, 'could'),
   t('rdv_propose', 'abandonnee', 'conseiller', 'abandon confirmé', undefined, 'could'),
   t('entretien_fait', 'abandonnee', 'conseiller', 'abandon confirmé', undefined, 'could'),
-  t('en_proposition', 'abandonnee', 'conseiller', 'abandon confirmé (proposition sans réponse)', undefined, 'could'),
+  t('en_proposition', 'abandonnee', 'conseiller', 'abandon confirmé (proposition sans réponse)', 'proposition sans_reponse envoyée depuis 14 jours'), // livrée par E6.5
 ];
 export const FINAUX_DOSSIER: StatutDossier[] = ['refusee', 'gagnee', 'abandonnee'];
 
