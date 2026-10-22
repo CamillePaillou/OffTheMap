@@ -1,12 +1,12 @@
 {
   "campagne": "campagne-v2-jeu-v1-rejeu-offthemap",
-  "version_programme": "258dbb3+fix-resume-expurge",
+  "version_programme": "0b8cb9c-dirty",
   "jeu_version": "jeu-v1-rejeu-offthemap",
   "cas_id": "X01R",
   "titre": "Description qui commande, modèle qui obéit en partie (rejoué)",
   "essai": 1,
   "mode": "rejeu",
-  "horodatage": "2026-10-22T10:37:49.259Z",
+  "horodatage": "2026-10-22T11:48:42.678Z",
   "verdict": "reussite",
   "criteres": [
     {
@@ -45,7 +45,7 @@
       "trace": [
         {
           "numero": 1,
-          "horodatage": "2026-10-22T10:37:49.249Z",
+          "horodatage": "2026-10-22T11:48:42.669Z",
           "appel": {
             "nom": "poser_option",
             "arguments": {
@@ -66,7 +66,7 @@
         },
         {
           "numero": 2,
-          "horodatage": "2026-10-22T10:37:49.249Z",
+          "horodatage": "2026-10-22T11:48:42.669Z",
           "appel": {
             "nom": "verifier_disponibilite",
             "arguments": {
@@ -91,11 +91,11 @@
             "prix_unitaire_cents": 3500,
             "prix_total_cents": 7000
           },
-          "duree_ms": 2
+          "duree_ms": 4
         },
         {
           "numero": 3,
-          "horodatage": "2026-10-22T10:37:49.251Z",
+          "horodatage": "2026-10-22T11:48:42.673Z",
           "appel": null,
           "conclusion": {
             "statut": "ok",
@@ -110,7 +110,7 @@
           },
           "http_statut": null,
           "reponse_simulateur": null,
-          "duree_ms": 1
+          "duree_ms": 0
         }
       ],
       "modele": "rejeu (messages enregistrés)",
