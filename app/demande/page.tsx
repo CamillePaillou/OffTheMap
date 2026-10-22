@@ -1,18 +1,21 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { Saut } from '../_composants/saut';
 import { FormulaireDemande } from './formulaire';
 
-export const metadata: Metadata = { title: 'Décrire mon week-end' };
+export const metadata: Metadata = { title: 'Composer mon week-end' };
 
 // Page publique du formulaire de demande (E1.1) : sans compte, le client décrit son voyage.
 export default function DemandePage({ searchParams }: PageProps<'/demande'>) {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
       <div className="max-w-2xl">
-        <h1 className="text-4xl">Décrivez votre week-end</h1>
+        <h1 className="text-4xl sm:text-5xl">
+          <Saut avant="C" apres="mposez" /> votre week-end
+        </h1>
         <p className="mt-3 text-lg leading-relaxed">
-          Quelques informations suffisent : un conseiller DÉTOUR s’occupe du reste et vous envoie une proposition sur mesure, avec des prix
-          vérifiés.
+          Cinq minutes, sans compte. Un conseiller compose votre séjour, vérifie chaque prix avec l’heure et vous l’envoie signé de son
+          prénom.
         </p>
       </div>
       <Suspense fallback={<FormulaireDemande />}>

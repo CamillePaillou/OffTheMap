@@ -170,7 +170,7 @@ export class FauxModeleChat implements ModeleAgent {
         );
       }
       if (typeof resultat.erreur === 'string') return reponse('Je n’ai pas trouvé cette prestation au catalogue. Dites-moi la ville et ce qui vous tente, je cherche.');
-      return reponse('Je n’ai pas pu vérifier cela. Décrivez votre week-end : un conseiller vérifiera pour vous.');
+      return reponse('Je n’ai pas pu vérifier cela. Composez votre week-end : un conseiller vérifiera pour vous.');
     }
 
     const question = plat(dernierVisiteur);
@@ -194,6 +194,6 @@ export class FauxModeleChat implements ModeleAgent {
         ...(motsCles ? { mots: motsCles } : {}),
       });
     }
-    return reponse('Je n’ai pas pu chercher dans le catalogue. Décrivez votre week-end : un conseiller vous répondra par e-mail.');
+    return reponse('Je n’ai pas pu chercher dans le catalogue. Composez votre week-end : un conseiller vous répondra par e-mail.');
   }
 }

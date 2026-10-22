@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Saut } from '../../../_composants/saut';
 import { Ligne } from '../../../_composants/ligne';
 
 export const metadata: Metadata = { title: 'Correction enregistrée' };
@@ -16,7 +17,9 @@ export default function MerciCorrectionPage() {
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
       <div className="panneau p-6 sm:p-10">
-        <h1 className="text-4xl">Merci, votre correction est enregistrée</h1>
+        <h1 className="text-4xl">
+          Merci, c’est <Saut avant="c" apres="rrigé" />.
+        </h1>
         <p className="mt-3 max-w-2xl text-lg leading-relaxed">Votre conseiller reprend votre demande et vous répond par e-mail.</p>
         <div className="mt-10">
           <Ligne titre="Où en est votre demande" stations={SUITE} actuelle={2} />

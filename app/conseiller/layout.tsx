@@ -11,7 +11,7 @@ export default function ConseillerLayout({ children }: LayoutProps<'/conseiller'
     <div className="bo flex flex-1 flex-wrap items-stretch">
       <Suspense fallback={null}>
         <ZoneListe>
-          <Suspense fallback={<p className="p-6 text-ardoise">Chargement des dossiers…</p>}>
+          <Suspense fallback={<p className="p-6 text-encre-doux">Chargement des dossiers…</p>}>
             <ListeDossiers />
           </Suspense>
         </ZoneListe>

@@ -13,7 +13,7 @@ export function PanneauAbandon({ propositionId }: { propositionId: string }) {
     <details className="bo-carte p-5" open={etat.erreur !== undefined}>
       <summary className="cursor-pointer font-semibold text-encre">Abandonner le dossier</summary>
       <form action={action} className="mt-3 flex flex-col gap-2">
-        <p className="text-sm text-ardoise">
+        <p className="text-sm text-encre-doux">
           Le dossier est clos et sort des clients à relancer. La proposition reste telle qu’elle a été envoyée.
         </p>
         <label className="flex items-center gap-2 text-sm">
@@ -24,7 +24,7 @@ export function PanneauAbandon({ propositionId }: { propositionId: string }) {
           {enCours ? 'Abandon…' : 'Abandonner le dossier'}
         </button>
         {etat.erreur && (
-          <p role="alert" className="text-sm text-grenade">
+          <p role="alert" className="text-sm text-brique-texte">
             {etat.erreur}
           </p>
         )}

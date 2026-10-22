@@ -33,7 +33,7 @@ const LONGUEUR_MAX = 600;
 const HISTORIQUE_MAX = 12;
 const IDEES = ['Que faire à Nantes ?', 'Où dormir à Lyon ?', 'Une activité quand il pleut ?', 'Quels sont vos horaires ?'];
 const BONJOUR = 'Bonjour ! Je peux vous parler de nos destinations et vérifier si une activité est disponible à une date. Les prix, c’est un conseiller qui vous les envoie.';
-const HORS_LIGNE = 'L’assistant ne répond pas pour le moment. Vous pouvez décrire votre week-end directement : un conseiller vous répondra.';
+const HORS_LIGNE = 'L’assistant ne répond pas pour le moment. Vous pouvez composer votre week-end directement : un conseiller vous répondra.';
 
 /** Le chatbot n'apparaît que sur le site public, et pas sur le formulaire (il y mène). */
 export function ChatbotSite() {
@@ -127,21 +127,21 @@ function Chatbot() {
           id={idPanneau}
           role="dialog"
           aria-label="Assistant DÉTOUR"
-          className="chatbot-entre fixed inset-x-3 bottom-20 z-40 flex max-h-[min(36rem,calc(100dvh-7rem))] flex-col overflow-hidden rounded-2xl border border-filet bg-white shadow-[0_18px_48px_rgb(14_74_110/0.22)] sm:inset-x-auto sm:right-6 sm:w-[24rem]"
+          className="chatbot-entre fixed inset-x-3 bottom-20 z-40 flex max-h-[min(36rem,calc(100dvh-7rem))] flex-col overflow-hidden rounded-2xl border border-trait bg-carte shadow-[0_18px_48px_rgb(22_35_63/0.22)] sm:inset-x-auto sm:right-6 sm:w-[24rem]"
         >
-          <header className="flex items-start justify-between gap-3 bg-nuit px-5 py-4 text-white">
+          <header className="sur-encre flex items-start justify-between gap-3 bg-encre px-5 py-4 text-craie">
             <div>
-              <h2 className="text-lg text-white!">Une question sur votre week-end ?</h2>
-              <p className="text-sm text-[#d8e6f0]">Destinations, idées, disponibilités</p>
+              <h2 className="text-lg text-craie!">Une question sur votre week-end ?</h2>
+              <p className="text-sm text-craie-sur-encre">Destinations, idées, disponibilités</p>
             </div>
-            <button type="button" onClick={fermer} aria-label="Fermer l’assistant" className="-mr-1 rounded-md p-1.5 text-white hover:bg-white/10">
+            <button type="button" onClick={fermer} aria-label="Fermer l’assistant" className="-mr-1 rounded-md p-1.5 text-craie hover:bg-craie/10">
               <svg aria-hidden width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M6 6l12 12M18 6L6 18" />
               </svg>
             </button>
           </header>
 
-          <div ref={fil} role="log" aria-label="Conversation" className="flex flex-1 flex-col gap-3 overflow-y-auto bg-fond px-4 py-4">
+          <div ref={fil} role="log" aria-label="Conversation" className="flex flex-1 flex-col gap-3 overflow-y-auto bg-craie px-4 py-4">
             <Bulle role="assistant" content={BONJOUR} />
             {messages.length === 0 && (
               <ul aria-label="Idées de questions" className="flex flex-wrap gap-2">
@@ -150,7 +150,7 @@ function Chatbot() {
                     <button
                       type="button"
                       onClick={() => void envoyer(idee)}
-                      className="rounded-full border border-filet bg-white px-3 py-1.5 text-left text-sm text-nuit hover:border-bleu"
+                      className="rounded-full border border-trait bg-carte px-3 py-1.5 text-left text-sm text-encre hover:border-encre"
                     >
                       {idee}
                     </button>
@@ -180,7 +180,7 @@ function Chatbot() {
                     <button
                       type="button"
                       onClick={() => void envoyer(r)}
-                      className="rounded-full border border-filet bg-white px-3 py-1.5 text-left text-sm text-nuit hover:border-bleu"
+                      className="rounded-full border border-trait bg-carte px-3 py-1.5 text-left text-sm text-encre hover:border-encre"
                     >
                       {r}
                     </button>
@@ -189,7 +189,7 @@ function Chatbot() {
               </ul>
             )}
             {enCours && (
-              <p className="self-start rounded-2xl rounded-bl-md bg-white px-4 py-3 text-doux" aria-label="L’assistant écrit">
+              <p className="self-start rounded-2xl rounded-bl-md bg-carte px-4 py-3 text-encre-doux" aria-label="L’assistant écrit">
                 <span className="chatbot-points" aria-hidden>
                   <span />
                   <span />
@@ -199,9 +199,9 @@ function Chatbot() {
             )}
           </div>
 
-          <div className="border-t border-filet bg-white px-4 pt-3 pb-4">
+          <div className="border-t border-trait bg-carte px-4 pt-3 pb-4">
             <Link href={lienDemande(suggestion)} className="btn-principal mb-3 w-full py-2.5! text-[0.95rem]">
-              Décrire mon week-end
+              Composer mon week-end
             </Link>
             <form onSubmit={soumettre} className="flex items-end gap-2">
               <label htmlFor={`${idPanneau}-champ`} className="sr-only">
@@ -216,20 +216,20 @@ function Chatbot() {
                 onChange={(e) => setSaisie(e.target.value)}
                 onKeyDown={touche}
                 placeholder="Votre question"
-                className="max-h-28 min-h-11 flex-1 resize-none rounded-xl border border-[#b7c7d3] px-3 py-2.5"
+                className="max-h-28 min-h-11 flex-1 resize-none rounded-xl border-[1.5px] border-ballast bg-craie px-3 py-2.5 focus:border-encre"
               />
               <button
                 type="submit"
                 disabled={enCours || !saisie.trim()}
                 aria-label="Envoyer"
-                className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-nuit text-white hover:bg-[#0a3a57] disabled:opacity-40"
+                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-encre text-craie hover:bg-encre-clair disabled:opacity-40"
               >
                 <svg aria-hidden width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14M13 6l6 6-6 6" />
                 </svg>
               </button>
             </form>
-            <p className="mt-2 text-xs text-doux">Ne donnez ici ni coordonnées ni information de santé. Rien n’est conservé.</p>
+            <p className="mt-2 text-xs text-encre-doux">Ne donnez ici ni coordonnées ni information de santé. Rien n’est conservé.</p>
           </div>
           <p aria-live="polite" className="sr-only">
             {annonce}
@@ -243,7 +243,7 @@ function Chatbot() {
         onClick={() => (ouvert ? fermer() : setOuvert(true))}
         aria-expanded={ouvert}
         aria-controls={ouvert ? idPanneau : undefined}
-        className="fixed right-4 bottom-4 z-40 flex items-center gap-2 rounded-full bg-nuit py-3 pr-5 pl-4 font-semibold text-white shadow-[0_10px_28px_rgb(14_74_110/0.35)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#0a3a57] sm:right-6 sm:bottom-6"
+        className="fixed right-4 bottom-4 z-40 flex items-center gap-2 rounded-full bg-encre py-3 pr-5 pl-4 font-semibold text-craie shadow-[0_10px_28px_rgb(22_35_63/0.35)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-encre-clair sm:right-6 sm:bottom-6"
       >
         <svg aria-hidden width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           {ouvert ? <path d="M6 9l6 6 6-6" /> : <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />}
@@ -260,14 +260,14 @@ function Bulle({ role, content, verification }: Message) {
     <div className={`chatbot-entre max-w-[85%] ${visiteur ? 'self-end' : 'self-start'}`}>
       <div
         className={`flex flex-col gap-1.5 rounded-2xl px-4 py-2.5 leading-relaxed ${
-          visiteur ? 'rounded-br-md bg-nuit text-white' : 'rounded-bl-md bg-white text-texte'
+          visiteur ? 'rounded-br-md bg-encre text-craie' : 'rounded-bl-md bg-carte text-encre'
         }`}
       >
         <span className="sr-only">{visiteur ? 'Vous : ' : 'Assistant : '}</span>
         <TexteLisible texte={content} />
       </div>
       {verification && (
-        <p className={`mt-1 text-xs ${verification === 'non_verifie' ? 'text-doux' : 'text-[#2f6b4a]'}`}>
+        <p className={`mt-1 text-xs ${verification === 'non_verifie' ? 'text-encre-doux' : 'text-encre'}`}>
           {verification === 'disponible'
             ? 'Vérifié auprès du prestataire à l’instant'
             : verification === 'indisponible'
@@ -319,20 +319,20 @@ function CartePrestation({ carte, lien }: { carte: Carte; lien: string }) {
   return (
     <Link
       href={lien}
-      className="group flex flex-col gap-0.5 rounded-xl border border-filet bg-white px-3.5 py-2.5 text-texte! no-underline transition-colors hover:border-nuit"
+      className="group flex flex-col gap-0.5 rounded-xl border border-trait bg-carte px-3.5 py-2.5 text-encre! no-underline transition-colors hover:border-encre"
     >
-      <span className="text-xs text-doux">
+      <span className="text-xs text-encre-doux">
         {TYPES[carte.type]} · {carte.destination}
       </span>
-      <span className="font-titre font-semibold leading-snug text-nuit">{carte.nom}</span>
-      {carte.description && <span className="line-clamp-1 text-sm text-doux">{carte.description}</span>}
+      <span className="font-titre font-semibold leading-snug text-encre">{carte.nom}</span>
+      {carte.description && <span className="line-clamp-1 text-sm text-encre-doux">{carte.description}</span>}
       {d && (
-        <span className={`mt-1 self-start rounded-full px-2 py-0.5 text-xs font-semibold ${d.disponible ? 'bg-ciel text-nuit' : 'bg-red-50 text-red-800'}`}>
+        <span className={`mt-1 self-start rounded-full px-2 py-0.5 text-xs font-semibold ${d.disponible ? 'bg-ciel text-encre' : 'bg-brique-pale text-brique-texte'}`}>
           {d.disponible ? 'Libre' : 'Complet'} le {jour(d.date)} pour {d.participants}
         </span>
       )}
-      <span className="mt-1 text-sm font-semibold text-nuit underline decoration-1 underline-offset-4 group-hover:decoration-2">
-        {carte.type === 'transport' ? 'Décrire mon week-end' : 'Ajouter à mon week-end'}
+      <span className="mt-1 text-sm font-semibold text-encre underline decoration-1 underline-offset-4 group-hover:decoration-2">
+        {carte.type === 'transport' ? 'Composer mon week-end' : 'Ajouter à mon week-end'}
       </span>
     </Link>
   );

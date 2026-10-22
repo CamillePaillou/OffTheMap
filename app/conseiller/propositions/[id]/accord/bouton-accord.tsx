@@ -15,7 +15,7 @@ export function BoutonAccord(props: { propositionId: string; ligneId: string; pr
         {enCours ? 'Enregistrement…' : `Autoriser cette prestation à ${props.prixAffiche}`}
       </button>
       {etat.erreur && (
-        <p role="alert" className="text-sm text-grenade">
+        <p role="alert" className="text-sm text-brique-texte">
           {etat.erreur}
         </p>
       )}

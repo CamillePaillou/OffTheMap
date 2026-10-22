@@ -79,9 +79,9 @@ const messagesPose: Record<string, string> = {
   ligne_introuvable: 'Ligne introuvable.',
   accord_absent_ou_expire: 'Aucun accord valide et non utilisé pour cette prestation.',
   accord_incoherent: 'L’accord ne correspond plus à la prestation ou au prix revérifié.',
-  simulateur_delai: 'Le simulateur n’a pas répondu à temps. L’accord a été consommé par sécurité ; vérifiez la trace avant toute nouvelle tentative.',
-  simulateur_erreur: 'Erreur du simulateur. L’accord a été consommé par sécurité ; vérifiez la trace.',
-  simulateur_refus: 'Le simulateur a refusé la pose de l’option.',
+  simulateur_delai: 'Le prestataire n’a pas répondu à temps. Par sécurité, l’accord est consommé : regardez la trace avant de recommencer.',
+  simulateur_erreur: 'Le prestataire n’a pas pu poser l’option. Par sécurité, l’accord est consommé : regardez la trace avant de recommencer.',
+  simulateur_refus: 'Le prestataire a refusé l’option : cette prestation n’est plus disponible à ces conditions.',
   reponse_serveur_incoherente: 'La réponse du simulateur ne correspond pas à l’accord. Vérifiez la trace avant toute action.',
 };
 
@@ -106,11 +106,11 @@ export async function confirmer(_etat: EtatAccord, formulaire: FormData): Promis
         option_introuvable: 'Aucune option active à confirmer.',
         option_expiree:
           'L’option a expiré ; vérifiez à nouveau la disponibilité avant toute nouvelle option.',
-        simulateur_delai: 'Délai dépassé : vérifiez la trace avant de réessayer.',
-        simulateur_erreur: 'Erreur du simulateur : vérifiez la trace.',
-        simulateur_refus: 'Le simulateur a refusé la confirmation.',
+        simulateur_delai: 'Le prestataire n’a pas répondu à temps. Regardez la trace avant de confirmer à nouveau : la réservation a peut-être abouti.',
+        simulateur_erreur: 'Le prestataire n’a pas pu confirmer la réservation. Regardez la trace avant de recommencer.',
+        simulateur_refus: 'Le prestataire a refusé la confirmation : vérifiez la clé d’approbation et l’option.',
         reponse_serveur_incoherente:
-          'Réponse de confirmation incohérente ; vérifiez la trace.',
+          'La réponse du prestataire ne correspond pas à l’option : regardez la trace avant toute action.',
       };
 
       if (
@@ -118,10 +118,12 @@ export async function confirmer(_etat: EtatAccord, formulaire: FormData): Promis
         'prix_unitaire_reverifie_cents' in resultat &&
         typeof resultat.prix_unitaire_reverifie_cents === 'number'
       ) {
+        const maintenant = new Date();
+        const prix = (resultat.prix_unitaire_reverifie_cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+        const jour = maintenant.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Paris' });
+        const heure = maintenant.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
         messages.option_expiree =
-          `L’option a expiré. Le prix vient d’être revérifié : ${
-            resultat.prix_unitaire_reverifie_cents / 100
-          } € par participant. Revenez à l’accord et posez une nouvelle option.`;
+          `L’option a expiré. Prix revérifié le ${jour} à ${heure} : ${prix} par participant. Revenez à l’accord pour poser une nouvelle option.`;
       }
 
       revalidatePath(`/conseiller/propositions/${proposition.id}/accord`);

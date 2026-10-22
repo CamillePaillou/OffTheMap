@@ -10,12 +10,12 @@ const jourCourt = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateSt
 const ecart = (cents: number) => (cents < 0 ? `−${euros(-cents)}` : euros(cents, true));
 
 function Cote({ c, type }: { c: CotePrestation | null; type: EcartPrestation['type'] }) {
-  if (!c) return <span className="text-ardoise">—</span>;
+  if (!c) return <span className="text-encre-doux">—</span>;
   const nuits = type === 'hebergement' ? ` (${c.dates.length} nuit${c.dates.length > 1 ? 's' : ''})` : '';
   return (
     <>
       <span className="block">{c.dates.map(jourCourt).join(', ')}{nuits}</span>
-      <span className="block text-ardoise">
+      <span className="block text-encre-doux">
         {c.participants.join(' ou ')} pers. · {c.prix_unitaires_cents.map((p) => euros(p)).join(' / ')}
         {c.prix_a_verifier && ' (à vérifier)'}
       </span>
@@ -33,18 +33,18 @@ export function EcartsVersionsCarte({ e, children }: { e: EcartsVersions; childr
         <span className="font-semibold">({ecart(e.delta_total_cents)})</span>
       </p>
       {e.prix_a_verifier && (
-        <p className="mt-1 text-sm text-[#5c3d0c]">
+        <p className="mt-1 text-sm text-encre">
           Certains prix de cette version sont encore ceux du catalogue : les écarts évolueront à mesure que les tarifs sont confirmés.
         </p>
       )}
 
       {e.prestations.length === 0 ? (
-        <p className="mt-4 text-sm text-ardoise">Aucune prestation n’a changé.</p>
+        <p className="mt-4 text-sm text-encre-doux">Aucune prestation n’a changé.</p>
       ) : (
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[40rem] text-left text-sm">
             <caption className="sr-only">Écarts par prestation entre les versions {e.version_avant} et {e.version_apres}</caption>
-            <thead className="bg-brume text-ardoise">
+            <thead className="bg-craie text-encre-doux">
               <tr>
                 <th className="px-3 py-2 font-semibold">Prestation</th>
                 <th className="px-3 py-2 font-semibold">Version {e.version_avant}</th>
@@ -60,10 +60,10 @@ export function EcartsVersionsCarte({ e, children }: { e: EcartsVersions; childr
                     <span className="mt-1 flex flex-wrap gap-1">
                       {p.nature === 'modifiee'
                         ? p.changements.map((c) => (
-                            <span key={c} className="rounded-full bg-pervenche-pale px-2 py-0.5 text-xs font-semibold text-encre">{CHANGEMENT[c]}</span>
+                            <span key={c} className="rounded-full bg-ciel-pale px-2 py-0.5 text-xs font-semibold text-encre">{CHANGEMENT[c]}</span>
                           ))
                         : (
-                            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.nature === 'ajoutee' ? 'bg-sauge-pale text-sauge' : 'bg-grenade-pale text-grenade'}`}>
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.nature === 'ajoutee' ? 'bg-ciel-pale text-encre' : 'bg-brique-pale text-brique-texte'}`}>
                               {p.nature === 'ajoutee' ? 'ajoutée' : 'retirée'}
                             </span>
                           )}
@@ -79,7 +79,7 @@ export function EcartsVersionsCarte({ e, children }: { e: EcartsVersions; childr
         </div>
       )}
       {e.inchangees > 0 && (
-        <p className="mt-3 text-sm text-ardoise">
+        <p className="mt-3 text-sm text-encre-doux">
           {e.inchangees} prestation{e.inchangees > 1 ? 's' : ''} inchangée{e.inchangees > 1 ? 's' : ''}.
         </p>
       )}

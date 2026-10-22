@@ -13,7 +13,7 @@ export function ZoneListe({ children }: { children: React.ReactNode }) {
   return (
     <aside
       aria-label="Liste des dossiers"
-      className={`${accueil ? 'block min-h-[75vh] lg:min-h-0' : 'hidden lg:block'} w-full border-trait bg-white lg:w-[372px] lg:shrink-0 lg:border-r`}
+      className={`${accueil ? 'block min-h-[75vh] lg:min-h-0' : 'hidden lg:block'} w-full border-trait bg-carte lg:w-[372px] lg:shrink-0 lg:border-r`}
     >
       {/* la colonne blanche va jusqu'en bas ; la liste elle-même reste visible pendant qu'on fait défiler le dossier */}
       <div className="lg:sticky lg:top-0 lg:max-h-screen lg:overflow-y-auto">{children}</div>
