@@ -247,9 +247,9 @@ insert into historique_dossier (dossier_id, proposition_id, type, ancien_statut,
 -- Jeton public, réservé à la démo locale : seule son empreinte SHA-256 est en base. Il expire 7 jours après
 -- le chargement du seed et ne sert qu'une fois : `make seed` le remet à neuf.
 insert into corrections (dossier_id, demande_id, boucle, champs, motif, commentaires, jeton_hash, demandee_par, expire_le, cree_le)
-  values ('d0551e00-0000-4000-8000-000004000000', 'de3a0de0-0000-4000-8000-000004000000', 1, '{budget,dates,nb_nuits}',
+  values ('d0551e00-0000-4000-8000-000004000000', 'de3a0de0-0000-4000-8000-000004000000', 1, '{budget,dates}',
           'Votre budget de 150 € pour deux personnes couvre difficilement le train et une nuit d''hôtel à Nantes. Pouvez-vous le revoir, ou nous dire si vous préférez raccourcir le séjour ?',
-          '{"budget": "Comptez au moins 290 € à deux : 96 € de train aller-retour et 192 € pour une nuit d''hôtel.", "nb_nuits": "Une nuit suffit pour un week-end ; deux nuits demandent un budget plus élevé."}'::jsonb,
+          '{"budget": "Comptez au moins 290 € à deux : 96 € de train aller-retour et 192 € pour une nuit d''hôtel.", "dates": "Une nuit suffit pour un week-end ; deux nuits demandent un budget plus élevé."}'::jsonb,
           encode(sha256(convert_to('demo-Nina-Moreau-correction-budget-E12-2026', 'UTF8')), 'hex'),
           '11111111-1111-4111-8111-111111111111', now() + interval '7 days', now());
 insert into historique_dossier (dossier_id, type, auteur, auteur_id, detail, cree_le)

@@ -9,12 +9,14 @@ import { z } from 'zod';
 import type { NouvelleDemande } from './demande';
 import { REGIMES } from './enums';
 
-/** Points que le conseiller peut demander de revoir, au niveau de la demande (pas du champ HTML). */
+/**
+ * Points que le conseiller peut demander de revoir, au niveau de la demande (pas du champ HTML).
+ * Pas de point « nuits » : elles se calculent depuis les dates, le client les change en changeant les dates.
+ */
 export const CHAMPS_CORRIGEABLES = [
   'email',
   'destination',
   'dates',
-  'nb_nuits',
   'voyageurs',
   'budget',
   'envies',
@@ -28,7 +30,6 @@ export const LIBELLES_CHAMPS: Record<ChampCorrigeable, string> = {
   email: 'Adresse e-mail',
   destination: 'Destination',
   dates: 'Dates du séjour',
-  nb_nuits: 'Nombre de nuits',
   voyageurs: 'Voyageurs',
   budget: 'Budget',
   envies: 'Ce qui vous ferait plaisir',
@@ -49,12 +50,8 @@ export const MOTIFS_TYPES: Record<ChampCorrigeable, readonly string[]> = {
   ],
   dates: [
     'Ces dates sont trop proches pour organiser le séjour : pouvez-vous les décaler ?',
-    'Les dates de départ et de retour ne correspondent pas au nombre de nuits.',
     'Ces dates tombent sur une période complète : avez-vous d’autres dates possibles ?',
-  ],
-  nb_nuits: [
-    'Le nombre de nuits ne correspond pas aux dates indiquées.',
-    'Une nuit de plus permettrait un programme moins serré : est-ce possible ?',
+    'Une nuit de plus permettrait un programme moins serré : pouvez-vous décaler votre retour ?',
   ],
   voyageurs: [
     'Pouvez-vous confirmer le nombre d’adultes et d’enfants ?',
@@ -78,7 +75,6 @@ export const CHAMPS_FORMULAIRE: Record<ChampCorrigeable, readonly string[]> = {
   email: ['email'],
   destination: ['destination'],
   dates: ['date_debut', 'date_fin'],
-  nb_nuits: ['nb_nuits'],
   voyageurs: ['adultes', 'enfants'],
   budget: ['budget_euros'],
   envies: ['envies'],
@@ -136,8 +132,6 @@ export function valeurDuPoint(d: Comparable, c: ChampCorrigeable): string {
       return (d.destination ?? '').trim().toLowerCase();
     case 'dates':
       return `${d.date_debut}/${d.date_fin}`;
-    case 'nb_nuits':
-      return String(d.nb_nuits);
     case 'voyageurs':
       return [...d.voyageurs].sort().join(',');
     case 'budget':
@@ -153,6 +147,9 @@ export function valeurDuPoint(d: Comparable, c: ChampCorrigeable): string {
   }
 }
 
+/** Garde les points encore proposés : une correction ancienne peut porter un point retiré depuis (« nb_nuits »). */
+export const estChampCorrigeable = (p: unknown): p is ChampCorrigeable => (CHAMPS_CORRIGEABLES as readonly unknown[]).includes(p);
+
 /** Points signalés que le client a renvoyés sans les modifier. */
 export function pointsInchanges(avant: Comparable, apres: Comparable, points: readonly ChampCorrigeable[]): ChampCorrigeable[] {
   return points.filter((c) => valeurDuPoint(avant, c) === valeurDuPoint(apres, c));
@@ -167,7 +164,6 @@ export function versValeursFormulaire(d: Comparable): Record<string, string> {
     destination: d.destination ?? '',
     date_debut: d.date_debut,
     date_fin: d.date_fin,
-    nb_nuits: String(d.nb_nuits),
     adultes: String(d.voyageurs.length - enfants),
     enfants: String(enfants),
     budget_euros: d.budget_annonce_cents === null ? '' : String(d.budget_annonce_cents / 100),

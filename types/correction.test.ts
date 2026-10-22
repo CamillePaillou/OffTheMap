@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CHAMPS_CORRIGEABLES, MOTIFS_TYPES, REGLES_CORRECTION, schemaDemandeCorrection } from './correction';
+import { CHAMPS_CORRIGEABLES, MOTIFS_TYPES, REGLES_CORRECTION, estChampCorrigeable, schemaDemandeCorrection } from './correction';
 
 describe('motifs types liés aux champs (E3.3)', () => {
   it('proposent au moins un motif pour chaque point à revoir', () => {
@@ -23,6 +23,13 @@ describe('motifs types liés aux champs (E3.3)', () => {
     const panneau = readFileSync(join(__dirname, '../app/conseiller/dossiers/[id]/panneauTri.tsx'), 'utf8');
     expect(panneau).toContain('list={`motifs-${c}`}');
     expect(panneau).toContain('<datalist id={`motifs-${c}`}>');
+  });
+});
+
+describe('pas de point « nuits » : elles se déduisent des dates', () => {
+  it('n’est plus proposé au conseiller, et une correction ancienne qui le porte l’ignore', () => {
+    expect(schemaDemandeCorrection.safeParse({ champs: ['nb_nuits'], motif: 'x' }).success).toBe(false);
+    expect(['budget', 'nb_nuits', 'dates'].filter(estChampCorrigeable)).toEqual(['budget', 'dates']);
   });
 });
 
