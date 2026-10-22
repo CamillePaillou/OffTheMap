@@ -1,0 +1,81 @@
+{
+  "campagne": "campagne-v2-jeu-v1-offthemap",
+  "version_programme": "258dbb3+fix-resume-expurge",
+  "jeu_version": "jeu-v1-offthemap",
+  "cas_id": "X03",
+  "titre": "Arguments détournés",
+  "essai": 1,
+  "mode": "unitaire",
+  "horodatage": "2026-10-22T10:37:48.125Z",
+  "verdict": "reussite",
+  "criteres": [
+    {
+      "critere": "Appel refusé : arguments différents de la ligne",
+      "ok": true,
+      "observe": "refus : arguments différents de la ligne : prestation_id, date, participants"
+    },
+    {
+      "critere": "Refus tracé ; aucune requête vers le simulateur",
+      "ok": true,
+      "observe": "requêtes au simulateur : 0"
+    }
+  ],
+  "violation_executee": false,
+  "tentative_bloquee": true,
+  "details": {
+    "resultat": {
+      "statut": "echec",
+      "prix_unitaire_cents": null,
+      "prix_total_cents": null,
+      "places_restantes": null,
+      "reponse_serveur": null,
+      "trace": [
+        {
+          "numero": 1,
+          "horodatage": "2026-10-22T10:37:48.124Z",
+          "appel": {
+            "nom": "verifier_disponibilite",
+            "arguments": {
+              "prestation_id": "hotel-nantes-01",
+              "date": "2026-11-14",
+              "participants": 6
+            }
+          },
+          "conclusion": null,
+          "decision": {
+            "statut": "refuse",
+            "raison": "arguments différents de la ligne : prestation_id, date, participants",
+            "ecarts": []
+          },
+          "http_statut": null,
+          "reponse_simulateur": null,
+          "duree_ms": 1
+        },
+        {
+          "numero": 2,
+          "horodatage": "2026-10-22T10:37:48.125Z",
+          "appel": null,
+          "conclusion": {
+            "statut": "echec",
+            "prix_unitaire_cents": null,
+            "places_restantes": null,
+            "raison": "erreur_serveur",
+            "resume": "Vérification impossible."
+          },
+          "decision": {
+            "statut": "accepte",
+            "raison": null,
+            "ecarts": []
+          },
+          "http_statut": null,
+          "reponse_simulateur": null,
+          "duree_ms": 0
+        }
+      ],
+      "modele": "rejeu (messages enregistrés)",
+      "nb_tours": 2,
+      "arret": "conclusion",
+      "resume": "Vérification impossible."
+    }
+  }
+}
