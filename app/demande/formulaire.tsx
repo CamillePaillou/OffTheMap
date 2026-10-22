@@ -1,6 +1,8 @@
 'use client';
 
-import { useActionState, useState, type FormEvent } from 'react';
+import { useActionState, useState, type FocusEvent, type FormEvent } from 'react';
+import { reglesCroisees, schemaSaisieDemande } from '@/types/demande';
+import { lireSaisie } from './lecture';
 import { Ligne } from '../_composants/ligne';
 import type { ChampCorrigeable, Commentaires } from '@/types/correction';
 import { envoyerDemande, type EtatDemande } from './actions';
@@ -39,6 +41,11 @@ const STATIONS: Record<string, (v: Record<string, string>) => boolean> = {
   accords: (v) => v.consentement_rgpd === 'on' && v.consentement_ia === 'on',
 };
 const OBLIGATOIRES = ['vous', 'voyage', 'voyageurs', 'accords'] as const;
+/** Champs vérifiés par le schéma : tous marqués « quittés » après un envoi refusé. */
+const STATIONS_CHAMPS = {
+  nom: 1, email: 1, date_debut: 1, date_fin: 1, nb_nuits: 1, adultes: 1, enfants: 1, budget_euros: 1, envies: 1, contraintes: 1,
+  consentement_rgpd: 1, consentement_ia: 1,
+} as const;
 
 function lire(form: HTMLFormElement): Record<string, string> {
   const v: Record<string, string> = {};
@@ -49,6 +56,26 @@ function lire(form: HTMLFormElement): Record<string, string> {
 }
 
 type Action = (etat: EtatDemande, formulaire: FormData) => Promise<EtatDemande>;
+
+/** Date du jour à Paris (AAAA-MM-JJ), comme le serveur : une date de départ antérieure est refusée. */
+const aujourdhuiParis = () => new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Paris' }).format(new Date());
+
+/**
+ * Les mêmes règles que le serveur (schemaSaisieDemande), vérifiées dans le navigateur : le client voit une erreur
+ * dès qu'il quitte le champ, sans attendre l'envoi. Le serveur revérifie tout à l'envoi.
+ */
+function verifier(form: HTMLFormElement): Record<string, string> {
+  const saisie = lireSaisie(new FormData(form));
+  const verdict = schemaSaisieDemande(aujourdhuiParis()).safeParse(saisie);
+  const erreurs: Record<string, string> = {};
+  if (!verdict.success) for (const i of verdict.error.issues) erreurs[String(i.path[0] ?? 'formulaire')] ??= i.message;
+  // le schéma n'applique les règles croisées que si tout le reste est valide : on les applique ici champ par champ
+  for (const e of reglesCroisees(saisie, aujourdhuiParis())) erreurs[e.champ] ??= e.message;
+  return erreurs;
+}
+
+/** Nom du champ dans le schéma pour un élément du formulaire (cases des régimes, case de mobilité). */
+const champDuSchema = (nom: string) => (nom.startsWith('regime_') ? 'regimes' : nom === 'mobilite_reduite' ? 'mobilite' : nom);
 
 interface Props {
   /** Action serveur appelée à l'envoi : dépôt (E1.1) par défaut, correction (E1.2) depuis un lien. */
@@ -84,16 +111,43 @@ export function FormulaireDemande({
   const [choisies, setChoisies] = useState<readonly PrestationChoisie[]>(prestationsChoisies);
   const [etat, action, enCours] = useActionState<EtatDemande, FormData>(envoyer, {});
   const v = etat.valeurs ?? initiales ?? {};
-  const e = etat.erreurs ?? {};
+  // erreurs vérifiées dans le navigateur, pour les champs que le client a déjà quittés (ou tous, après un envoi refusé)
+  const [touches, setTouches] = useState<ReadonlySet<string>>(new Set());
+  const [locales, setLocales] = useState<Record<string, string>>({});
+  const serveur = etat.erreurs ?? {};
+  const e: Record<string, string | undefined> = { ...serveur };
+  for (const nom of touches) e[nom] = locales[nom];
+  const quitter = (ev: FocusEvent<HTMLFormElement>) => {
+    const nom = (ev.target as unknown as HTMLInputElement).name;
+    if (!nom || nom === 'prestation') return;
+    setTouches((t) => new Set(t).add(champDuSchema(nom)));
+    setLocales(verifier(ev.currentTarget));
+  };
+  const avantEnvoi = (ev: FormEvent<HTMLFormElement>) => {
+    const erreurs = verifier(ev.currentTarget);
+    setLocales(erreurs);
+    const noms = Object.keys(erreurs);
+    if (noms.length === 0) return; // le serveur revérifie
+    ev.preventDefault();
+    setTouches(new Set([...Object.keys(STATIONS_CHAMPS), ...noms]));
+    // le premier champ en erreur reçoit le focus : le client voit tout de suite quoi corriger
+    const premier = ev.currentTarget.querySelector<HTMLElement>(noms.map((n) => `[name="${n}"],[name^="${n === 'regimes' ? 'regime_' : n}"]`).join(','));
+    premier?.focus();
+  };
   // ce que le client a saisi, relu à chaque frappe pour le récapitulatif et les stations
   const [saisie, setSaisie] = useState<Record<string, string> | null>(null);
   const courant = saisie ?? v;
-  const suivre = (ev: FormEvent<HTMLFormElement>) => setSaisie(lire(ev.currentTarget));
+  const suivre = (ev: FormEvent<HTMLFormElement>) => {
+    setSaisie(lire(ev.currentTarget));
+    // un champ déjà quitté est revérifié à chaque frappe : l'erreur disparaît dès qu'elle est corrigée
+    if (touches.size > 0) setLocales(verifier(ev.currentTarget));
+  };
   const rempli = (station: keyof typeof STATIONS) => (STATIONS[station]!(courant) ? 'true' : 'false');
   const faites = OBLIGATOIRES.filter((o) => STATIONS[o]!(courant)).length;
   const aRevoir = (nom: string) => surlignes.includes(nom);
   // champ signalé par le conseiller : bordure et fond ambre, et annonce pour les lecteurs d'écran
-  const c = (nom: string) => (aRevoir(nom) ? `${champ} border-encre! bg-ciel-pale ring-2 ring-ciel` : champ);
+  // champ en erreur : bordure brique ; champ signalé par le conseiller : fond ciel
+  const c = (nom: string) => (e[nom] ? `${champ} border-brique!` : aRevoir(nom) ? `${champ} border-encre! bg-ciel-pale ring-2 ring-ciel` : champ);
   const note = (point: ChampCorrigeable) =>
     commentaires[point] ? (
       <p id={`note-${point}`} className="rounded-lg border-l-4 border-encre bg-ciel-pale px-3 py-2 text-sm text-encre">
@@ -115,7 +169,7 @@ export function FormulaireDemande({
   return (
     // La clé remonte le formulaire après une erreur : les valeurs saisies sont reprises par defaultValue.
     <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-    <form key={JSON.stringify(v)} action={action} onInput={suivre} onChange={suivre} noValidate className="panneau ligne-formulaire flex flex-col gap-8 p-5 sm:p-8">
+    <form key={JSON.stringify(v)} action={action} onInput={suivre} onChange={suivre} onBlur={quitter} onSubmit={avantEnvoi} noValidate className="panneau ligne-formulaire flex flex-col gap-8 p-5 sm:p-8">
       {e.formulaire && (
         <p role="alert" className="rounded-lg border-l-4 border-brique bg-brique-pale px-3 py-2 text-sm text-brique-texte">
           {e.formulaire}

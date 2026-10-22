@@ -19,7 +19,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="fr" className={`${bricolage.variable} ${instrument.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col font-sans">
+      {/* des extensions du navigateur (ColorZilla, Grammarly…) ajoutent des attributs à body avant React : sans effet */}
+      <body className="flex min-h-full flex-col font-sans" suppressHydrationWarning>
         <a href="#contenu" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-10 focus:rounded focus:bg-carte focus:px-3 focus:py-2">
           Aller au contenu
         </a>

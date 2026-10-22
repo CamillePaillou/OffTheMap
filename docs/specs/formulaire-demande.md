@@ -36,3 +36,12 @@ Les colonnes correspondantes sont retirées de `demandes` par `supabase/migratio
 ## Correction depuis un lien (E1.2)
 
 Le même formulaire sert à corriger une demande : prérempli avec la version à corriger, champs signalés surlignés, consentements à recocher. Règles : `docs/specs/correction-demande.md`.
+
+## Validation au fil de la saisie
+
+Les règles du serveur (`schemaSaisieDemande` et `reglesCroisees` dans `types/demande.ts`) sont aussi appliquées dans le navigateur :
+
+- une erreur s'affiche dès que le client **quitte** un champ, sous le champ, bordure brique ; elle disparaît dès qu'elle est corrigée, à la frappe ;
+- un champ jamais quitté n'affiche rien : pas d'erreur sur un formulaire qu'on vient d'ouvrir ;
+- les règles croisées (départ passé, retour avant le départ, plus de nuits que de jours, au moins un adulte, 20 voyageurs au plus) jugent chaque champ dès qu'il est rempli, même si d'autres sont encore vides ;
+- à l'envoi, s'il reste des erreurs, rien ne part : toutes s'affichent et le premier champ en erreur reçoit le focus. Le serveur revérifie tout à l'envoi.
