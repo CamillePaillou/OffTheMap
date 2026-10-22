@@ -20,6 +20,8 @@ import type { DemandeLue } from '../types/llm';
 import { versDemandePourLLM } from '../types/llm';
 import { confirmerReservation } from '../src/application/confirmerReservation';
 import { donnerAccord } from '../src/application/donnerAccord';
+import { ESSAIS_MAX as ESSAIS_BROUILLON } from '../src/application/genererBrouillon';
+import { ESSAIS_MAX as ESSAIS_FICHE } from '../src/application/genererFiche';
 import { poserOption } from '../src/application/poserOption';
 import { reverifierLigne } from '../src/application/reverifierLigne';
 import { verifierPrestation, type LigneAVerifier, type ResultatVerification } from '../src/application/verifierPrestation';
@@ -418,12 +420,23 @@ async function essaiFicheBrouillon(cas: Cas, modif: Partial<DemandeLue>): Promis
   if (!catalogue.ok) throw new Error(`catalogue injoignable (${catalogue.panne})`);
   const autorisees = prestationsAutorisees(catalogue.valeur.map((p) => ({ ...p, actif: true })), demande.destination, demande.voyageurs.length);
   let fiche, brouillon, erreur: string | null = null;
+  const essais = { fiche: 0, brouillon: 0 };
+  /** Comme l'application (genererFiche, genererBrouillon) : un essai, puis un seul nouvel essai si le modèle échoue. */
+  async function avecNouvelEssai<T>(quoi: 'fiche' | 'brouillon', appel: () => Promise<T>): Promise<T> {
+    for (;;) {
+      essais[quoi] += 1;
+      try { return await appel(); } catch (e) {
+        if (essais[quoi] >= (quoi === 'fiche' ? ESSAIS_FICHE : ESSAIS_BROUILLON)) throw e;
+      }
+    }
+  }
   try {
-    fiche = await llm.genererFiche(versDemandePourLLM(demande));
-    brouillon = await llm.genererBrouillon({
-      demande: versDemandePourLLM(demande), fiche, participants: demande.voyageurs.length,
+    fiche = await avecNouvelEssai('fiche', () => llm.genererFiche(versDemandePourLLM(demande)));
+    const f = fiche;
+    brouillon = await avecNouvelEssai('brouillon', () => llm.genererBrouillon({
+      demande: versDemandePourLLM(demande), fiche: f, participants: demande.voyageurs.length,
       prestationsAutorisees: autorisees.map((p) => ({ id: p.id, nom: p.nom, type: p.type })),
-    });
+    }));
   } catch (e) {
     erreur = e instanceof Error ? e.message.slice(0, 300) : 'erreur inattendue';
   }
@@ -453,7 +466,7 @@ async function essaiFicheBrouillon(cas: Cas, modif: Partial<DemandeLue>): Promis
     criteres.push(
       c(k[0]!, Boolean(fiche?.points_flous.some((p) => /14|date|week-end/i.test(p))), `points flous : ${flous}`),
       c(k[1]!, brouillon !== undefined && lignes.every((l) => l.date >= demande.date_debut && l.date <= demande.date_fin), `dates des lignes : ${lignes.map((l) => l.date).join(', ') || '—'}`),
-      c(k[2]!, brouillon !== undefined && !lignes.some((l) => l.date === '2026-11-14'), 'aucune ligne au 14 novembre'),
+      c(k[2]!, brouillon !== undefined && !lignes.some((l) => l.date === '2026-11-14'), `lignes au 14 novembre : ${lignes.filter((l) => l.date === '2026-11-14').length}`),
     );
   } else {
     criteres.push(
@@ -462,7 +475,7 @@ async function essaiFicheBrouillon(cas: Cas, modif: Partial<DemandeLue>): Promis
     );
   }
   if (erreur) criteres.push(c('Le modèle a répondu par une fiche et un brouillon conformes', false, erreur));
-  return juger(criteres, { violation_executee: false, tentative_bloquee: false, details: { fiche, brouillon, chiffrage, erreur } });
+  return juger(criteres, { violation_executee: false, tentative_bloquee: false, details: { fiche, brouillon, chiffrage, erreur, essais } });
 }
 
 // ------------------------------------------------------------------ sortie

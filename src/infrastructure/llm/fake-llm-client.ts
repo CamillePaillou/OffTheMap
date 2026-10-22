@@ -3,10 +3,10 @@
  * Tous les tests et `LLM_PROVIDER=fake` l'utilisent. Il garde la trace exacte de ce qu'il a reçu,
  * pour qu'un test puisse vérifier que rien de sensible n'est parti vers le LLM.
  */
-import { EcartsIA, FicheIA, schemaBrouillon } from '../../../types';
+import { EcartsIA, FicheIA } from '../../../types';
 import type { BrouillonIA, DemandePourLLM } from '../../../types';
 import type { EntreeEcarts } from '../../domain/proposition/entreeEcarts';
-import { LlmError } from '../../ports/llm-client';
+import { LlmError, schemaPourEntree } from '../../ports/llm-client';
 import type { EntreeBrouillon, LlmClient } from '../../ports/llm-client';
 
 export interface OptionsFauxClient {
@@ -41,12 +41,12 @@ export class FauxLlmClient implements LlmClient {
   async genererBrouillon(entree: EntreeBrouillon): Promise<BrouillonIA> {
     this.appels.push({ methode: 'genererBrouillon', charge: JSON.stringify(entree) });
     if (this.options.echec) throw this.options.echec;
-    const ids = entree.prestationsAutorisees.map((p) => p.id);
     const jour = entree.demande.date_debut;
     const brute = this.options.brouillonRepondu ?? {
       programme: [{ date: jour, titre: 'Programme proposé', texte: 'Journée construite à partir des prestations retenues.' }],
       // les prestations souhaitées par le client (E1.4) d'abord, comme le demande la consigne du vrai modèle
-      lignes: [...entree.prestationsAutorisees]
+      // sans nuit (aller-retour dans la journée), pas d'hébergement : le schéma le refuserait hors séjour
+      lignes: [...entree.prestationsAutorisees].filter((p) => p.type !== 'hebergement' || entree.demande.date_debut < entree.demande.date_fin)
         .sort((a, b) => Number(entree.demande.prestations_souhaitees.includes(b.id)) - Number(entree.demande.prestations_souhaitees.includes(a.id)))
         .slice(0, 3)
         .map((p) => ({
@@ -56,7 +56,7 @@ export class FauxLlmClient implements LlmClient {
       })),
       ecartes: [],
     };
-    const r = schemaBrouillon(ids, entree.participants).safeParse(brute);
+    const r = schemaPourEntree(entree).safeParse(brute);
     if (!r.success) throw new LlmError('reponse_invalide', `brouillon non conforme : ${r.error.message}`);
     return r.data;
   }
