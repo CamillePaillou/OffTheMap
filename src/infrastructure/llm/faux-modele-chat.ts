@@ -5,6 +5,7 @@
  * quand il a une date et un nombre de voyageurs. Il utilise les mêmes outils, bornés de la même façon, que le vrai
  * modèle. Il ne renvoie vers un conseiller que pour le prix, la réservation, ou ce que le catalogue ne dit pas.
  */
+import { dateParlee } from '../../domain/chatbot/relances';
 import type { ModeleAgent, ReponseChat, RequeteChat } from '../../ports/modele-agent';
 
 const MOIS = ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'];
@@ -44,8 +45,7 @@ export function lireVoyageurs(texte: string): number | null {
   return n >= 1 && n <= 20 ? n : null;
 }
 
-const NOMS_TYPES = { transport: 'transport', hebergement: 'hébergement', activite: 'activité' } as const;
-type TypePrestation = keyof typeof NOMS_TYPES;
+type TypePrestation = 'transport' | 'hebergement' | 'activite';
 
 /** « un hôtel », « où dormir » → hebergement ; « que faire », « un atelier » → activite ; « le train » → transport. */
 export function lireType(texte: string): TypePrestation | null {
@@ -83,25 +83,29 @@ interface PrestationLue {
   tags?: string[];
 }
 
-/** « Atelier de machines imaginaires (activité, créatif, intérieur) : atelier accessible sans effort sportif. » */
-function decrire(p: PrestationLue): string {
-  const etiquettes = [NOMS_TYPES[p.type] ?? p.type, ...(p.tags ?? [])].join(', ');
-  // « fictif » est une mention du catalogue de cours, pas une information pour le visiteur
-  const description = p.description
-    ?.replace(/\s*\bfictif\b|\s*\bfictive\b/g, '')
-    .replace(/\s+([,.;:])/g, '$1')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return `${p.nom} (${etiquettes})${description ? ` : ${description.charAt(0).toLowerCase()}${description.slice(1)}` : ''}`;
+/** « 3 adresses », « une adresse » */
+const adresses = (n: number) => (n === 1 ? 'une adresse' : `${n} adresses`);
+const NOMS_MOTS: Record<string, string> = { intérieur: 'en intérieur', extérieur: 'en plein air', cuisine: 'gourmande', créatif: 'créative', jeu: 'pour jouer', 'sans effort': 'sans effort', 'centre-ville': 'en centre-ville', 'sans voiture': 'sans voiture' };
+
+/**
+ * Réponse courte : les prestations s'affichent en cartes sous la bulle (nom, ville, type, description). Le texte
+ * dit seulement ce qu'on a trouvé, puis ce qu'on peut faire ensuite.
+ */
+function resumer(prestations: readonly PrestationLue[], mots: string | undefined, destination: string | undefined): string {
+  const villes = [...new Set(prestations.map((p) => p.destination))];
+  const ou = destination ? ` à ${destination}` : villes.length === 1 ? ` à ${villes[0]}` : ` à ${villes.slice(0, -1).join(', ')} et ${villes.at(-1)}`;
+  const quoi = mots ? mots.split(' ').map((m) => NOMS_MOTS[m] ?? m).join(', ') : '';
+  return `${adresses(prestations.length).replace(/^./, (c) => c.toUpperCase())}${quoi ? ` ${quoi}` : ''}${ou}, chez nos partenaires.`;
 }
 
-/** Les prestations regroupées par ville, une ville par ligne (sans le nom de la ville quand il n'y en a qu'une). */
-function parVille(prestations: readonly PrestationLue[]): string {
-  const villes = [...new Set(prestations.map((p) => p.destination))];
-  if (villes.length === 1) return prestations.map((p) => `- ${decrire(p)}.`).join('\n');
-  return villes
-    .map((v) => `${v} : ${prestations.filter((p) => p.destination === v).map(decrire).join(' ; ')}.`)
-    .join('\n');
+/** Ce que le modèle de règles sait traiter seul ; le reste va au vrai modèle quand il est configuré. */
+export function comprendQuestion(texte: string, aujourdhui: string): boolean {
+  const t = plat(texte);
+  return (
+    !!lireDestination(texte) || !!lireType(texte) || !!lireMots(texte) || !!lireDate(texte, aujourdhui) ||
+    /\b(reserv\w*|prix|combien|tarifs?|couts?|coute|budget|horaires?|ouvert\w*|telephone|adresse|contact|agence|propose\w*|offre|catalogue|destinations?|villes?)\b/.test(t) ||
+    /^(bonjour|salut|bonsoir|hello|coucou)\W*$/.test(t.trim())
+  );
 }
 
 export class FauxModeleChat implements ModeleAgent {
@@ -122,10 +126,11 @@ export class FauxModeleChat implements ModeleAgent {
 
     // la ville, le type et les mots-clés de la dernière question d'abord, sinon ceux de la conversation
     const destination = lireDestination(dernierVisiteur) ?? lireDestination(toutVisiteur);
+    // la date et le nombre de voyageurs du dernier message d'abord (« Et le 14 novembre ? »), sinon ceux d'avant
     const type = lireType(dernierVisiteur) ?? (lireDestination(dernierVisiteur) ? null : lireType(toutVisiteur));
     const motsCles = lireMots(dernierVisiteur);
-    const date = lireDate(toutVisiteur, aujourdhui);
-    const voyageurs = lireVoyageurs(toutVisiteur);
+    const date = lireDate(dernierVisiteur, aujourdhui) ?? [...visiteur].reverse().map((v) => lireDate(v, aujourdhui)).find(Boolean) ?? null;
+    const voyageurs = lireVoyageurs(dernierVisiteur) ?? [...visiteur].reverse().map(lireVoyageurs).find(Boolean) ?? null;
 
     if (dernier.role === 'tool') {
       const resultat = JSON.parse(dernier.content) as Record<string, unknown>;
@@ -145,24 +150,23 @@ export class FauxModeleChat implements ModeleAgent {
           const cible = (type && prestations.find((p) => p.type === type)) || prestations.find((p) => p.type === 'activite') || prestations[0]!;
           return outil('verifier_disponibilite', { prestation_id: cible.id, date, participants: voyageurs });
         }
-        const intro = args.mots
-          ? `Ce qui correspond à « ${args.mots} » :`
-          : motsCles
-            ? `Rien ne correspond exactement à « ${motsCles} »${args.destination ? ` à ${args.destination}` : ''}. Voici ce que nos partenaires y proposent :`
-            : `Voici ce que nos partenaires proposent${args.destination ? ` à ${args.destination}` : ''} :`;
-        const relance = args.destination
+        const trouve = motsCles && !args.mots
+          ? `Rien de tel${args.destination ? ` à ${args.destination}` : ''} pour l’instant. ${resumer(prestations, undefined, args.destination)}`
+          : resumer(prestations, args.mots, args.destination);
+        const ensuite = args.destination
           ? 'Donnez-moi une date et le nombre de voyageurs : je vérifie si c’est libre.'
-          : 'Une ville vous tente ? Donnez-moi aussi une date et le nombre de voyageurs : je vérifie si c’est libre.';
-        return reponse(`${intro}\n${parVille(prestations)}\n${relance}`);
+          : 'Une ville vous tente ? Avec une date, je vérifie si c’est libre.';
+        return reponse(`${trouve}\n${ensuite}`);
       }
       if (typeof resultat.disponible === 'boolean') {
         const nom = typeof resultat.nom === 'string' ? resultat.nom : 'Cette prestation';
-        const quand = new Date(`${resultat.date}T12:00:00Z`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+        const jourSemaine = new Date(`${resultat.date}T12:00:00Z`).toLocaleDateString('fr-FR', { weekday: 'long', timeZone: 'UTC' });
+        const quand = `${jourSemaine} ${dateParlee(String(resultat.date))}`;
         const qui = `${resultat.participants} personne${Number(resultat.participants) > 1 ? 's' : ''}`;
         return reponse(
           resultat.disponible
-            ? `C’est libre : ${nom}, le ${quand}, pour ${qui}. Vérifié à l’instant auprès du prestataire. Pour le prix et le reste du séjour, décrivez votre week-end : un conseiller vous envoie une proposition signée, avec des prix vérifiés.`
-            : `${nom} est complet le ${quand} pour ${qui}. Une autre date, ou une autre idée dans la même ville ? Dites-moi.`,
+            ? `C’est libre : ${nom}, le ${quand}, pour ${qui}. Vérifié à l’instant auprès du prestataire.\nPour le prix et le reste du séjour, un conseiller vous envoie une proposition signée.`
+            : `${nom} est complet le ${quand} pour ${qui}.\nUne autre date, ou une autre idée dans la même ville ?`,
         );
       }
       if (typeof resultat.erreur === 'string') return reponse('Je n’ai pas trouvé cette prestation au catalogue. Dites-moi la ville et ce qui vous tente, je cherche.');

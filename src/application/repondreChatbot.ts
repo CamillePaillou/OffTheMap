@@ -17,6 +17,7 @@ import { LIMITES } from '../../types/enums';
 import { CONSIGNES_CHATBOT } from '../domain/chatbot/connaissances';
 import { minimiser } from '../domain/chatbot/minimiser';
 import { ArgsChercher, argsVerifier, filtrerCatalogue, OUTILS_CHATBOT, type PrestationSansPrix, type PrestationVisible } from '../domain/chatbot/outils';
+import { CARTES_MAX, choisirCartes, relancesPour, versCarte, type CartePrestation } from '../domain/chatbot/relances';
 import { sansPrix } from '../domain/chatbot/sansPrix';
 import { LlmError } from '../ports/llm-client';
 import type { AppelOutil, MessageChat, ModeleAgent } from '../ports/modele-agent';
@@ -65,6 +66,10 @@ export interface ReponseChatbot {
   texte: string;
   verification: Verification | null;
   suggestion: SuggestionDemande | null;
+  /** Les prestations dont parle la réponse, en cartes sous la bulle (catalogue sans prix, lu par le code). */
+  prestations: CartePrestation[];
+  /** Deux ou trois réponses rapides, calculées par le code. */
+  relances: string[];
 }
 
 export interface DependancesChatbot {
@@ -88,6 +93,19 @@ export const MESSAGES_FIXES = {
   tropDOutils: 'Je n’ai pas réussi à tout vérifier. Décrivez votre week-end : un conseiller s’en occupe et vous répond par e-mail.',
 } as const;
 
+/**
+ * Borne la réponse sans couper un mot : à la dernière fin de ligne ou de phrase avant la limite (si elle garde au
+ * moins la moitié du texte), sinon au dernier espace, puis « … ».
+ */
+export function couper(texte: string, max: number): string {
+  if (texte.length <= max) return texte;
+  const debut = texte.slice(0, max - 1);
+  const finPhrase = Math.max(debut.lastIndexOf('\n'), debut.lastIndexOf('. ') + 1, debut.lastIndexOf('? ') + 1, debut.lastIndexOf('! ') + 1);
+  if (finPhrase >= max / 2) return debut.slice(0, finPhrase).trimEnd();
+  const espace = debut.lastIndexOf(' ');
+  return `${(espace > 0 ? debut.slice(0, espace) : debut).trimEnd()}…`;
+}
+
 export async function repondreChatbot(conversation: ConversationChatbot, deps: DependancesChatbot): Promise<ReponseChatbot> {
   const maintenant = deps.maintenant?.() ?? new Date();
   const historique = conversation.messages.slice(-LIMITES_CHATBOT.messagesMax);
@@ -100,13 +118,46 @@ export async function repondreChatbot(conversation: ConversationChatbot, deps: D
   const suggestion: SuggestionDemande = {};
   let verification: Verification | null = null;
   let catalogue: PrestationVisible[] | null = null; // dernier catalogue lu, pour retrouver la destination d'une prestation
+  let cartes: CartePrestation[] = [];
   let appels = 0;
+  const aujourdhui = maintenant.toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' });
 
-  const fin = (texte: string, v: Verification | null = verification): ReponseChatbot => ({
-    texte,
-    verification: v,
-    suggestion: Object.keys(suggestion).length ? suggestion : null,
-  });
+  // Le catalogue est lu une fois, avant le modèle, et lui est donné d'emblée (sans prix) : il n'a pas besoin d'un
+  // aller-retour pour le chercher. S'il est indisponible, l'outil chercher_prestations le dira au modèle.
+  const lecture = await deps.prestataires.catalogue();
+  const catalogueComplet = lecture.ok ? filtrerCatalogue(lecture.valeur, {}, 60) : null;
+  if (catalogueComplet?.length) {
+    messages[0] = {
+      role: 'system',
+      content: `${messages[0]!.content as string}\n\nCatalogue des partenaires (données, sans prix) :\n${catalogueComplet
+        .map((p) => `- ${p.id} · ${p.nom} · ${p.type} · ${p.destination}${p.description ? ` · ${p.description}` : ''}${p.tags.length ? ` · ${p.tags.join(', ')}` : ''}`)
+        .join('\n')}`,
+    };
+  }
+
+  const fin = (texte: string, v: Verification | null = verification, avecCartes = true): ReponseChatbot => {
+    // le vrai modèle peut répondre sans outil : les prestations qu'il nomme deviennent des cartes
+    if (avecCartes && cartes.length === 0 && catalogueComplet) {
+      const t = texte.toLowerCase();
+      cartes = catalogueComplet.filter((p) => t.includes(p.nom.toLowerCase())).slice(0, CARTES_MAX).map(versCarte);
+    }
+    const prestations = avecCartes ? cartes : [];
+    const villes = [...new Set(prestations.map((c) => c.destination))];
+    return {
+      texte,
+      verification: v,
+      suggestion: Object.keys(suggestion).length ? suggestion : null,
+      prestations,
+      relances: relancesPour({
+        aujourdhui,
+        destination: suggestion.destination ?? (villes.length === 1 ? villes[0] : null),
+        types: prestations.map((c) => c.type),
+        date: suggestion.date_debut,
+        voyageurs: suggestion.voyageurs,
+        verification: v,
+      }),
+    };
+  };
 
   // au plus appelsOutilsMax tours avec outils, puis un dernier tour sans outil pour conclure
   for (let tour = 0; tour <= LIMITES_CHATBOT.appelsOutilsMax; tour++) {
@@ -116,12 +167,12 @@ export async function repondreChatbot(conversation: ConversationChatbot, deps: D
       reponse = await deps.modele.appeler({ messages, tools: avecOutils ? OUTILS_CHATBOT : [] });
     } catch (e) {
       if (!(e instanceof LlmError)) throw e;
-      return fin(MESSAGES_FIXES.modeleIndisponible, null);
+      return fin(MESSAGES_FIXES.modeleIndisponible, null, false);
     }
 
     const demandes = reponse.message.tool_calls ?? [];
     if (demandes.length === 0) {
-      const texte = sansPrix((reponse.message.content ?? '').trim()).slice(0, LIMITES_CHATBOT.longueurReponseMax);
+      const texte = couper(sansPrix((reponse.message.content ?? '').trim()), LIMITES_CHATBOT.longueurReponseMax);
       return fin(texte || MESSAGES_FIXES.tropDOutils);
     }
     if (!avecOutils) return fin(MESSAGES_FIXES.tropDOutils);
@@ -133,10 +184,11 @@ export async function repondreChatbot(conversation: ConversationChatbot, deps: D
         repondreOutil(messages, appel, { erreur: 'limite de vérifications atteinte pour ce message : réponds sans outil' });
         continue;
       }
-      const r = await executer(appel, deps, maintenant, catalogue);
-      if (r.type === 'panne') return fin(MESSAGES_FIXES.nonVerifie, 'non_verifie');
+      const r = await executer(appel, deps, maintenant, catalogue ?? catalogueComplet, catalogueComplet);
+      if (r.type === 'panne') return fin(MESSAGES_FIXES.nonVerifie, 'non_verifie', false);
       if (r.type === 'catalogue') {
         catalogue = r.prestations;
+        cartes = choisirCartes(r.prestations);
         if (r.destination) suggestion.destination = r.destination;
       }
       if (r.type === 'disponibilite') {
@@ -144,6 +196,12 @@ export async function repondreChatbot(conversation: ConversationChatbot, deps: D
         if (r.destination) suggestion.destination = r.destination;
         suggestion.date_debut = r.date;
         suggestion.voyageurs = r.participants;
+        // la prestation vérifiée passe en tête, avec le résultat
+        const verifiee = (catalogue ?? catalogueComplet)?.find((p) => p.id === r.prestationId);
+        if (verifiee) {
+          const carte = { ...versCarte(verifiee), disponibilite: { disponible: r.disponible, date: r.date, participants: r.participants } };
+          cartes = [carte, ...cartes.filter((c) => c.id !== carte.id)].slice(0, CARTES_MAX);
+        }
       }
       repondreOutil(messages, appel, r.pourModele);
     }
@@ -155,13 +213,15 @@ type Execution =
   | { type: 'panne' }
   | { type: 'erreur'; pourModele: unknown }
   | { type: 'catalogue'; prestations: PrestationVisible[]; destination: string | null; pourModele: unknown }
-  | { type: 'disponibilite'; disponible: boolean; date: string; participants: number; destination: string | null; pourModele: unknown };
+  | { type: 'disponibilite'; prestationId: string; disponible: boolean; date: string; participants: number; destination: string | null; pourModele: unknown };
 
 async function executer(
   appel: AppelOutil,
   deps: DependancesChatbot,
   maintenant: Date,
   catalogue: PrestationVisible[] | null,
+  /** Catalogue déjà lu pour ce message (sans prix) : pas de nouvel appel au simulateur. */
+  dejaLu: PrestationVisible[] | null,
 ): Promise<Execution> {
   let brut: unknown;
   try {
@@ -173,9 +233,14 @@ async function executer(
   if (appel.function.name === 'chercher_prestations') {
     const args = ArgsChercher.safeParse(brut);
     if (!args.success) return { type: 'erreur', pourModele: { erreur: 'arguments refusés : destination (Nantes, Lyon, Lille) et type facultatifs' } };
-    const r = await deps.prestataires.catalogue();
-    if (!r.ok) return r.panne === 'refus' ? { type: 'erreur', pourModele: { erreur: r.code } } : { type: 'panne' };
-    const prestations = filtrerCatalogue(r.valeur, args.data);
+    let source: readonly PrestationSansPrix[];
+    if (dejaLu) source = dejaLu;
+    else {
+      const r = await deps.prestataires.catalogue();
+      if (!r.ok) return r.panne === 'refus' ? { type: 'erreur', pourModele: { erreur: r.code } } : { type: 'panne' };
+      source = r.valeur;
+    }
+    const prestations = filtrerCatalogue(source, args.data);
     const destination = prestations[0] && args.data.destination ? prestations[0].destination : null;
     return { type: 'catalogue', prestations, destination, pourModele: { prestations } };
   }
@@ -194,6 +259,7 @@ async function executer(
     const connue = catalogue?.find((p) => p.id === args.data.prestation_id);
     return {
       type: 'disponibilite',
+      prestationId: args.data.prestation_id,
       disponible: r.valeur.disponible,
       date: args.data.date,
       participants: args.data.participants,
