@@ -16,7 +16,7 @@ import { resumeEvenement } from './resumeEvenement';
 const SEJOUR: Sejour = { nom: 'Inès Martin', destination: 'Nantes', date_debut: '2026-11-07', date_fin: '2026-11-08', conseiller: 'Camille (démo)' };
 const NBSP = ' ';
 const ligne = (nom: string, statut: LigneMail['statut'], prix: number | null, participants = 2): LigneMail =>
-  ({ nom, date: '2026-11-07', participants, statut, prix_confirme_cents: prix });
+  ({ nom, date: '2026-11-07', participants, statut, prix_confirme_cents: prix, verifie_le: prix === null ? null : '2026-10-21T14:42:00.000Z' });
 
 describe('mails modèles (E5.4)', () => {
   it('quatre modèles fixes', () => {
@@ -26,11 +26,11 @@ describe('mails modèles (E5.4)', () => {
 
   it('rendez-vous : nom, séjour, créneaux à compléter, signature du conseiller', () => {
     const m = mailRendezVous(SEJOUR);
-    expect(m.sujet).toContain('rendez-vous');
+    expect(m.sujet).toBe('Votre week-end à Nantes : prenons rendez-vous');
     expect(m.corps).toContain('Bonjour Inès Martin,');
     expect(m.corps).toContain('séjour à Nantes, du 7 novembre 2026 au 8 novembre 2026');
     expect(m.corps).toContain('[créneaux à compléter]');
-    expect(m.corps).toMatch(/Camille \(démo\)\nDÉTOUR$/);
+    expect(m.corps).toMatch(/À bientôt,\nCamille\nDÉTOUR · Prenez le pas de côté\.$/); // signé du prénom
   });
 
   it('à corriger : chaque point avec le commentaire du conseiller, puis le lien', () => {
@@ -48,7 +48,7 @@ describe('mails modèles (E5.4)', () => {
       ligne('Atelier', 'confirme', 4000),
       ligne('Hôtel', 'indisponible', null), // sort de la proposition
     ]);
-    expect(m.corps).toContain(`- 7 novembre 2026 · Atelier · 2 pers. × 40,00${NBSP}€ = 80,00${NBSP}€`);
+    expect(m.corps).toContain(`- 7 novembre 2026 · Atelier · 2 pers. × 40,00${NBSP}€ = 80,00${NBSP}€ (prix vérifié le 21/10 à 16 h 42)`);
     expect(m.corps).toContain(`Total pour le groupe : 176,00${NBSP}€`);
     expect(m.corps).not.toContain('Hôtel');
   });
@@ -56,6 +56,18 @@ describe('mails modèles (E5.4)', () => {
   it('proposition : refusée si un prix n’est pas vérifié — rien ne part avec un prix non vérifié', () => {
     expect(() => mailProposition(SEJOUR, [ligne('Train', 'confirme', 4800), ligne('Atelier', 'a_verifier', null)])).toThrow(MailImpossibleErreur);
     expect(() => mailProposition(SEJOUR, [ligne('Hôtel', 'indisponible', null)])).toThrow(MailImpossibleErreur);
+  });
+
+  it('proposition : refusée si un prix n’est pas daté — un prix est toujours daté', () => {
+    expect(() => mailProposition(SEJOUR, [{ ...ligne('Train', 'confirme', 4800), verifie_le: null }])).toThrow(/sans date de vérification/);
+  });
+
+  it('ton DÉTOUR : le conseiller parle en « je », aucun astérisque ni « à partir de »', () => {
+    const corps = [mailRendezVous(SEJOUR), mailProposition(SEJOUR, [ligne('Train', 'confirme', 4800)]), mailConfirmation(SEJOUR, [ligne('Train', 'reservee', 4800)])]
+      .map((m) => m.corps)
+      .join('\n');
+    expect(corps).toMatch(/Je peux vous composer/);
+    expect(corps).not.toMatch(/\*|à partir de|!!/i);
   });
 
   it('confirmation : uniquement des lignes réservées', () => {

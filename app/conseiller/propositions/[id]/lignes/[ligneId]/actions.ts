@@ -26,8 +26,9 @@ export async function reverifier(propositionId: string, ligneId: string): Promis
       secrets: [process.env.LLM_API_KEY, process.env.SIMULATEUR_TEAM_KEY],
     };
   } catch (e) {
-    const detail = e instanceof Error ? e.message : String(e);
-    return { erreur: `L’agent n’est pas configuré sur le serveur : ${detail}.` };
+    // le détail technique va dans les journaux du serveur, pas à l'écran
+    console.error('agent de vérification non configuré :', e instanceof Error ? e.message : e);
+    return { erreur: 'L’agent de vérification n’est pas configuré sur ce serveur (modèle ou clé d’équipe manquants). Vérifiez le prix par téléphone en attendant.' };
   }
 
   try {

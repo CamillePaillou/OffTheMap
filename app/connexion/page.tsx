@@ -15,7 +15,7 @@ export default function ConnexionPage({ searchParams }: PageProps<'/connexion'>)
     <main className="bo flex flex-1 items-center justify-center px-4 py-12">
       <div className="bo-bloc bo-entre w-full max-w-sm p-7 sm:p-8">
         <h1 className="text-2xl">Espace conseiller</h1>
-        <p className="mt-1.5 text-ardoise">Connectez-vous pour retrouver vos dossiers.</p>
+        <p className="mt-1.5 text-encre-doux">Connectez-vous pour retrouver vos dossiers.</p>
         <Suspense>
           <Formulaire searchParams={searchParams} />
         </Suspense>

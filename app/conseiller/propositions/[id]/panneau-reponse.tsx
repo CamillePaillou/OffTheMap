@@ -28,8 +28,8 @@ export function PanneauReponse({ propositionId, statut }: { propositionId: strin
 
   if (statut === 'depot_recu') {
     return (
-      <section className="rounded-[18px] bg-sauge-pale p-4 text-sm">
-        <p className="font-medium text-sauge">Proposition acceptée, dépôt de garantie reçu.</p>
+      <section className="rounded-[18px] bg-ciel-pale p-4 text-sm">
+        <p className="font-medium text-encre">Proposition acceptée, dépôt de garantie reçu.</p>
         <Link href={`/conseiller/propositions/${propositionId}/accord`} className="mt-2 inline-block underline underline-offset-4">
           Passer à la réservation : donner l’accord pour les options
         </Link>
@@ -41,7 +41,7 @@ export function PanneauReponse({ propositionId, statut }: { propositionId: strin
   return (
     <form action={action} className="bo-carte flex flex-col gap-3 p-5">
       <h2 className="text-xl">{t.titre}</h2>
-      {etape === 'depot_recu' && <p className="text-sm text-sauge">Acceptation enregistrée.</p>}
+      {etape === 'depot_recu' && <p className="text-sm text-encre">Acceptation enregistrée.</p>}
       <label className="flex items-center gap-2 text-sm">
         <input name="confirmer" type="checkbox" />
         {t.case}
@@ -50,7 +50,7 @@ export function PanneauReponse({ propositionId, statut }: { propositionId: strin
         {enCours ? 'Enregistrement…' : t.bouton}
       </button>
       {etat.erreur && (
-        <p role="alert" className="text-sm text-grenade">
+        <p role="alert" className="text-sm text-brique-texte">
           {etat.erreur}
         </p>
       )}

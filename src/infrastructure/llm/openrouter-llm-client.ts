@@ -75,7 +75,10 @@ const CONSIGNES_FICHE =
 const CONSIGNES_BROUILLON =
   `${CONSIGNES_COMMUNES} Construis un programme jour par jour et des lignes de proposition ` +
   'en choisissant uniquement parmi les prestations autorisées. Une ligne ne dépasse jamais le nombre de participants. ' +
-  'Indique dans « ecartes » les prestations autorisées que tu n’as pas retenues, avec la raison.';
+  'Indique dans « ecartes » les prestations autorisées que tu n’as pas retenues, avec la raison. ' +
+  'Le programme est relu puis signé par le conseiller : écris-le au ton DÉTOUR, précis d’abord (heures, lieux, ce qu’on y fait), ' +
+  'en phrases courtes, « nous » pour l’agence ; une pointe d’humour au plus, jamais sur un prix ni sur un problème ; ' +
+  'ni point d’exclamation en série, ni formule publicitaire.';
 
 const CONSIGNES_ECARTS =
   `${CONSIGNES_COMMUNES} Le client a demandé un changement ; une nouvelle version de sa proposition a été préparée. ` +

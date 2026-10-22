@@ -20,5 +20,6 @@ export function lignesPourMail(p: Proposition): LigneMail[] {
     participants: l.participants,
     statut: l.statut,
     prix_confirme_cents: l.prix_confirme?.montant_cents ?? null,
+    verifie_le: l.prix_confirme?.le ?? null,
   }));
 }

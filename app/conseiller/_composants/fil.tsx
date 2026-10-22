@@ -4,7 +4,7 @@ import Link from 'next/link';
 export function Fil({ etapes }: { etapes: readonly { libelle: string; href?: string }[] }) {
   return (
     <nav aria-label="Fil d’Ariane" className="text-sm">
-      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-ardoise">
+      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-encre-doux">
         {etapes.map((e, i) => (
           <li key={i} className="flex items-center gap-2">
             {i > 0 && <span aria-hidden>/</span>}

@@ -22,7 +22,7 @@ export function BoutonRelancerBrouillon({ propositionId }: { propositionId: stri
         {enCours ? 'Relance…' : 'Relancer'}
       </button>
       {etat.erreur && (
-        <span role="alert" className="text-sm text-grenade">
+        <span role="alert" className="text-sm text-brique-texte">
           {etat.erreur}
         </span>
       )}

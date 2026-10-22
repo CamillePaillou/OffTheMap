@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Saut } from '../../_composants/saut';
 import { Ligne } from '../../_composants/ligne';
 
 export const metadata: Metadata = { title: 'Demande enregistrée' };
@@ -16,7 +17,9 @@ export default function MerciPage() {
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
       <div className="panneau p-6 sm:p-10">
-        <h1 className="text-4xl">Merci, votre demande est enregistrée</h1>
+        <h1 className="text-4xl">
+          Merci, c’est <Saut avant="n" apres="té" />.
+        </h1>
         <p className="mt-3 max-w-2xl text-lg leading-relaxed">
           Un conseiller DÉTOUR l’étudie et vous répond par e-mail. Pensez à regarder vos courriers indésirables si vous ne voyez rien venir.
         </p>

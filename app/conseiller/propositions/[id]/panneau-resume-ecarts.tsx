@@ -14,15 +14,15 @@ export function PanneauResumeEcarts({ propositionId, resume, aJour }: { proposit
       <h3 className="font-semibold text-encre">Résumé pour le client</h3>
       {resume ? (
         <>
-          <blockquote className="mt-2 whitespace-pre-line rounded-lg bg-brume p-3 text-sm text-encre">{resume}</blockquote>
-          <p className={`mt-1 text-xs ${aJour ? 'text-ardoise' : 'font-semibold text-[#5c3d0c]'}`}>
+          <blockquote className="mt-2 whitespace-pre-line rounded-lg bg-craie p-3 text-sm text-encre">{resume}</blockquote>
+          <p className={`mt-1 text-xs ${aJour ? 'text-encre-doux' : 'font-semibold text-encre'}`}>
             {aJour
               ? 'Écrit par l’IA, sans aucun chiffre : ajoutez les prix vous-même avant de l’envoyer.'
               : 'Les écarts ont changé depuis ce résumé : rédigez-le à nouveau.'}
           </p>
         </>
       ) : (
-        <p className="mt-1 text-sm text-ardoise">
+        <p className="mt-1 text-sm text-encre-doux">
           L’IA rédige un court paragraphe qui explique ces changements au client, sans aucun chiffre ni montant.
         </p>
       )}
@@ -31,7 +31,7 @@ export function PanneauResumeEcarts({ propositionId, resume, aJour }: { proposit
           {enCours ? 'Rédaction…' : resume ? 'Rédiger à nouveau' : 'Rédiger le résumé pour le client'}
         </button>
         {etat.erreur && !enCours && (
-          <span role="alert" className="text-sm text-grenade">
+          <span role="alert" className="text-sm text-brique-texte">
             {etat.erreur}
           </span>
         )}
