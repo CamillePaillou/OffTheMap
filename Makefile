@@ -5,7 +5,7 @@ DB_CONTAINER := supabase_db_off-the-map
 APP_PORT ?= 3000
 
 .DEFAULT_GOAL := help
-.PHONY: help up down restart logs status migrate seed reset test-db lint typecheck build essai-llm essai-agent
+.PHONY: help up down restart logs status migrate seed reset test-db lint typecheck build essai-llm essai-agent essai-chatbot
 
 help: ## Liste les commandes
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
@@ -58,6 +58,9 @@ essai-llm: .env node_modules ## Appel réel à OpenRouter avec les modèles de .
 
 essai-agent: .env node_modules ## Agent réel : OpenRouter + simulateur local (E8.3) ; PANNE=delai ou erreur_serveur
 	LLM_ESSAI_REEL=1 SIMULATEUR_URL=http://localhost:$(or $(SIMULATEUR_PORT),8765) SIMULATEUR_PANNE=$(or $(PANNE),aucune) node --env-file=.env node_modules/vitest/vitest.mjs run src/application/verifierPrestation.essai-reel.test.ts
+
+essai-chatbot: .env node_modules ## Chatbot réel : OpenRouter + simulateur local (E1.3) ; PANNE=delai ou erreur_serveur
+	LLM_ESSAI_REEL=1 SIMULATEUR_URL=http://localhost:$(or $(SIMULATEUR_PORT),8765) SIMULATEUR_PANNE=$(or $(PANNE),aucune) node --env-file=.env node_modules/vitest/vitest.mjs run src/application/repondreChatbot.essai-reel.test.ts
 
 lint: node_modules ## Lint
 	npm run lint

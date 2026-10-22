@@ -22,9 +22,19 @@ export default function DemandePage({ searchParams }: PageProps<'/demande'>) {
   );
 }
 
-// Depuis une carte de l'accueil (« Un week-end à Lyon ») : la destination est préremplie, rien d'autre.
+// Préremplissage depuis une carte de l'accueil (« Un week-end à Lyon ») ou depuis le chatbot (E1.3) : destination,
+// date de départ et nombre d'adultes, contrôlés ici ; le client relit et complète. Rien d'autre n'est prérempli.
 async function AvecDestination({ searchParams }: Pick<PageProps<'/demande'>, 'searchParams'>) {
-  const { destination } = await searchParams;
-  const valeur = typeof destination === 'string' ? destination.trim().slice(0, 80) : '';
-  return <FormulaireDemande initiales={valeur ? { destination: valeur, adultes: '2', enfants: '0' } : undefined} />;
+  const p = await searchParams;
+  const texte = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+  const destination = texte(p.destination).slice(0, 80);
+  const date = texte(p.date_debut);
+  const dateValide = /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(`${date}T12:00:00Z`)) ? date : '';
+  const adultes = Number(texte(p.adultes));
+  const adultesValides = Number.isInteger(adultes) && adultes >= 1 && adultes <= 20 ? String(adultes) : '';
+  const initiales: Record<string, string> = {};
+  if (destination) initiales.destination = destination;
+  if (dateValide) initiales.date_debut = dateValide;
+  if (destination || dateValide || adultesValides) Object.assign(initiales, { adultes: adultesValides || '2', enfants: '0' });
+  return <FormulaireDemande initiales={Object.keys(initiales).length ? initiales : undefined} />;
 }

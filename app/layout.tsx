@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Atkinson_Hyperlegible, Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
 import { Suspense } from "react";
+import { ChatbotSite } from "./_composants/chatbot";
 import { EnTete, EnTeteSelon } from "./_composants/en-tete";
 import { PiedDePage, PiedDePageReduit } from "./_composants/pied-de-page";
 import "./globals.css";
@@ -32,6 +33,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </div>
         <Suspense fallback={<PiedDePageReduit />}>
           <PiedDePage />
+        </Suspense>
+        {/* chatbot du site public (E1.3) : le chemin décide où il apparaît */}
+        <Suspense fallback={null}>
+          <ChatbotSite />
         </Suspense>
       </body>
     </html>

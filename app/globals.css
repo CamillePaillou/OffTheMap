@@ -218,3 +218,28 @@
 @media (prefers-reduced-motion: reduce) {
   .bo *, .bo { animation: none !important; transition: none !important; }
 }
+
+/* ---------------------------------------------------------------- chatbot du site (E1.3) */
+@layer components {
+  .chatbot-entre { animation: chatbot-entre 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .chatbot-points { display: inline-flex; gap: 4px; }
+  .chatbot-points > span {
+    width: 6px; height: 6px; border-radius: 999px; background: currentColor;
+    animation: chatbot-point 1s ease-in-out infinite;
+  }
+  .chatbot-points > span:nth-child(2) { animation-delay: 150ms; }
+  .chatbot-points > span:nth-child(3) { animation-delay: 300ms; }
+}
+
+@keyframes chatbot-entre {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes chatbot-point {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chatbot-entre, .chatbot-points > span { animation: none; }
+}
