@@ -16,7 +16,7 @@ const demande = versDemandePourLLM({
   envies: 'Un week-end créatif sans voiture',
   contraintes: 'Pas de longues marches',
   regimes: ['vegetarien'],
-  mobilite: 'reduite',
+  mobilite: 'reduite', prestations_souhaitees: [],
 } satisfies DemandeLue);
 
 const fiche = { envies: ['week-end créatif'], contraintes: ['pas de longues marches'], regimes: ['vegetarien'], mobilite: 'reduite', niveau_physique: null, points_flous: [] };

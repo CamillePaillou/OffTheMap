@@ -42,11 +42,16 @@ export function ChatbotSite() {
   return <Chatbot />;
 }
 
-function lienDemande(s: Reponse['suggestion'], carte?: Carte) {
+/**
+ * Le formulaire prérempli : ville, date, voyageurs, et les prestations ajoutées (E1.4), que le serveur renomme depuis
+ * le catalogue et enregistre avec la demande. Rien d'autre ne passe par l'adresse.
+ */
+function lienDemande(s: Reponse['suggestion'], choix: readonly Carte[]) {
   const q = new URLSearchParams();
-  const destination = carte?.destination ?? s?.destination;
+  const villes = [...new Set(choix.map((c) => c.destination))];
+  const destination = s?.destination ?? (villes.length === 1 ? villes[0] : undefined);
   if (destination) q.set('destination', destination);
-  if (carte && carte.type !== 'transport') q.set('envie', carte.nom);
+  if (choix.length > 0) q.set('prestations', choix.map((c) => c.id).join(','));
   if (s?.date_debut) q.set('date_debut', s.date_debut);
   if (s?.voyageurs) q.set('adultes', String(s.voyageurs));
   const chaine = q.toString();
@@ -63,6 +68,10 @@ function Chatbot() {
   const [saisie, setSaisie] = useState('');
   const [enCours, setEnCours] = useState(false);
   const [suggestion, setSuggestion] = useState<Reponse['suggestion']>(null);
+  // prestations ajoutées au week-end depuis les cartes (E1.4), 6 au plus
+  const [choix, setChoix] = useState<Carte[]>([]);
+  const basculer = (c: Carte) =>
+    setChoix((liste) => (liste.some((x) => x.id === c.id) ? liste.filter((x) => x.id !== c.id) : [...liste, c].slice(-6)));
   const [annonce, setAnnonce] = useState('');
   const idPanneau = useId();
   const bouton = useRef<HTMLButtonElement>(null);
@@ -165,7 +174,7 @@ function Chatbot() {
                   <ul aria-label="Prestations proposées" className="chatbot-entre flex flex-col gap-2">
                     {m.prestations.map((c) => (
                       <li key={c.id}>
-                        <CartePrestation carte={c} lien={lienDemande(suggestion, c)} />
+                        <CartePrestation carte={c} ajoutee={choix.some((x) => x.id === c.id)} basculer={() => basculer(c)} />
                       </li>
                     ))}
                   </ul>
@@ -200,7 +209,12 @@ function Chatbot() {
           </div>
 
           <div className="border-t border-trait bg-carte px-4 pt-3 pb-4">
-            <Link href={lienDemande(suggestion)} className="btn-principal mb-3 w-full py-2.5! text-[0.95rem]">
+            {choix.length > 0 && (
+              <p className="mb-2 text-sm text-encre-doux" aria-live="polite">
+                {choix.length === 1 ? '1 prestation ajoutée' : `${choix.length} prestations ajoutées`} : {choix.map((c) => c.nom).join(', ')}.
+              </p>
+            )}
+            <Link href={lienDemande(suggestion, choix)} className="btn-principal mb-3 w-full py-2.5! text-[0.95rem]">
               Composer mon week-end
             </Link>
             <form onSubmit={soumettre} className="flex items-end gap-2">
@@ -314,13 +328,10 @@ const jour = (iso: string) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 /** Une prestation du catalogue : ce qu'on y fait, et le chemin vers le formulaire prérempli avec elle. */
-function CartePrestation({ carte, lien }: { carte: Carte; lien: string }) {
+function CartePrestation({ carte, ajoutee, basculer }: { carte: Carte; ajoutee: boolean; basculer: () => void }) {
   const d = carte.disponibilite;
   return (
-    <Link
-      href={lien}
-      className="group flex flex-col gap-0.5 rounded-xl border border-trait bg-carte px-3.5 py-2.5 text-encre! no-underline transition-colors hover:border-encre"
-    >
+    <div className={`flex flex-col gap-0.5 rounded-xl border bg-carte px-3.5 py-2.5 transition-colors ${ajoutee ? 'border-encre' : 'border-trait'}`}>
       <span className="text-xs text-encre-doux">
         {TYPES[carte.type]} · {carte.destination}
       </span>
@@ -331,9 +342,17 @@ function CartePrestation({ carte, lien }: { carte: Carte; lien: string }) {
           {d.disponible ? 'Libre' : 'Complet'} le {jour(d.date)} pour {d.participants}
         </span>
       )}
-      <span className="mt-1 text-sm font-semibold text-encre underline decoration-1 underline-offset-4 group-hover:decoration-2">
-        {carte.type === 'transport' ? 'Composer mon week-end' : 'Ajouter à mon week-end'}
-      </span>
-    </Link>
+      {/* ajoute la prestation au week-end : elle part avec la demande, le conseiller la voit sur le dossier */}
+      <button
+        type="button"
+        onClick={basculer}
+        aria-pressed={ajoutee}
+        className={`mt-1.5 self-start rounded-full px-3 py-1 text-sm font-semibold transition-colors ${
+          ajoutee ? 'bg-encre text-craie hover:bg-encre-clair' : 'border-[1.5px] border-encre text-encre hover:bg-encre hover:text-craie'
+        }`}
+      >
+        {ajoutee ? 'Ajoutée ✓ · retirer' : 'Ajouter à mon week-end'}
+      </button>
+    </div>
   );
 }

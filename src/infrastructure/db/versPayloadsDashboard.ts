@@ -69,7 +69,7 @@ export type LigneFicheDetail = Ligne<'fiches',
 export type LigneDossierDetail = Ligne<'dossiers', 'id' | 'statut' | 'cree_le'> & {
   demandes: (Ligne<'demandes',
     | 'version' | 'remplacee_le' | 'nom' | 'email' | 'destination' | 'date_debut' | 'date_fin' | 'nb_nuits' | 'voyageurs'
-    | 'budget_annonce_cents' | 'envies' | 'contraintes'> & { fiches: LigneFicheDetail | null })[];
+    | 'budget_annonce_cents' | 'envies' | 'contraintes' | 'prestations_souhaitees'> & { fiches: LigneFicheDetail | null })[];
   propositions: Ligne<'propositions', 'id' | 'version' | 'statut' | 'total_cents'>[];
 };
 
@@ -96,7 +96,10 @@ export function versEvenement(h: LigneHistorique): EvenementHistorique {
   });
 }
 
-export function versDetailDossier(d: LigneDossierDetail, historique: LigneHistorique[]): DetailDossier {
+/** Nom, type et ville d'une prestation du catalogue (sans prix), pour afficher les prestations souhaitées (E1.4). */
+export type PrestationNommee = { id: string; nom: string; type: 'transport' | 'hebergement' | 'activite'; destination: string };
+
+export function versDetailDossier(d: LigneDossierDetail, historique: LigneHistorique[], catalogue: readonly PrestationNommee[] = []): DetailDossier {
   const demande = versionEnCours(d.demandes);
   if (!demande) throw new Error(`dossier sans demande : ${d.id}`);
   const f = demande.fiches;
@@ -114,6 +117,11 @@ export function versDetailDossier(d: LigneDossierDetail, historique: LigneHistor
       budget_annonce: demande.budget_annonce_cents === null ? null : { montant_cents: demande.budget_annonce_cents },
       envies: demande.envies,
       contraintes: demande.contraintes,
+      // dans l'ordre du client ; une prestation sortie du catalogue depuis n'est plus montrée
+      prestations_souhaitees: (demande.prestations_souhaitees ?? [])
+        .map((id) => catalogue.find((p) => p.id === id))
+        .filter((p): p is PrestationNommee => p !== undefined)
+        .map(({ id, nom, type, destination }) => ({ id, nom, type, destination })),
     },
     // sans ligne dans fiches (aucune génération aboutie), l'état reste lisible sur le statut du dossier
     fiche: f && etat

@@ -2,7 +2,7 @@ import 'server-only';
 import { z } from 'zod';
 import { clientSupabase } from '../../../lib/supabase/serveur';
 import type { DossiersLecture } from '../../ports/dossiers';
-import { versDetailDossier, versDossierResume, type LigneDossierDetail, type LigneDossierListe, type LigneHistorique } from './versPayloadsDashboard';
+import { versDetailDossier, versDossierResume, type LigneDossierDetail, type LigneDossierListe, type LigneHistorique, type PrestationNommee } from './versPayloadsDashboard';
 
 const SELECT_LISTE = `id, statut, cree_le,
   demandes (version, remplacee_le, nom, destination, date_debut, date_fin, voyageurs, budget_annonce_cents,
@@ -10,7 +10,7 @@ const SELECT_LISTE = `id, statut, cree_le,
   propositions (id, version, statut, total_cents, proposition_lignes (statut))`;
 
 const SELECT_DETAIL = `id, statut, cree_le,
-  demandes (version, remplacee_le, nom, email, destination, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents, envies, contraintes,
+  demandes (version, remplacee_le, nom, email, destination, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents, envies, contraintes, prestations_souhaitees,
     fiches (envies, contraintes, points_flous, regimes, mobilite, niveau_physique, budget_reel_cents, date_debut_fixe, date_fin_fixe,
       nb_nuits_fixe, notes_conseiller, decision, validee_le, erreur_generation)),
   propositions (id, version, statut, total_cents)`;
@@ -45,6 +45,14 @@ export class DossiersSupabase implements DossiersLecture {
     if (dossier.error) throw new Error(`détail du dossier : ${dossier.error.message}`);
     if (historique.error) throw new Error(`historique du dossier : ${historique.error.message}`);
     if (!dossier.data) return null;
-    return versDetailDossier(dossier.data satisfies LigneDossierDetail, historique.data satisfies LigneHistorique[]);
+    // prestations souhaitées (E1.4) : leurs noms, lus au catalogue (colonnes sans prix)
+    const ids = [...new Set(dossier.data.demandes.flatMap((d) => d.prestations_souhaitees ?? []))];
+    let catalogue: PrestationNommee[] = [];
+    if (ids.length > 0) {
+      const { data, error } = await supabase.from('prestations').select('id, nom, type, destination').in('id', ids);
+      if (error) throw new Error(`prestations souhaitées : ${error.message}`);
+      catalogue = data ?? [];
+    }
+    return versDetailDossier(dossier.data satisfies LigneDossierDetail, historique.data satisfies LigneHistorique[], catalogue);
   }
 }

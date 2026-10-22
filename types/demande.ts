@@ -29,6 +29,8 @@ export const schemaSaisieDemande = (aujourdhui: string) =>
       contraintes: texteOptionnel(2000),
       regimes: z.array(z.enum(REGIMES)),
       mobilite: z.enum(MOBILITES).nullable(),
+      // prestations ajoutées depuis le chatbot (E1.4) : identifiants du catalogue ; la base ne garde que les actives
+      prestations: z.array(z.string().regex(/^[a-z0-9-]{1,80}$/, 'Prestation inconnue')).max(6, '6 prestations au plus').default([]),
       // Vérifiés dans superRefine avec les règles croisées : toutes les erreurs s'affichent en une fois.
       consentement_rgpd: z.boolean(),
       consentement_ia: z.boolean(),
@@ -62,6 +64,7 @@ export interface NouvelleDemande {
   contraintes: string | null;
   regimes: SaisieDemande['regimes'];
   mobilite: SaisieDemande['mobilite'];
+  prestations_souhaitees: string[];
 }
 
 /** À n'appeler qu'après une validation réussie : les deux consentements y sont vrais. */
@@ -81,5 +84,6 @@ export function versNouvelleDemande(s: SaisieDemande): NouvelleDemande {
     contraintes: s.contraintes,
     regimes: s.regimes,
     mobilite: s.mobilite,
+    prestations_souhaitees: [...new Set(s.prestations)],
   };
 }

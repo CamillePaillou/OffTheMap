@@ -10,7 +10,7 @@ const ALICE = 'alice';
 const MAINTENANT = new Date('2026-10-20T10:00:00+02:00');
 const NINA: VersionDemande = {
   nom: 'Nina Moreau', email: 'nina@example.org', destination: 'Nantes', date_debut: '2026-11-07', date_fin: '2026-11-08',
-  nb_nuits: 1, voyageurs: ['adulte', 'adulte'], budget_annonce_cents: 15000, envies: null, contraintes: null, regimes: [], mobilite: null,
+  nb_nuits: 1, voyageurs: ['adulte', 'adulte'], budget_annonce_cents: 15000, envies: null, contraintes: null, regimes: [], mobilite: null, prestations_souhaitees: [],
 };
 
 let statuts: StatutsEnMemoire;

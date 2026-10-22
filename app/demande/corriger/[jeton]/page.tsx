@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { lireCorrection } from '@/src/application/corrigerDemande';
 import { CorrectionsSupabase } from '@/src/infrastructure/db/correctionsSupabase';
 import { CHAMPS_FORMULAIRE, LIBELLES_CHAMPS, versValeursFormulaire } from '@/types/correction';
+import { nommerPrestations } from '@/src/infrastructure/db/catalogueSupabase';
 import { FormulaireDemande } from '../../formulaire';
 import { envoyerCorrection } from './actions';
 
@@ -74,6 +75,7 @@ async function Contenu({ params }: { params: PageProps<'/demande/corriger/[jeton
       <FormulaireDemande
         action={envoyerCorrection.bind(null, jeton)}
         initiales={versValeursFormulaire(lecture.demande)}
+        prestationsChoisies={await nommerPrestations(lecture.demande.prestations_souhaitees ?? [])}
         surlignes={surlignes}
         commentaires={commentaires}
         libelleEnvoi="Envoyer ma correction"

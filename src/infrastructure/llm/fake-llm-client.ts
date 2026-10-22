@@ -45,7 +45,11 @@ export class FauxLlmClient implements LlmClient {
     const jour = entree.demande.date_debut;
     const brute = this.options.brouillonRepondu ?? {
       programme: [{ date: jour, titre: 'Programme proposé', texte: 'Journée construite à partir des prestations retenues.' }],
-      lignes: entree.prestationsAutorisees.slice(0, 3).map((p) => ({
+      // les prestations souhaitées par le client (E1.4) d'abord, comme le demande la consigne du vrai modèle
+      lignes: [...entree.prestationsAutorisees]
+        .sort((a, b) => Number(entree.demande.prestations_souhaitees.includes(b.id)) - Number(entree.demande.prestations_souhaitees.includes(a.id)))
+        .slice(0, 3)
+        .map((p) => ({
         prestation_id: p.id,
         date: jour,
         participants: entree.participants,

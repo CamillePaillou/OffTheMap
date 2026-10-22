@@ -88,6 +88,13 @@ export const DetailDossier = z.object({
     budget_annonce: z.object({ montant_cents: centsPositif }).strict().nullable(), // budget total du groupe
     envies: z.string().nullable(),
     contraintes: z.string().nullable(),
+    // ajoutées par le client depuis le chatbot (E1.4) : ce qui l'intéresse au catalogue, sans prix
+    prestations_souhaitees: z.array(z.object({
+      id: z.string().min(1),
+      nom: z.string().min(1),
+      type: z.enum(['transport', 'hebergement', 'activite']),
+      destination: z.string().min(1),
+    }).strict()).max(6),
   }).strict(),
   fiche: z.object({
     etat: z.enum(ETATS_FICHE),

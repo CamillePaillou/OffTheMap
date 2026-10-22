@@ -15,7 +15,7 @@ const DEMANDE: DemandeLue = {
   date_debut: '2026-11-07', date_fin: '2026-11-08', nb_nuits: 1,
   voyageurs: ['adulte', 'adulte'], budget_annonce_cents: 40000,
   envies: 'Un atelier créatif et la ville à pied', contraintes: 'Sans voiture',
-  regimes: ['sans_gluten'], mobilite: null,
+  regimes: ['sans_gluten'], mobilite: null, prestations_souhaitees: [],
 };
 
 /** Client qui échoue les `n` premiers appels, puis répond comme le faux client. */

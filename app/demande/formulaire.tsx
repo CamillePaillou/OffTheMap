@@ -34,7 +34,7 @@ const STATIONS: Record<string, (v: Record<string, string>) => boolean> = {
   voyage: (v) => !!v.date_debut && !!v.date_fin && v.nb_nuits !== undefined && v.nb_nuits !== '',
   voyageurs: (v) => Number(v.adultes) >= 1,
   budget: (v) => !!v.budget_euros,
-  envies: (v) => !!v.envies?.trim() || !!v.contraintes?.trim(),
+  envies: (v) => !!v.envies?.trim() || !!v.contraintes?.trim() || !!v.prestation,
   besoins: (v) => Object.keys(v).some((k) => k.startsWith('regime_') || k === 'mobilite_reduite'),
   accords: (v) => v.consentement_rgpd === 'on' && v.consentement_ia === 'on',
 };
@@ -60,7 +60,17 @@ interface Props {
   /** Petit commentaire du conseiller par point signalé : explique au client pourquoi le champ ne va pas. */
   commentaires?: Commentaires;
   libelleEnvoi?: string;
+  /** Prestations ajoutées depuis le chatbot (E1.4), nommées par le serveur : le client peut en retirer. */
+  prestationsChoisies?: readonly PrestationChoisie[];
 }
+
+export interface PrestationChoisie {
+  id: string;
+  nom: string;
+  type: 'transport' | 'hebergement' | 'activite';
+  destination: string;
+}
+const TYPES_PRESTATION = { transport: 'Transport', hebergement: 'Hébergement', activite: 'Activité' } as const;
 
 export function FormulaireDemande({
   action: envoyer = envoyerDemande,
@@ -68,7 +78,10 @@ export function FormulaireDemande({
   surlignes = [],
   commentaires = {},
   libelleEnvoi = 'Envoyer ma demande',
+  prestationsChoisies = [],
 }: Props) {
+  // gardées dans l'état du composant : elles survivent à un renvoi du formulaire avec erreurs
+  const [choisies, setChoisies] = useState<readonly PrestationChoisie[]>(prestationsChoisies);
   const [etat, action, enCours] = useActionState<EtatDemande, FormData>(envoyer, {});
   const v = etat.valeurs ?? initiales ?? {};
   const e = etat.erreurs ?? {};
@@ -183,6 +196,33 @@ export function FormulaireDemande({
       <fieldset data-rempli={rempli('envies')} className="flex flex-col gap-4">
         <legend className="mb-3 text-xl">Vos envies</legend>
         <p className="text-sm text-encre-doux">N’indiquez ici aucune information de santé : cochez plutôt les cases plus bas.</p>
+        {choisies.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Ce qui vous tente</span>
+            <ul aria-label="Prestations ajoutées depuis l’assistant" className="flex flex-col gap-2">
+              {choisies.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-3 rounded-xl bg-ciel-pale px-3.5 py-2.5">
+                  <input type="hidden" name="prestation" value={p.id} />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-xs text-encre-doux">
+                      {TYPES_PRESTATION[p.type]} · {p.destination}
+                    </span>
+                    <span className="font-titre font-semibold leading-snug">{p.nom}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setChoisies((liste) => liste.filter((x) => x.id !== p.id))}
+                    className="shrink-0 rounded-full px-2.5 py-1 text-sm font-medium underline underline-offset-4 hover:bg-encre/[0.07]"
+                    aria-label={`Retirer ${p.nom}`}
+                  >
+                    Retirer
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <span className="text-sm text-encre-doux">Votre conseiller les verra sur votre demande et les privilégiera.</span>
+          </div>
+        )}
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium">Ce qui vous ferait plaisir</span>
           <textarea name="envies" rows={4} defaultValue={v.envies} className={c('envies')} {...decrit('envies')} />

@@ -25,7 +25,7 @@ const NINA: VersionDemande = {
   date_debut: '2026-11-07', date_fin: '2026-11-08', nb_nuits: 1,
   voyageurs: ['adulte', 'adulte'], budget_annonce_cents: 15000,
   envies: 'Week-end créatif à Nantes, sans voiture', contraintes: 'Pas de voiture',
-  regimes: ['vegetarien'], mobilite: null,
+  regimes: ['vegetarien'], mobilite: null, prestations_souhaitees: [],
 };
 
 /** Le formulaire tel que le client le renvoie : prérempli, consentements recochés, quelques champs modifiés. */

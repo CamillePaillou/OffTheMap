@@ -72,7 +72,7 @@ describe('minimisation vers le LLM', () => {
   const demande: DemandeLue = {
     nom: 'Inès', email: 'ines@example.org', destination: 'Nantes', date_debut: '2026-11-07', date_fin: '2026-11-08',
     nb_nuits: 1, voyageurs: ['adulte', 'adulte', 'enfant'], budget_annonce_cents: 40000,
-    envies: 'créatif, sans voiture', contraintes: null, regimes: ['vegetarien'], mobilite: null,
+    envies: 'créatif, sans voiture', contraintes: null, regimes: ['vegetarien'], mobilite: null, prestations_souhaitees: [],
   };
   it('ne transmet pas l’identité, mais les catégories et la présence d’un enfant', () => {
     const texte = JSON.stringify(versDemandePourLLM(demande));

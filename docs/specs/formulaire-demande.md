@@ -16,6 +16,7 @@ Règle : **chaque champ a un usage**. Un champ qui ne sert à rien n'est pas dem
 | `contraintes` | non | Fiche IA : ce que le brouillon doit éviter |
 | `regimes` | non | Catégories seulement : fiche IA, choix des repas et des activités culinaires |
 | `mobilite` | non | Fiche IA : le brouillon et le conseiller écartent les activités inadaptées |
+| `prestations` | non | Prestations du catalogue ajoutées depuis le chatbot (E1.4), 6 au plus : montrées au conseiller sur le dossier, privilégiées par le brouillon ; la base ne garde que des prestations actives |
 | `consentement_rgpd` | oui | Obligation légale : sans accord, rien n'est enregistré |
 | `consentement_ia` | oui | Information sur l'usage de l'IA : sans accord, rien n'est enregistré |
 

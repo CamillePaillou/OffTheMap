@@ -19,7 +19,7 @@ const sophie: DemandeLue = {
   envies: 'Un week-end créatif sans voiture',
   contraintes: 'Pas de longues marches',
   regimes: ['vegetarien'],
-  mobilite: 'reduite',
+  mobilite: 'reduite', prestations_souhaitees: [],
 };
 
 const entree = (): EntreeBrouillon => ({

@@ -22,6 +22,8 @@ export interface DemandeLue {
   contraintes: string | null;
   regimes: Regime[];
   mobilite: Mobilite | null;
+  /** Identifiants des prestations ajoutées depuis le chatbot (E1.4) : le brouillon les privilégie. */
+  prestations_souhaitees: string[];
 }
 
 const schemaDemandePourLLM = z.object({
@@ -35,6 +37,7 @@ const schemaDemandePourLLM = z.object({
   contraintes: z.string().nullable(),
   regimes: z.array(z.enum(REGIMES)), // catégories seulement
   mobilite: z.enum(MOBILITES).nullable(),
+  prestations_souhaitees: z.array(z.string().regex(/^[a-z0-9-]+$/)).max(6), // identifiants du catalogue, sans prix
 }).strict(); // un champ en trop (nom, e-mail…) fait échouer la validation
 
 declare const minimisee: unique symbol;
@@ -53,6 +56,7 @@ export function versDemandePourLLM(d: DemandeLue): DemandePourLLM {
     contraintes: d.contraintes,
     regimes: d.regimes,
     mobilite: d.mobilite,
+    prestations_souhaitees: d.prestations_souhaitees,
   });
   return sortie as DemandePourLLM;
 }

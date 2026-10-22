@@ -29,6 +29,8 @@ const REGIME: Record<string, string> = {
 };
 
 // Fiche d'un dossier (E2.1) : la demande du client, la fiche de l'IA, le tri (E3.1) et ce que le conseiller corrige après l'entretien.
+const TYPES_PRESTATION = { transport: 'transport', hebergement: 'hébergement', activite: 'activité' } as const;
+
 export default function DossierPage({ params }: Props) {
   return (
     <Suspense fallback={<p className="px-9 pt-7 text-encre-doux">Chargement…</p>}>
@@ -216,6 +218,25 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
               <dd>{voyageurs(demande.voyageurs)}</dd>
               <dt className="text-encre-doux">Budget annoncé</dt>
               <dd>{demande.budget_annonce ? `${euros(demande.budget_annonce.montant_cents)} pour le groupe` : 'non précisé'}</dd>
+              {demande.prestations_souhaitees.length > 0 && (
+                <>
+                  {/* E1.4 : ajoutées par le client depuis le chatbot ; le brouillon les retient en priorité */}
+                  <dt className="text-encre-doux">Ce qui le tente</dt>
+                  <dd>
+                    <ul aria-label="Prestations choisies par le client" className="flex flex-col items-start gap-1.5">
+                      {demande.prestations_souhaitees.map((p) => (
+                        <li key={p.id} className="rounded-[10px] bg-ciel px-3 py-1">
+                          <span className="font-semibold">{p.nom}</span>
+                          <span className="text-encre-doux">
+                            {' '}
+                            · {TYPES_PRESTATION[p.type]}, {p.destination}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </dd>
+                </>
+              )}
               <dt className="text-encre-doux">Contraintes</dt>
               <dd className="whitespace-pre-line">{demande.contraintes ?? '—'}</dd>
               <dt className="text-encre-doux">Reçue le</dt>

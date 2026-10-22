@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { Saut } from '../_composants/saut';
+import { nommerPrestations } from '@/src/infrastructure/db/catalogueSupabase';
 import { FormulaireDemande } from './formulaire';
 
 export const metadata: Metadata = { title: 'Composer mon week-end' };
@@ -26,8 +27,8 @@ export default function DemandePage({ searchParams }: PageProps<'/demande'>) {
 }
 
 // Préremplissage depuis une carte de l'accueil (« Un week-end à Lyon ») ou depuis le chatbot (E1.3) : destination,
-// date de départ, nombre d'adultes et la prestation choisie dans le chatbot (« envie »), contrôlés ici ; le client
-// relit et complète. Rien d'autre n'est prérempli.
+// date de départ, nombre d'adultes, et les prestations ajoutées dans le chatbot (E1.4, « prestations=id1,id2 »),
+// contrôlées ici et nommées depuis le catalogue ; le client relit, retire ou complète. Rien d'autre n'est prérempli.
 async function AvecDestination({ searchParams }: Pick<PageProps<'/demande'>, 'searchParams'>) {
   const p = await searchParams;
   const texte = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
@@ -36,12 +37,13 @@ async function AvecDestination({ searchParams }: Pick<PageProps<'/demande'>, 'se
   const dateValide = /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(`${date}T12:00:00Z`)) ? date : '';
   const adultes = Number(texte(p.adultes));
   const adultesValides = Number.isInteger(adultes) && adultes >= 1 && adultes <= 20 ? String(adultes) : '';
-  // nom d'une prestation du catalogue : lettres, chiffres et ponctuation simple seulement, 120 caractères au plus
-  const envie = texte(p.envie).replace(/[^\p{L}\p{N} ’'.,:()–-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 120);
+  const prestations = await nommerPrestations(texte(p.prestations).split(','));
   const initiales: Record<string, string> = {};
-  if (envie) initiales.envies = `Ce qui me tente : ${envie}.`;
   if (destination) initiales.destination = destination;
   if (dateValide) initiales.date_debut = dateValide;
-  if (destination || dateValide || adultesValides || envie) Object.assign(initiales, { adultes: adultesValides || '2', enfants: '0' });
-  return <FormulaireDemande initiales={Object.keys(initiales).length ? initiales : undefined} />;
+  if (destination || dateValide || adultesValides || prestations.length) Object.assign(initiales, { adultes: adultesValides || '2', enfants: '0' });
+  // sans destination donnée, celle des prestations choisies si elles sont toutes dans la même ville
+  const villes = [...new Set(prestations.map((x) => x.destination))];
+  if (!initiales.destination && villes.length === 1) initiales.destination = villes[0]!;
+  return <FormulaireDemande initiales={Object.keys(initiales).length ? initiales : undefined} prestationsChoisies={prestations} />;
 }
