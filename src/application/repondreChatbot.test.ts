@@ -82,7 +82,7 @@ describe('chatbot du site (E1.3)', () => {
       prestataires: fauxSimulateur({ dispo: { ok: false, panne } }),
       maintenant: MAINTENANT,
     });
-    expect(r).toEqual({ texte: MESSAGES_FIXES.nonVerifie, verification: 'non_verifie', suggestion: null });
+    expect(r).toEqual({ texte: MESSAGES_FIXES.nonVerifie, verification: 'non_verifie', suggestion: null, prestations: [], relances: expect.any(Array) });
     expect(modele.requetes).toHaveLength(1); // arrêt immédiat, pas de nouvel essai
   });
 
@@ -93,7 +93,7 @@ describe('chatbot du site (E1.3)', () => {
     );
     const simulateur = fauxSimulateur();
     const r = await repondreChatbot(question('Réservez-moi l’hôtel'), { modele, prestataires: simulateur, maintenant: MAINTENANT });
-    expect(simulateur.appels).toEqual([]);
+    expect(simulateur.appels).toEqual(['catalogue']); // lu une fois, avant le modèle ; aucune écriture
     expect(r.texte).toMatch(/conseiller/);
     expect(modele.requetes[0]!.tools.map((t) => t.function.name)).toEqual(['chercher_prestations', 'verifier_disponibilite']);
     expect(JSON.stringify(modele.requetes[1]!.messages.at(-1))).toMatch(/outil inconnu/);
@@ -113,7 +113,7 @@ describe('chatbot du site (E1.3)', () => {
   it('modèle injoignable : réponse fixe, sans nouvel essai', async () => {
     const modele = fauxModele(new LlmError('delai', 'délai dépassé'));
     const r = await repondreChatbot(question('Bonjour'), { modele, prestataires: fauxSimulateur(), maintenant: MAINTENANT });
-    expect(r).toEqual({ texte: MESSAGES_FIXES.modeleIndisponible, verification: null, suggestion: null });
+    expect(r).toEqual({ texte: MESSAGES_FIXES.modeleIndisponible, verification: null, suggestion: null, prestations: [], relances: expect.any(Array) });
   });
 
   it(`${LIMITES_CHATBOT.appelsOutilsMax} appels d’outil au plus, puis le modèle doit conclure sans outil`, async () => {
@@ -121,7 +121,7 @@ describe('chatbot du site (E1.3)', () => {
     const modele = fauxModele(appel(), appel(), appel(), texte('À Nantes : un atelier et un hôtel.'));
     const simulateur = fauxSimulateur();
     const r = await repondreChatbot(question('Que faire à Nantes ?'), { modele, prestataires: simulateur, maintenant: MAINTENANT });
-    expect(simulateur.appels).toHaveLength(3);
+    expect(simulateur.appels).toEqual(['catalogue']); // lu une fois : les recherches suivantes filtrent ce catalogue
     expect(modele.requetes.at(-1)!.tools).toEqual([]);
     expect(r.texte).toBe('À Nantes : un atelier et un hôtel.');
     expect(r.suggestion).toEqual({ destination: 'Nantes' });
@@ -144,7 +144,7 @@ describe('chatbot du site (E1.3)', () => {
     );
     const simulateur = fauxSimulateur();
     const r = await repondreChatbot(question('Le 1er octobre ?'), { modele, prestataires: simulateur, maintenant: MAINTENANT });
-    expect(simulateur.appels).toEqual([]);
+    expect(simulateur.appels).toEqual(['catalogue']); // pas d'appel de disponibilité
     expect(JSON.stringify(modele.requetes[1]!.messages.at(-1))).toMatch(/date passée/);
     expect(r.verification).toBeNull();
   });
@@ -173,5 +173,42 @@ describe('longueur des réponses', () => {
 
   it('une réponse courte n’est pas touchée', () => {
     expect(couper('Bonjour.', 900)).toBe('Bonjour.');
+  });
+});
+
+describe('réponses plus rapides et plus lisibles', () => {
+  it('le catalogue (sans prix) est donné au modèle dès le départ : il peut vérifier sans chercher d’abord', async () => {
+    const modele = fauxModele(
+      outil('verifier_disponibilite', { prestation_id: 'activite-nantes-01', date: '2026-11-07', participants: 2 }),
+      texte('C’est libre.'),
+    );
+    const simulateur = fauxSimulateur();
+    const r = await repondreChatbot(question('L’atelier de Nantes le 7 novembre pour deux ?'), { modele, prestataires: simulateur, maintenant: MAINTENANT });
+    const systeme = String(modele.requetes[0]!.messages[0]!.content);
+    expect(systeme).toMatch(/activite-nantes-01 · Atelier de machines imaginaires · activite · Nantes/);
+    expect(systeme).not.toMatch(/3500|9600|prix_unitaire|capacite/);
+    expect(modele.requetes).toHaveLength(2); // vérifier, conclure : plus de recherche préalable
+    expect(simulateur.appels).toEqual(['catalogue', 'disponibilite activite-nantes-01 2026-11-07 2']);
+    // la prestation vérifiée devient une carte, avec le résultat
+    expect(r.prestations[0]).toMatchObject({ id: 'activite-nantes-01', disponibilite: { disponible: true, date: '2026-11-07', participants: 2 } });
+  });
+
+  it('les prestations nommées par le modèle deviennent des cartes, sans prix', async () => {
+    const r = await repondreChatbot(question('Une idée à Nantes ?'), {
+      modele: fauxModele(texte('L’Atelier de machines imaginaires plaira à tout le monde.')),
+      prestataires: fauxSimulateur(),
+      maintenant: MAINTENANT,
+    });
+    expect(r.prestations.map((c) => c.nom)).toEqual(['Atelier de machines imaginaires']);
+    expect(JSON.stringify(r.prestations)).not.toMatch(/prix|capacite|3500/);
+  });
+
+  it('des réponses rapides adaptées à la ville et à la date', async () => {
+    const modele = fauxModele(
+      outil('verifier_disponibilite', { prestation_id: 'activite-nantes-01', date: '2026-11-07', participants: 2 }),
+      texte('C’est libre.'),
+    );
+    const r = await repondreChatbot(question('L’atelier de Nantes le 7 novembre pour deux ?'), { modele, prestataires: fauxSimulateur(), maintenant: MAINTENANT });
+    expect(r.relances).toEqual(['Où dormir à Nantes ?', 'Et le 14 novembre ?', 'Et à Lyon ?']);
   });
 });

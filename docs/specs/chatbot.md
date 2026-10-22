@@ -29,6 +29,14 @@ Briques réutilisées : port `ModeleAgent` et adaptateur OpenRouter (E0.13, E0.1
 
 Tout autre outil (poser une option, réserver, annuler) est refusé : il n'existe pas pour le chatbot, et le cas d'usage ne reçoit que `catalogue` et `disponibilite` du port `Prestataires`.
 
+## Rapidité et lisibilité
+
+- **Réponses rapides d'abord** (`ModeleHybride`, avec `LLM_PROVIDER=openrouter`) : les questions que le modèle de règles comprend (une ville, un type, un mot-clé, une date, le prix, la réservation, les horaires, « bonjour ») sont traitées sans appel réseau, en moins d'une seconde. Les autres vont au modèle principal seul (sans réserve), avec `CHATBOT_TIMEOUT_MS` (8 s par défaut). S'il échoue ou si le message dépasse 15 s, les règles terminent la réponse avec le catalogue.
+- **Un aller-retour de moins** : le catalogue (sans prix) est lu une fois par message et donné au modèle dans ses consignes ; `chercher_prestations` filtre ce catalogue sans rappeler le simulateur.
+- **Texte court, cartes en dessous** : la réponse tient en une ou deux phrases. Les prestations dont elle parle (résultats d'outil, ou noms cités par le modèle et retrouvés dans le catalogue) s'affichent en cartes : type, ville, nom, une ligne de description, et le résultat de la vérification s'il y en a eu une. Une carte ouvre le formulaire prérempli avec la ville, la prestation (« Ce qui me tente : … »), la date et les voyageurs.
+- **Réponses rapides** : deux ou trois suggestions calculées par le code après chaque réponse (« Où dormir à Lyon ? », « Libre le 7 novembre pour 2 ? », « Et le 14 novembre ? », « Et à Lille ? »), toutes comprises par les règles, donc instantanées.
+- **Jamais coupé en plein mot** : au-delà de 900 caractères, coupure en fin de phrase ; les lignes « - … » du modèle s'affichent en liste à puces.
+
 ## Règles
 
 - **Aucun prix** : ni dans ce que reçoit le modèle, ni dans ce qu'il répond (un montant écrit quand même est remplacé par « prix communiqué par un conseiller »).
