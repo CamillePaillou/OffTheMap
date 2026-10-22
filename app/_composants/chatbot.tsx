@@ -5,20 +5,33 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 
 /** Réponse de /api/chatbot (src/application/repondreChatbot.ts). */
+interface Carte {
+  id: string;
+  nom: string;
+  type: 'transport' | 'hebergement' | 'activite';
+  destination: string;
+  description?: string;
+  disponibilite?: { disponible: boolean; date: string; participants: number };
+}
 interface Reponse {
   texte: string;
   verification: 'disponible' | 'indisponible' | 'non_verifie' | null;
   suggestion: { destination?: string; date_debut?: string; voyageurs?: number } | null;
+  prestations?: Carte[];
+  relances?: string[];
 }
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   verification?: Reponse['verification'];
+  prestations?: Carte[];
+  relances?: string[];
 }
+const TYPES: Record<Carte['type'], string> = { transport: 'Transport', hebergement: 'Hébergement', activite: 'Activité' };
 
 const LONGUEUR_MAX = 600;
 const HISTORIQUE_MAX = 12;
-const IDEES = ['Que faire à Nantes ?', 'Un atelier à Nantes le 7 novembre pour deux ?', 'Quels sont vos horaires ?'];
+const IDEES = ['Que faire à Nantes ?', 'Où dormir à Lyon ?', 'Une activité quand il pleut ?', 'Quels sont vos horaires ?'];
 const BONJOUR = 'Bonjour ! Je peux vous parler de nos destinations et vérifier si une activité est disponible à une date. Les prix, c’est un conseiller qui vous les envoie.';
 const HORS_LIGNE = 'L’assistant ne répond pas pour le moment. Vous pouvez décrire votre week-end directement : un conseiller vous répondra.';
 
@@ -29,9 +42,11 @@ export function ChatbotSite() {
   return <Chatbot />;
 }
 
-function lienDemande(s: Reponse['suggestion']) {
+function lienDemande(s: Reponse['suggestion'], carte?: Carte) {
   const q = new URLSearchParams();
-  if (s?.destination) q.set('destination', s.destination);
+  const destination = carte?.destination ?? s?.destination;
+  if (destination) q.set('destination', destination);
+  if (carte && carte.type !== 'transport') q.set('envie', carte.nom);
   if (s?.date_debut) q.set('date_debut', s.date_debut);
   if (s?.voyageurs) q.set('adultes', String(s.voyageurs));
   const chaine = q.toString();
@@ -84,7 +99,10 @@ function Chatbot() {
     } catch {
       reponse = { texte: HORS_LIGNE, verification: null, suggestion: null };
     }
-    setMessages([...suite, { role: 'assistant', content: reponse.texte, verification: reponse.verification }]);
+    setMessages([
+      ...suite,
+      { role: 'assistant', content: reponse.texte, verification: reponse.verification, prestations: reponse.prestations ?? [], relances: reponse.relances ?? [] },
+    ]);
     if (reponse.suggestion) setSuggestion((s) => ({ ...s, ...reponse.suggestion }));
     setAnnonce(reponse.texte);
     setEnCours(false);
@@ -141,8 +159,35 @@ function Chatbot() {
               </ul>
             )}
             {messages.map((m, i) => (
-              <Bulle key={i} {...m} />
+              <div key={i} className="flex flex-col gap-2">
+                <Bulle {...m} />
+                {m.prestations && m.prestations.length > 0 && (
+                  <ul aria-label="Prestations proposées" className="chatbot-entre flex flex-col gap-2">
+                    {m.prestations.map((c) => (
+                      <li key={c.id}>
+                        <CartePrestation carte={c} lien={lienDemande(suggestion, c)} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             ))}
+            {/* réponses rapides : seulement après la dernière réponse */}
+            {!enCours && (messages.at(-1)?.relances?.length ?? 0) > 0 && (
+              <ul aria-label="Réponses rapides" className="flex flex-wrap gap-2">
+                {messages.at(-1)!.relances!.map((r) => (
+                  <li key={r}>
+                    <button
+                      type="button"
+                      onClick={() => void envoyer(r)}
+                      className="rounded-full border border-filet bg-white px-3 py-1.5 text-left text-sm text-nuit hover:border-bleu"
+                    >
+                      {r}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
             {enCours && (
               <p className="self-start rounded-2xl rounded-bl-md bg-white px-4 py-3 text-doux" aria-label="L’assistant écrit">
                 <span className="chatbot-points" aria-hidden>
@@ -213,14 +258,14 @@ function Bulle({ role, content, verification }: Message) {
   const visiteur = role === 'user';
   return (
     <div className={`chatbot-entre max-w-[85%] ${visiteur ? 'self-end' : 'self-start'}`}>
-      <p
-        className={`whitespace-pre-line rounded-2xl px-4 py-2.5 leading-relaxed ${
+      <div
+        className={`flex flex-col gap-1.5 rounded-2xl px-4 py-2.5 leading-relaxed ${
           visiteur ? 'rounded-br-md bg-nuit text-white' : 'rounded-bl-md bg-white text-texte'
         }`}
       >
         <span className="sr-only">{visiteur ? 'Vous : ' : 'Assistant : '}</span>
-        {content}
-      </p>
+        <TexteLisible texte={content} />
+      </div>
       {verification && (
         <p className={`mt-1 text-xs ${verification === 'non_verifie' ? 'text-doux' : 'text-[#2f6b4a]'}`}>
           {verification === 'disponible'
@@ -231,5 +276,64 @@ function Bulle({ role, content, verification }: Message) {
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Le texte d'une bulle, aéré : un paragraphe par ligne, et les lignes « - … » (que le vrai modèle peut écrire) en
+ * liste à puces. Pas de HTML venu du serveur : tout est rendu comme du texte.
+ */
+function TexteLisible({ texte }: { texte: string }) {
+  const blocs: (string | string[])[] = [];
+  for (const ligne of texte.split('\n').map((l) => l.trim()).filter(Boolean)) {
+    const puce = /^[-•*]\s+(.*)$/.exec(ligne);
+    if (puce) {
+      const dernier = blocs.at(-1);
+      if (Array.isArray(dernier)) dernier.push(puce[1]!);
+      else blocs.push([puce[1]!]);
+    } else blocs.push(ligne);
+  }
+  return (
+    <>
+      {blocs.map((b, i) =>
+        Array.isArray(b) ? (
+          <ul key={i} className="flex list-disc flex-col gap-1 pl-5">
+            {b.map((l, j) => (
+              <li key={j}>{l}</li>
+            ))}
+          </ul>
+        ) : (
+          <p key={i}>{b}</p>
+        ),
+      )}
+    </>
+  );
+}
+
+const jour = (iso: string) =>
+  new Date(`${iso}T12:00:00Z`).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+/** Une prestation du catalogue : ce qu'on y fait, et le chemin vers le formulaire prérempli avec elle. */
+function CartePrestation({ carte, lien }: { carte: Carte; lien: string }) {
+  const d = carte.disponibilite;
+  return (
+    <Link
+      href={lien}
+      className="group flex flex-col gap-0.5 rounded-xl border border-filet bg-white px-3.5 py-2.5 text-texte! no-underline transition-colors hover:border-nuit"
+    >
+      <span className="text-xs text-doux">
+        {TYPES[carte.type]} · {carte.destination}
+      </span>
+      <span className="font-titre font-semibold leading-snug text-nuit">{carte.nom}</span>
+      {carte.description && <span className="line-clamp-1 text-sm text-doux">{carte.description}</span>}
+      {d && (
+        <span className={`mt-1 self-start rounded-full px-2 py-0.5 text-xs font-semibold ${d.disponible ? 'bg-ciel text-nuit' : 'bg-red-50 text-red-800'}`}>
+          {d.disponible ? 'Libre' : 'Complet'} le {jour(d.date)} pour {d.participants}
+        </span>
+      )}
+      <span className="mt-1 text-sm font-semibold text-nuit underline decoration-1 underline-offset-4 group-hover:decoration-2">
+        {carte.type === 'transport' ? 'Décrire mon week-end' : 'Ajouter à mon week-end'}
+      </span>
+    </Link>
   );
 }
