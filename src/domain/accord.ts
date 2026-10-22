@@ -17,7 +17,8 @@ export type RefusAccord =
   | 'verification_absente'
   | 'verification_non_ok' // échec ou indisponible : aucun prix fiable
   | 'demarche_en_cours' // un accord ou une option est déjà en cours sur cette ligne
-  | 'prix_modifie'; // le prix revérifié n'est plus celui que le conseiller a vu
+  | 'prix_modifie' // le prix revérifié n'est plus celui que le conseiller a vu
+  | 'prix_a_reverifier'; // E11.2 (E02) : le prestataire a posé l'option à un autre prix depuis la dernière vérification
 
 export interface DemandeAccord {
   statutProposition: StatutProposition;
@@ -25,6 +26,11 @@ export interface DemandeAccord {
   /** Total de la ligne affiché au conseiller au moment du clic (centimes). */
   prixAfficheCents: number;
   demarcheEnCours: boolean;
+  /**
+   * E11.2 (E02) : date du dernier échec de pose `reponse_serveur_incoherente` de la ligne, ou null. Le prix vérifié
+   * n'est plus celui du prestataire : un nouvel accord attend une vérification postérieure.
+   */
+  refusPrixLe?: string | null;
   maintenant: Date;
 }
 
@@ -48,6 +54,7 @@ export function evaluerAccord(d: DemandeAccord): VerdictAccord {
   const prix = prixReverifieCents(d.ligne);
   if (prix === null) return { ok: false, raison: 'verification_non_ok' };
   if (d.demarcheEnCours) return { ok: false, raison: 'demarche_en_cours' };
+  if (d.refusPrixLe && Date.parse(d.ligne.derniere_verification.le) <= Date.parse(d.refusPrixLe)) return { ok: false, raison: 'prix_a_reverifier' };
   if (prix !== d.prixAfficheCents) return { ok: false, raison: 'prix_modifie' };
 
   return {
@@ -67,6 +74,7 @@ export const MESSAGES_REFUS_ACCORD: Record<RefusAccord | 'ligne_introuvable' | '
   verification_non_ok: 'La dernière vérification n’a pas abouti : aucun prix fiable.',
   demarche_en_cours: 'Un accord ou une option est déjà en cours sur cette ligne.',
   prix_modifie: 'Le prix a changé depuis l’affichage : rechargez la page et relisez-le avant d’autoriser.',
+  prix_a_reverifier: 'Le prestataire a posé l’option à un autre prix que celui vérifié : revérifiez la ligne avant un nouvel accord.',
   ligne_introuvable: 'Ligne introuvable dans cette proposition.',
   proposition_introuvable: 'Proposition introuvable.',
   conseiller_non_identifie: 'Conseiller non identifié.',
@@ -81,5 +89,5 @@ export const MESSAGES_POSE_OPTION: Record<string, string> = {
   simulateur_delai: 'Le prestataire n’a pas répondu à temps. Par sécurité, l’accord est consommé : regardez la trace avant de recommencer.',
   simulateur_erreur: 'Le prestataire n’a pas pu poser l’option. Par sécurité, l’accord est consommé : regardez la trace avant de recommencer.',
   simulateur_refus: 'Le prestataire a refusé l’option : cette prestation n’est plus disponible à ces conditions.',
-  reponse_serveur_incoherente: 'La réponse du prestataire ne correspond pas à l’accord (prix, date ou participants) : l’option n’est pas retenue. Revérifiez le prix de la ligne, puis donnez un nouvel accord.',
+  reponse_serveur_incoherente: 'La réponse du prestataire ne correspond pas à l’accord (prix, date ou participants) : l’option n’est pas retenue. Revérifiez le prix de la ligne avant un nouvel accord ; l’option reste chez le prestataire jusqu’à son expiration.',
 };

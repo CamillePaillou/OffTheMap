@@ -11,6 +11,8 @@ export interface AccordEnMemoire extends NouvelAccord {
   expire_option_le?: string;
   reponse_serveur?: unknown;
   erreur_option?: string;
+  /** Date de l'échec de pose (E11.2, cas E02). */
+  echec_le?: string;
   accord_utilise: boolean;
   reservation_id_simulateur?: string;
   confirme_par?: string;
@@ -71,12 +73,18 @@ export class AccordsEnMemoire implements AccordsRepository {
     } else {
       accord.statut = 'echec';
       accord.erreur_option = resultat.raison;
+      accord.echec_le = new Date().toISOString();
       accord.reponse_serveur = resultat.reponse_serveur;
     }
     this.historique.push({
       dossier_id: accord.dossier_id, proposition_id: accord.proposition_id, type: 'option', auteur_id: 'systeme',
       detail: { type: 'option', option_id: optionId, ligne_id: accord.ligne_id, ...resultat },
     });
+  }
+
+  async dernierEchecPose(ligneId: string): Promise<{ raison: string; le: string } | undefined> {
+    const derniere = this.accords.filter((a) => a.ligne_id === ligneId).at(-1);
+    return derniere?.statut === 'echec' && derniere.erreur_option && derniere.echec_le ? { raison: derniere.erreur_option, le: derniere.echec_le } : undefined;
   }
 
   async optionPosee(ligneId: string): Promise<AccordOptionEtOption | undefined> {

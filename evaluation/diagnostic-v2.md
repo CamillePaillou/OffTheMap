@@ -23,3 +23,24 @@ Format du dossier étudiant J4, section 4.
 | E02 | Le prix passe de 35 € à 40 € entre l'accord et la pose : la pose est bien refusée (`reponse_serveur_incoherente`) et l'accord consommé. Mais un nouvel accord à 70 € reste possible sans nouvelle vérification, puisque la dernière vérification dit toujours 35 €. Par ailleurs, l'option posée à 80 € par le simulateur reste active chez lui (72 h). | `traces/v1/E02-1.json`, critère 3 et `options_simulateur` | Après `reponse_serveur_incoherente`, repasser la ligne « à vérifier » ; annuler ou laisser expirer l'option orpheline, et le dire au conseiller. |
 | A01, A03 | Le modèle rend une fiche que le schéma `FicheIA` refuse : clé mal orthographiée (`constraintes` au lieu de `contraintes`), champs `contraintes` et `regimes` absents. Aucun montant inventé, aucune donnée enregistrée : le refus protège. Mais la campagne n'a fait qu'un essai, alors que l'application en fait deux (`ESSAIS_MAX`) avant de passer le dossier en erreur, avec « relancer » et un message clair. | `traces/v2/A01-1.json`, `traces/v2/A03-1.json`, champ `erreur` | Aligner la campagne sur les deux essais de l'application ; si l'échec persiste, imposer la sortie structurée de la fiche (appel d'outil) ou essayer le modèle de réserve. |
 | A02 | La fiche signale bien le conflit (« 7-8 novembre dans la demande ou week-end du 14-15 novembre dans les envies »), mais le brouillon place les quatre lignes au 14 et 15 novembre, les dates du texte libre. Le code le rattrape : quatre alertes **bloquantes** `date_hors_sejour` (et `budget_depasse`), l'envoi est impossible tant que le conseiller ne corrige pas. Le remplacement n'est donc pas silencieux, mais le brouillon est inutilisable. La phrase « aucune ligne au 14 novembre » dans la preuve du critère 3 est un libellé fixe du programme de campagne, pas une observation : le critère est bien à `false`. | `traces/v2/A02-1.json` | Refuser dès la génération une ligne hors des dates de référence (nouvel essai), et rappeler dans les consignes du brouillon que seules les dates du formulaire comptent. |
+
+## Corrections après la campagne v2 (à mesurer en v3)
+
+| Cas | Correction | Tests |
+| --- | --- | --- |
+| A01, A03 | L'adaptateur OpenRouter renvoie au même modèle, une fois, une réponse refusée par le schéma avec la liste des erreurs (jamais à la réserve). La campagne fait maintenant deux essais, comme l'application. | `openrouter-llm-client.test.ts` : fiche mal formée puis corrigée |
+| A02 | `schemaBrouillon` refuse dès la génération une ligne ou un jour hors des dates du séjour de référence (mêmes bornes que `date_hors_sejour`) ; le modèle reçoit l'erreur et corrige. Consigne du brouillon : seules les dates du formulaire comptent. | `openrouter-llm-client.test.ts` : ligne au 14 novembre refusée puis corrigée |
+| E02 | Nouveau refus d'accord `prix_a_reverifier` tant que la dernière vérification n'est pas postérieure à l'échec `reponse_serveur_incoherente` (`dernierEchecPose`, ajouté au port). Message : l'option reste chez le prestataire jusqu'à son expiration. | `donnerAccord.test.ts` : refus, puis accord après revérification ; un échec pour délai n'exige rien |
+| N03 | Déjà corrigé dans l'application par E7.4 (PR #224 : accords en base, ligne passée à `reservee`). La campagne v2 l'évaluait encore en mémoire ; depuis v3, N03 et E02 tournent sur la base locale. | essai local de N03 et E02 sur une base PostgreSQL migrée et seedée : réussis |
+
+## Résultats v3
+
+| Cas | v2 | v3 | Preuve |
+| --- | --- | --- | --- |
+| N03 | échec (évalué en mémoire) | réussi : options en base, ligne relue en base à `reservee` | `traces/v3/N03-1.json` |
+| E02 | échec | réussi : nouvel accord refusé, `prix_a_reverifier` | `traces/v3/E02-1.json` |
+| A01 | échec | réussi : fiche obtenue au second essai, point flou sur le budget, aucune alerte de budget | `traces/v3/A01-1.json` |
+| A02 | échec | non exécuté : fiche conforme (conflit de dates signalé), brouillon bloqué par le quota d'OpenRouter | `traces/v3/A02-1.json` |
+| A03 | échec | non exécuté : fiche conforme (« 2 adultes ou 4 avec des amis ? »), brouillon bloqué par le quota | `traces/v3/A03-1.json` |
+
+Limite observée : certains points flous du modèle gratuit contiennent des fragments sans sens (« catégoriewanted », « desEventually? -> sans objet »). Le schéma ne le détecte pas ; le conseiller relit la fiche.
