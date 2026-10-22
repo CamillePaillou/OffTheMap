@@ -31,6 +31,11 @@ describe('propositions Supabase → payload du dashboard', () => {
     expect(p.lignes[0]!.derniere_verification).toEqual({ statut: 'ok', prix_unitaire_cents: 4000, places_restantes: 6, le: '2026-10-20T10:00:00.000Z' });
   });
 
+  it('lit une ligne retirée après le dépôt, sans prix confirmé (E7.4)', () => {
+    const p = versProposition(proposition({ statut: 'depot_recu', proposition_lignes: [ligne({ statut: 'retiree' })] }));
+    expect(p.lignes[0]!).toMatchObject({ statut: 'retiree', prix_confirme: null });
+  });
+
   it('budget de référence : réel de la fiche, sinon annoncé', () => {
     expect(versProposition(proposition()).budget_reference_cents).toBe(40000);
     const avecReel = proposition({ dossiers: { demandes: [{ version: 1, remplacee_le: null, budget_annonce_cents: 40000, fiches: { budget_reel_cents: 38000 } }] } });

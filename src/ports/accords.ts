@@ -1,5 +1,5 @@
 /**
- * Port d'écriture de l'accord (E9.3). L'adaptateur PostgreSQL insère une ligne `options` au statut
+ * Port d'écriture de l'accord (E9.3). L'adaptateur PostgreSQL (accordsSupabase, E7.4) insère une ligne `options` au statut
  * `accord_donne` (retrouve lui-même la vérification de la ligne, `verification_id`) et l'événement
  * `accord` de l'historique dans la même transaction. L'index unique `options_une_en_cours_par_ligne`
  * garantit une seule démarche en cours par ligne.
@@ -47,7 +47,7 @@ export interface AccordsRepository {
 }
 
 export interface AccordOption extends NouvelAccord { option_id: string; accord_utilise: boolean; statut: 'accord_donne' | 'posee' | 'echec' | 'confirmee' | 'annulee'; }
-export interface AccordOptionEtOption extends AccordOption { option_id_simulateur?: string; expire_option_le?: string; reservation_id_simulateur?: string; ligne_snapshot: { prestation_id: string; date: string; participants: number }; }
+export interface AccordOptionEtOption extends AccordOption { option_id_simulateur?: string; expire_option_le?: string; reservation_id_simulateur?: string; confirme_le?: string; reponse_confirmation?: unknown; ligne_snapshot: { prestation_id: string; date: string; participants: number }; }
 export type ResultatPoseOption =
   | { ok: true; option_id_simulateur: string; expire_le: string; reponse_serveur: unknown; ligne_snapshot?: { prestation_id: string; date: string; participants: number } }
   | { ok: false; raison: string; reponse_serveur?: unknown };
@@ -56,7 +56,7 @@ export interface TentativeOption {
   raison: string; date: string;
 }
 
-export type ResultatConfirmation = { ok: true; reservation_id_simulateur: string; reponse_serveur: unknown } | { ok: false; raison: string; reponse_serveur?: unknown };
+export type ResultatConfirmation = { ok: true; reservation_id_simulateur: string; reponse_serveur: unknown; confirme_par: string } | { ok: false; raison: string; reponse_serveur?: unknown };
 export interface TentativeConfirmation { ligne_id: string; auteur_id: string; raison: string; date: string; detail?: unknown }
 
 export type ResultatAnnulation = { ok: true; reservation_id_simulateur: string; reponse_serveur: unknown } | { ok: false; raison: string; reponse_serveur?: unknown };

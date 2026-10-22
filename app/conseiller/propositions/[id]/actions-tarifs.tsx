@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import type { StatutLigne, StatutVerification } from '@/types';
-import { accepter, envoyer, indisponible, remplacer, revoir, saisirTarif, type EtatAction } from './tarifs';
+import { accepter, envoyer, indisponible, remplacer, retirer, revoir, saisirTarif, type EtatAction } from './tarifs';
 
 const champ = 'rounded-lg border-[1.5px] border-ballast bg-carte px-2 py-1';
 const SOURCES = [
@@ -17,8 +17,10 @@ interface PropsLigne {
   propositionId: string;
   ligneId: string;
   statut: StatutLigne;
-  /** La proposition n'est plus modifiable (envoyée ou au-delà). */
+  /** La proposition n'est plus modifiable (envoyée ou au-delà) et la ligne n'est pas ajustable après le dépôt. */
   figee: boolean;
+  /** E7.4 : proposition au dépôt reçu. Pas de retour à vérifier ; remplacer ou retirer demande l'accord du client. */
+  apresDepot?: boolean;
   verification: { statut: StatutVerification; prix_unitaire_cents: number | null } | null;
   /** E5.2 : prestations du catalogue qui peuvent remplacer une ligne indisponible. */
   remplacantes?: { id: string; nom: string; prix_unitaire_cents: number; capacite: number }[];
@@ -27,16 +29,27 @@ interface PropsLigne {
   date?: string;
 }
 
-/** Tarif d'une ligne (E5.1) : accepter le prix revérifié, saisir un tarif avec sa source, indisponible, revoir ; remplacer (E5.2). */
-export function ActionsLigne({ propositionId, ligneId, statut, figee, verification, remplacantes = [], prestationId, date }: PropsLigne) {
+/**
+ * Tarif d'une ligne (E5.1) : accepter le prix revérifié, saisir un tarif avec sa source, indisponible, revoir ; remplacer (E5.2).
+ * Après le dépôt (E7.4) : marquer indisponible une ligne confirmée, la remplacer ou la retirer avec l'accord du client.
+ */
+export function ActionsLigne({ propositionId, ligneId, statut, figee, apresDepot = false, verification, remplacantes = [], prestationId, date }: PropsLigne) {
   const [etatAccepter, actionAccepter, accepterEnCours] = useActionState<EtatAction, FormData>(() => accepter(propositionId, ligneId), {});
   const [etatSaisie, actionSaisie, saisieEnCours] = useActionState<EtatAction, FormData>(saisirTarif.bind(null, propositionId, ligneId), {});
   const [etatIndispo, actionIndispo, indispoEnCours] = useActionState<EtatAction, FormData>(() => indisponible(propositionId, ligneId), {});
   const [etatRevoir, actionRevoir, revoirEnCours] = useActionState<EtatAction, FormData>(() => revoir(propositionId, ligneId), {});
   const [etatRemplacer, actionRemplacer, remplacerEnCours] = useActionState<EtatAction, FormData>(remplacer.bind(null, propositionId, ligneId), {});
+  const [etatRetirer, actionRetirer, retirerEnCours] = useActionState<EtatAction, FormData>(retirer.bind(null, propositionId, ligneId), {});
   if (figee) return null;
 
-  const erreur = [etatAccepter, etatSaisie, etatIndispo, etatRevoir, etatRemplacer].map((e) => e.erreurs?.formulaire).find(Boolean);
+  const erreur = [etatAccepter, etatSaisie, etatIndispo, etatRevoir, etatRemplacer, etatRetirer].map((e) => e.erreurs?.formulaire).find(Boolean);
+  // après le dépôt, le client a accepté la proposition : tout changement de prestation se fait avec son accord
+  const accordClient = apresDepot && (
+    <label className="flex items-center gap-1 text-xs">
+      <input type="checkbox" name="accordClient" />
+      Le client a accepté ce changement
+    </label>
+  );
   const e = etatSaisie.erreurs ?? {};
   const v = etatSaisie.valeurs ?? {};
   const bouton = 'rounded-full border border-encre/30 bg-carte px-2.5 py-1 text-xs font-medium hover:bg-encre hover:text-craie disabled:opacity-50';
@@ -72,6 +85,7 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
                   <input type="date" name="date" defaultValue={vr.date ?? date} className={champ} aria-invalid={!!er.date} />
                 </label>
                 {er.date && <span role="alert" className="text-xs text-brique-texte">{er.date}</span>}
+                {accordClient}
                 <button type="submit" disabled={remplacerEnCours} className="bo-btn px-2.5! py-1! text-xs">
                   Remplacer (nouvelle ligne à vérifier)
                 </button>
@@ -79,11 +93,31 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, verificati
             )}
           </details>
         )}
-        <form action={actionRevoir}>
-          <button type="submit" disabled={revoirEnCours} className={bouton}>
-            Repasser à vérifier
-          </button>
-        </form>
+        {statut === 'indisponible' && apresDepot && (
+          <details className="text-right">
+            <summary className="cursor-pointer text-xs underline underline-offset-4">Retirer la prestation</summary>
+            <form action={actionRetirer} className="mt-2 flex flex-col items-end gap-1">
+              <p className="max-w-56 text-xs text-encre-doux">Elle sort de la proposition et du total, sans remplacement.</p>
+              {accordClient}
+              <button type="submit" disabled={retirerEnCours} className={bouton}>
+                Retirer sans remplacer
+              </button>
+            </form>
+          </details>
+        )}
+        {statut === 'confirme' && apresDepot ? (
+          <form action={actionIndispo}>
+            <button type="submit" disabled={indispoEnCours} className={bouton}>
+              Marquer indisponible
+            </button>
+          </form>
+        ) : !apresDepot && (
+          <form action={actionRevoir}>
+            <button type="submit" disabled={revoirEnCours} className={bouton}>
+              Repasser à vérifier
+            </button>
+          </form>
+        )}
         {erreur && <span role="alert" className="text-xs text-brique-texte">{erreur}</span>}
       </div>
     );

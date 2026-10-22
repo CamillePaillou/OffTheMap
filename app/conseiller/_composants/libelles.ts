@@ -13,7 +13,7 @@ export const STATUT_DOSSIER: Record<StatutDossier, string> = {
   rdv_propose: 'Rendez-vous proposé',
   entretien_fait: 'Entretien fait',
   en_proposition: 'En proposition',
-  gagnee: 'Gagnée',
+  gagnee: 'Conclue',
   abandonnee: 'Abandonnée',
 };
 

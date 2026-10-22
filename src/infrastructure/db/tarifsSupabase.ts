@@ -5,6 +5,9 @@ import { clientService } from '../../../lib/supabase/service';
 import { valeursDeReference } from '../../domain/chiffrage/chiffrer';
 import { StatutModifieErreur } from '../../ports/statuts';
 import {
+  AccordClientRequisErreur,
+  DemarcheEnCoursLigneErreur,
+  DerniereLigneErreur,
   EnvoiRefuseErreur,
   LigneModifieeErreur,
   MemePrestationErreur,
@@ -15,6 +18,7 @@ import {
   type ChangementLigne,
   type ModificationLigne,
   type RemplacementLigne,
+  type RetraitLigne,
   type Sejour,
   type TarifsRepository,
 } from '../../ports/tarifs';
@@ -49,6 +53,7 @@ export class TarifsSupabase implements TarifsRepository {
     });
     if (error?.code === 'OT002') throw new LigneModifieeErreur(error.message);
     if (error?.code === 'OT008') throw new PropositionFigeeErreur(error.message);
+    if (error?.code === 'OT012') throw new DemarcheEnCoursLigneErreur(error.message);
     if (error) throw new Error(`changer_ligne : ${error.message}`);
     return data as StatutProposition;
   }
@@ -105,17 +110,31 @@ export class TarifsSupabase implements TarifsRepository {
       p_conseiller: r.conseillerId,
       ...(r.date ? { p_date: r.date } : {}),
       ...(r.participants ? { p_participants: r.participants } : {}),
+      p_accord_client: r.accordClient ?? false,
     });
     if (error?.code === 'OT002') throw new LigneModifieeErreur(error.message);
     if (error?.code === 'OT008') throw new PropositionFigeeErreur(error.message);
     if (error?.code === 'OT010') throw new PrestationRefuseeErreur(error.message);
     if (error?.code === 'OT011') throw new MemePrestationErreur(error.message);
+    if (error?.code === 'OT013') throw new AccordClientRequisErreur(error.message);
     if (error) throw new Error(`remplacer_ligne : ${error.message}`);
     const ligneId = data as string;
     const { data: p, error: e2 } = await clientService()
       .from('proposition_lignes').select('propositions (statut)').eq('id', ligneId).single();
     if (e2) throw new Error(`remplacer_ligne : ${e2.message}`);
     return { ligneId, statutProposition: p.propositions!.statut as StatutProposition };
+  }
+
+  async retirerLigne(r: RetraitLigne) {
+    const { data, error } = await clientService().rpc('retirer_ligne', {
+      p_ligne: r.ligneId, p_conseiller: r.conseillerId, p_accord_client: r.accordClient,
+    });
+    if (error?.code === 'OT002') throw new LigneModifieeErreur(error.message);
+    if (error?.code === 'OT008') throw new PropositionFigeeErreur(error.message);
+    if (error?.code === 'OT013') throw new AccordClientRequisErreur(error.message);
+    if (error?.code === 'OT014') throw new DerniereLigneErreur(error.message);
+    if (error) throw new Error(`retirer_ligne : ${error.message}`);
+    return data as StatutProposition;
   }
 
   async prestationsRemplacantes(ligneId: string) {

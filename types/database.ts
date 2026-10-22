@@ -362,6 +362,7 @@ export type Database = {
           prix_accorde_cents: number;
           prix_option_cents: number | null;
           reponse_confirmation: Json | null;
+          reponse_annulation: Json | null;
           reponse_option: Json | null;
           reservation_id_simulateur: string | null;
           statut: Database["public"]["Enums"]["statut_option"];
@@ -384,6 +385,7 @@ export type Database = {
           prix_accorde_cents: number;
           prix_option_cents?: number | null;
           reponse_confirmation?: Json | null;
+          reponse_annulation?: Json | null;
           reponse_option?: Json | null;
           reservation_id_simulateur?: string | null;
           statut?: Database["public"]["Enums"]["statut_option"];
@@ -405,6 +407,7 @@ export type Database = {
           prix_accorde_cents?: number;
           prix_option_cents?: number | null;
           reponse_confirmation?: Json | null;
+          reponse_annulation?: Json | null;
           reponse_option?: Json | null;
           reservation_id_simulateur?: string | null;
           statut?: Database["public"]["Enums"]["statut_option"];
@@ -714,6 +717,41 @@ export type Database = {
       };
       enregistrer_rappel: { Args: { p_proposition: string; p_jour: number }; Returns: number };
       abandonner_dossier: { Args: { p_proposition: string; p_conseiller: string }; Returns: number };
+      enregistrer_accord: {
+        Args: { p_ligne: string; p_conseiller: string; p_accord_le: string; p_expire_le: string; p_prix_cents: number };
+        Returns: string;
+      };
+      consommer_accord: { Args: { p_option: string; p_maintenant: string }; Returns: boolean };
+      terminer_pose_option: {
+        Args: {
+          p_option: string;
+          p_ok: boolean;
+          p_option_id_simulateur: string | null;
+          p_expire_le: string | null;
+          p_reponse: Json;
+          p_raison: string | null;
+        };
+        Returns: undefined;
+      };
+      terminer_confirmation: {
+        Args: {
+          p_option: string;
+          p_ok: boolean;
+          p_conseiller: string | null;
+          p_reservation_id_simulateur: string | null;
+          p_reponse: Json;
+          p_raison: string | null;
+        };
+        Returns: Database["public"]["Enums"]["statut_proposition"];
+      };
+      terminer_annulation: {
+        Args: { p_option: string; p_ok: boolean; p_conseiller: string | null; p_reponse: Json; p_raison: string | null };
+        Returns: undefined;
+      };
+      tracer_evenement_option: {
+        Args: { p_proposition: string | null; p_ligne: string | null; p_conseiller: string | null; p_detail: Json };
+        Returns: undefined;
+      };
       changer_ligne: {
         Args: {
           p_ligne: string;
@@ -728,8 +766,12 @@ export type Database = {
       enregistrer_alertes: { Args: { p_proposition: string; p_alertes: Json }; Returns: undefined };
       envoyer_proposition: { Args: { p_proposition: string; p_conseiller: string }; Returns: number };
       remplacer_ligne: {
-        Args: { p_ligne: string; p_prestation: string; p_conseiller: string; p_date?: string; p_participants?: number };
+        Args: { p_ligne: string; p_prestation: string; p_conseiller: string; p_date?: string; p_participants?: number; p_accord_client?: boolean };
         Returns: string;
+      };
+      retirer_ligne: {
+        Args: { p_ligne: string; p_conseiller: string; p_accord_client: boolean };
+        Returns: Database["public"]["Enums"]["statut_proposition"];
       };
       ajouter_ligne: {
         Args: { p_proposition: string; p_prestation: string; p_date: string; p_participants: number; p_conseiller: string };
@@ -815,7 +857,7 @@ export type Database = {
         | "en_proposition"
         | "gagnee"
         | "abandonnee";
-      statut_ligne: "a_verifier" | "confirme" | "indisponible" | "remplacee" | "reservee";
+      statut_ligne: "a_verifier" | "confirme" | "indisponible" | "remplacee" | "reservee" | "retiree";
       statut_option: "accord_donne" | "posee" | "expiree" | "echec" | "confirmee" | "annulee";
       statut_proposition:
         | "brouillon_en_cours"
@@ -982,7 +1024,7 @@ export const Constants = {
         "gagnee",
         "abandonnee",
       ],
-      statut_ligne: ["a_verifier", "confirme", "indisponible", "remplacee", "reservee"],
+      statut_ligne: ["a_verifier", "confirme", "indisponible", "remplacee", "reservee", "retiree"],
       statut_option: ["accord_donne", "posee", "expiree", "echec", "confirmee", "annulee"],
       statut_proposition: [
         "brouillon_en_cours",

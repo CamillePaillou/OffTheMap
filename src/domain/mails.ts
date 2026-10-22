@@ -111,9 +111,9 @@ export interface LigneMail {
   verifie_le: string | null;
 }
 
-/** Lignes et total à prix vérifiés uniquement. Les lignes remplacées ou indisponibles ne figurent pas. */
+/** Lignes et total à prix vérifiés uniquement. Les lignes remplacées, retirées ou indisponibles ne figurent pas. */
 function lignesVerifiees(lignes: readonly LigneMail[], statutsAttendus: readonly StatutLigne[]) {
-  const retenues = lignes.filter((l) => l.statut !== 'remplacee' && l.statut !== 'indisponible');
+  const retenues = lignes.filter((l) => l.statut !== 'remplacee' && l.statut !== 'retiree' && l.statut !== 'indisponible');
   if (retenues.length === 0) throw new MailImpossibleErreur('aucune prestation à présenter');
   for (const l of retenues) {
     if (!statutsAttendus.includes(l.statut) || l.prix_confirme_cents === null) {

@@ -40,7 +40,7 @@ export interface EntreeChiffrage {
 export interface ResultatChiffrage {
   /** Un total par ligne, dans l'ordre, y compris les lignes hors total (comme la colonne calculée en base). */
   totaux_lignes_cents: number[];
-  /** Somme des lignes, hors `remplacee` et `indisponible`, plus la marge (nulle). */
+  /** Somme des lignes, hors `remplacee`, `indisponible` et `retiree`, plus la marge (nulle). */
   total_cents: number;
   /** À écrire dans `propositions.alertes`. */
   alertes: Alerte[];
@@ -70,8 +70,8 @@ export function chiffrer(e: EntreeChiffrage): ResultatChiffrage {
   const alerter = (code: CodeAlerte, message: string, l?: LigneAChiffrer) =>
     alertes.push({ code, message, ...(l?.id ? { ligne_id: l.id } : {}) });
 
-  // Contrôles sur toutes les lignes sauf `remplacee`, y compris les indisponibles.
-  const controlees = e.lignes.filter((l) => l.statut !== 'remplacee');
+  // Contrôles sur toutes les lignes sauf `remplacee` et `retiree` (E7.4), y compris les indisponibles.
+  const controlees = e.lignes.filter((l) => l.statut !== 'remplacee' && l.statut !== 'retiree');
   const veilleDepart = jourPrecedent(e.date_fin);
   for (const l of controlees) {
     if (l.participants > l.capacite) {

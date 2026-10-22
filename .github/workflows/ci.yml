@@ -100,7 +100,9 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_seed.sql
       - name: Tests du schéma avec le seed chargé
         run: psql -q -f supabase/scripts/test_contraintes.sql
-      - name: Rejeu du cas de Sophie, du formulaire au dépôt (E7.3)
+      - name: Rejeu du cas de Sophie, du formulaire à la réservation (E7.3, E7.4)
         run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_bout_en_bout.sql
       - name: Prestations souhaitées (E1.4)
         run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_prestations_souhaitees.sql
+      - name: Prestation indisponible après le dépôt (E7.4)
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_indisponible_apres_depot.sql

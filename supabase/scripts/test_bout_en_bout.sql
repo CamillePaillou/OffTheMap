@@ -1,4 +1,4 @@
--- Rejouer le cas de Sophie de bout en bout (E7.3), du formulaire au dépôt reçu.
+-- Rejouer le cas de Sophie de bout en bout (E7.3), du formulaire au dépôt reçu, puis jusqu'à la réservation (E7.4).
 --
 -- Chaque étape appelle la fonction SQL que l'application appelle à ce moment-là (adaptateurs de src/infrastructure/db),
 -- avec les mêmes données qu'à l'écran. Le scénario est décrit pas à pas dans docs/recette/bout-en-bout.md.
@@ -110,19 +110,64 @@ select enregistrer_reponse_client(:'proposition', 'acceptee', :'conseillere');
 select enregistrer_reponse_client(:'proposition', 'depot_recu', :'conseillere');
 select etape('11. dépôt reçu', format('select statut::text from propositions where id = %L', :'proposition'), 'depot_recu');
 
+-- 12. Réservation, ligne par ligne (E9.3 à E9.5, branchés en base par E7.4) : accord au prix revérifié,
+--     consommation de l'accord avant l'appel au simulateur, option posée, puis seconde validation
+create function reserver(p_ligne uuid, p_conseiller uuid, p_prix integer, p_suffixe text) returns text language plpgsql as $$
+declare v_option uuid;
+begin
+  v_option := enregistrer_accord(p_ligne, p_conseiller, now(), now() + interval '10 minutes', p_prix);
+  if not consommer_accord(v_option, now()) then raise exception 'accord non consommé'; end if;
+  if consommer_accord(v_option, now()) then raise exception 'accord consommé deux fois'; end if;
+  perform terminer_pose_option(v_option, true, 'opt_' || p_suffixe, now() + interval '2 days', '{"statut": "active"}', null);
+  return terminer_confirmation(v_option, true, p_conseiller, 'res_' || p_suffixe, '{"statut": "confirmee"}', null)::text;
+end $$;
+
+select enregistrer_accord(:'ligne_train', :'conseillere', now(), now() + interval '10 minutes', 9600) as accord_train \gset
+select etape('12. accord donné sur le train', format('select statut::text from options where id = %L', :'accord_train'), 'accord_donne');
+select set_config('rejeu.ligne_train', :'ligne_train', true), set_config('rejeu.conseillere', :'conseillere', true);
+do $$
+begin
+  perform enregistrer_accord(current_setting('rejeu.ligne_train')::uuid, current_setting('rejeu.conseillere')::uuid, now(), now() + interval '10 minutes', 9600);
+  raise exception 'ÉCHEC : 12. second accord accepté sur une ligne qui a déjà une démarche en cours';
+exception when sqlstate 'OT012' then
+  raise notice 'OK : 12. un second accord sur la même ligne est refusé';
+end $$;
+-- l'accord du train n'est pas utilisé à temps : il est clos en échec au prochain accord
+update options set accord_le = now() - interval '20 minutes', accord_expire_le = now() - interval '10 minutes' where ligne_id = :'ligne_train';
+select etape('13. train réservé', format('select reserver(%L, %L, 9600, ''train'')', :'ligne_train', :'conseillere'), 'depot_recu');
+select etape('13. accord expiré clos en échec', format($q$select string_agg(statut::text, ' ' order by statut::text) from options where ligne_id = %L$q$, :'ligne_train'), 'confirmee echec');
+select etape('13. hôtel réservé', format('select reserver(%L, %L, 19200, ''hotel'')', :'ligne_hotel', :'conseillere'), 'depot_recu');
+select etape('14. dernière ligne réservée : proposition réservée', format('select reserver(%L, %L, 8000, ''atelier'')', :'ligne_atelier', :'conseillere'), 'reservee');
+select etape('14. dossier gagné', format('select statut::text from dossiers where id = %L', :'dossier'), 'gagnee');
+
+-- 15. Annulation d'une réservation confirmée par erreur (E9.8, Could) : l'option passe à annulee au nom de la conseillère,
+--     la ligne repasse à confirme, la proposition à depot_recu et le dossier à en_proposition
+select id as option_atelier from options where ligne_id = :'ligne_atelier' and statut = 'confirmee' \gset
+select terminer_annulation(:'option_atelier', true, :'conseillere', '{"statut": "annulee"}', null);
+select etape('15. réservation annulée', format('select statut::text || '' '' || (annulee_le is not null) from options where id = %L', :'option_atelier'), 'annulee true');
+select etape('15. ligne, proposition et dossier rouverts', format('select l.statut::text || '' '' || p.statut::text || '' '' || d.statut::text
+  from proposition_lignes l join propositions p on p.id = l.proposition_id join dossiers d on d.id = p.dossier_id where l.id = %L', :'ligne_atelier'),
+  'confirme depot_recu en_proposition');
+
+-- 16. Nouvel accord sur la ligne rouverte, puis nouvelle réservation : tout est de nouveau réservé
+select etape('16. atelier réservé de nouveau', format('select reserver(%L, %L, 8000, ''atelier2'')', :'ligne_atelier', :'conseillere'), 'reservee');
+select etape('16. dossier de nouveau conclu', format('select statut::text from dossiers where id = %L', :'dossier'), 'gagnee');
+
 -- Fin : le parcours est complet et entièrement tracé
-select etape('fin : dossier toujours en proposition (réservation hors E7.3)', format('select statut::text from dossiers where id = %L', :'dossier'), 'en_proposition');
-select etape('fin : aucune ligne à vérifier', format($q$select count(*)::text from proposition_lignes where proposition_id = %L and statut <> 'confirme'$q$, :'proposition'), '0');
+select etape('fin : toutes les lignes réservées', format($q$select count(*)::text from proposition_lignes where proposition_id = %L and statut <> 'reservee'$q$, :'proposition'), '0');
 select etape('fin : chaque statut du dossier est journalisé, dans l''ordre', format($q$
   select string_agg(nouveau_statut, ' > ' order by id) from historique_dossier
   where dossier_id = %L and type = 'statut' and proposition_id is null$q$, :'dossier'),
-  'nouvelle > fiche_en_cours > fiche_prete > validee > rdv_propose > entretien_fait > en_proposition');
+  'nouvelle > fiche_en_cours > fiche_prete > validee > rdv_propose > entretien_fait > en_proposition > gagnee > en_proposition > gagnee');
 select etape('fin : chaque statut de la proposition est journalisé, dans l''ordre', format($q$
   select string_agg(nouveau_statut, ' > ' order by id) from historique_dossier
   where proposition_id = %L and type = 'statut'$q$, :'proposition'),
-  'brouillon_en_cours > brouillon_pret > a_verifier > prete > envoyee > acceptee > depot_recu');
+  'brouillon_en_cours > brouillon_pret > a_verifier > prete > envoyee > acceptee > depot_recu > reservee > depot_recu > reservee');
+select etape('fin : accords, options et réservations tracés', format($q$select string_agg(type::text || ':' || n, ' ' order by type) from
+  (select type, count(*) n from historique_dossier where proposition_id = %L and type in ('accord', 'option', 'reservation') group by type) t$q$, :'proposition'),
+  'accord:5 option:5 reservation:4');
 select etape('fin : deux mails tracés', format($q$select count(*)::text from historique_dossier where dossier_id = %L and type = 'mail'$q$, :'dossier'), '2');
 
 \o
-\echo 'REJEU OK : le cas de Sophie va du formulaire au dépôt reçu sans intervention technique.'
+\echo 'REJEU OK : le cas de Sophie va du formulaire à la réservation sans intervention technique.'
 rollback;
