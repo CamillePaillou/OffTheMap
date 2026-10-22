@@ -475,6 +475,13 @@ function masquer<T>(valeur: T): T {
 }
 
 async function main() {
+  // Avant d'écrire quoi que ce soit : un simulateur éteint ou une clé OpenRouter oubliée écraseraient des résultats valides
+  // par des « non exécuté ».
+  const sante = await fetch(new URL('/health', SIMULATEUR_URL)).then((r) => r.ok, () => false);
+  if (!sante) throw new Error(`simulateur injoignable sur ${SIMULATEUR_URL} : lancer « docker compose up -d simulateur ». Rien n’a été écrit.`);
+  if (!LLM_ACTIF && env.CAMPAGNE_SANS_MODELE !== '1') {
+    throw new Error('LLM_API_KEY vide : les essais en agent direct seraient « non exécutés ». Remplir .env, ou relancer avec SANS_MODELE=1 pour l’accepter. Rien n’a été écrit.');
+  }
   const jeu = JSON.parse(readFileSync(JEU, 'utf8')) as { version: string; cas: Cas[] };
   const programme = env.CAMPAGNE_PROGRAMME?.trim() || versionProgramme();
   const campagne = `campagne-${VERSION}-${jeu.version}`;

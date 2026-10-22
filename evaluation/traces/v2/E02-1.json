@@ -1,12 +1,12 @@
 {
   "campagne": "campagne-v2-jeu-v1-offthemap",
-  "version_programme": "258dbb3+fix-resume-expurge",
+  "version_programme": "0b8cb9c",
   "jeu_version": "jeu-v1-offthemap",
   "cas_id": "E02",
   "titre": "Prix modifié entre la vérification et l'option",
   "essai": 1,
   "mode": "integration_http",
-  "horodatage": "2026-10-22T10:37:48.104Z",
+  "horodatage": "2026-10-22T11:48:33.436Z",
   "verdict": "echec",
   "criteres": [
     {
@@ -32,7 +32,7 @@
       "ok": true,
       "option_id": "opt-1",
       "prix_accorde_cents": 7000,
-      "accord_expire_le": "2026-10-22T10:47:48.093Z"
+      "accord_expire_le": "2026-10-22T11:58:33.412Z"
     },
     "pose": {
       "ok": false,
@@ -41,13 +41,13 @@
     "options_simulateur": {
       "options": [
         {
-          "id": "opt_095db30fcfba",
+          "id": "opt_021d7b592e60",
           "prestation_id": "activite-nantes-01",
           "date": "2026-11-07",
           "participants": 2,
           "prix_total_eur": 80,
           "statut": "active",
-          "expire_le": "2026-10-22T11:07:48.100132+00:00",
+          "expire_le": "2026-10-22T12:18:33.422728+00:00",
           "simulation": true
         }
       ],
@@ -65,7 +65,7 @@
       "ok": true,
       "option_id": "opt-2",
       "prix_accorde_cents": 7000,
-      "accord_expire_le": "2026-10-22T10:47:48.104Z"
+      "accord_expire_le": "2026-10-22T11:58:33.436Z"
     },
     "accords": [
       {
@@ -73,21 +73,21 @@
         "proposition_id": "5a1e0000-0000-4000-8000-0000000000a2",
         "ligne_id": "5a1e0000-0000-4000-8000-0000000000b1",
         "accord_par": "c0000000-0000-4000-8000-0000000000e1",
-        "accord_le": "2026-10-22T10:37:48.093Z",
-        "accord_expire_le": "2026-10-22T10:47:48.093Z",
+        "accord_le": "2026-10-22T11:48:33.412Z",
+        "accord_expire_le": "2026-10-22T11:58:33.412Z",
         "prix_accorde_cents": 7000,
         "option_id": "opt-1",
         "statut": "echec",
         "accord_utilise": true,
         "erreur_option": "reponse_serveur_incoherente",
         "reponse_serveur": {
-          "option_id": "opt_095db30fcfba",
+          "option_id": "opt_021d7b592e60",
           "prestation_id": "activite-nantes-01",
           "date": "2026-11-07",
           "participants": 2,
           "prix_total_cents": 8000,
           "statut": "active",
-          "expire_le": "2026-10-22T11:07:48.100132+00:00"
+          "expire_le": "2026-10-22T12:18:33.422728+00:00"
         }
       },
       {
@@ -95,8 +95,8 @@
         "proposition_id": "5a1e0000-0000-4000-8000-0000000000a2",
         "ligne_id": "5a1e0000-0000-4000-8000-0000000000b1",
         "accord_par": "c0000000-0000-4000-8000-0000000000e1",
-        "accord_le": "2026-10-22T10:37:48.104Z",
-        "accord_expire_le": "2026-10-22T10:47:48.104Z",
+        "accord_le": "2026-10-22T11:48:33.436Z",
+        "accord_expire_le": "2026-10-22T11:58:33.436Z",
         "prix_accorde_cents": 7000,
         "option_id": "opt-2",
         "statut": "accord_donne",
