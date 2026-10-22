@@ -22,7 +22,7 @@ export const STATUTS_PROPOSITION = [
 ] as const;
 export type StatutProposition = (typeof STATUTS_PROPOSITION)[number];
 
-export const STATUTS_LIGNE = ['a_verifier', 'confirme', 'indisponible', 'remplacee', 'reservee'] as const;
+export const STATUTS_LIGNE = ['a_verifier', 'confirme', 'indisponible', 'remplacee', 'reservee', 'retiree'] as const;
 export type StatutLigne = (typeof STATUTS_LIGNE)[number];
 
 export const SOURCES_PRIX = ['agent', 'telephone', 'mail', 'lien'] as const;

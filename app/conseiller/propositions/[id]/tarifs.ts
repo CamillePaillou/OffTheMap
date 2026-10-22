@@ -12,6 +12,7 @@ import {
   modifierBudget,
   modifierLigne,
   remplacerLigne,
+  retirerLigne,
   revoirLigne,
   type RefusLigne,
   type ResultatLigne,
@@ -31,11 +32,14 @@ const REFUS: Record<RefusLigne, string> = {
   introuvable: 'Cette ligne n’existe plus.',
   transition_interdite: 'Ce changement n’est pas possible pour cette ligne.',
   ligne_modifiee: 'La ligne a changé entre-temps : rechargez la page.',
-  proposition_figee: 'La proposition est envoyée : ses tarifs ne se modifient plus.',
+  proposition_figee: 'La proposition est envoyée : ce changement n’est plus possible.',
   pas_de_prix_verifie: 'Aucun prix revérifié à accepter : vérifiez la ligne ou saisissez un tarif.',
   prestation_refusee: 'Cette prestation n’est plus au catalogue : choisissez-en une autre.',
   meme_prestation: 'Même prestation à la même date : choisissez une autre prestation ou une autre date.',
   deja_prevue: 'Cette prestation est déjà prévue à cette date, ou rien ne change.',
+  accord_client_requis: 'Le client a déjà accepté la proposition : cochez la case pour confirmer qu’il accepte ce changement.',
+  derniere_ligne: 'C’est la dernière prestation de la proposition : remplacez-la plutôt que de la retirer.',
+  demarche_en_cours: 'Un accord ou une option est encore valable sur cette prestation : confirmez-la ou laissez-la expirer d’abord.',
 };
 
 function versEtat(r: ResultatLigne, valeurs?: Record<string, string>): EtatAction {
@@ -75,8 +79,15 @@ export async function remplacer(propositionId: string, ligneId: string, _e: Etat
   const { id } = await exigerConseiller(chemin(propositionId));
   const prestationId = f.get('prestation')?.toString() ?? '';
   const date = f.get('date')?.toString() ?? '';
-  const r = await remplacerLigne(new TarifsSupabase(), { ligneId, conseillerId: id, prestationId, date });
+  const accordClient = f.get('accordClient') === 'on';
+  const r = await remplacerLigne(new TarifsSupabase(), { ligneId, conseillerId: id, prestationId, date, accordClient });
   return versEtat(r, { prestation: prestationId, date });
+}
+
+/** E7.4 : retire une ligne indisponible après le dépôt, sans la remplacer, avec l'accord du client. */
+export async function retirer(propositionId: string, ligneId: string, _e: EtatAction, f: FormData): Promise<EtatAction> {
+  const { id } = await exigerConseiller(chemin(propositionId));
+  return versEtat(await retirerLigne(new TarifsSupabase(), { ligneId, conseillerId: id, accordClient: f.get('accordClient') === 'on' }));
 }
 
 /** Ajoute une prestation du catalogue à la proposition (E6.6) : nouvelle ligne à vérifier. */

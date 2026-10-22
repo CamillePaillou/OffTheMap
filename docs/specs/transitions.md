@@ -30,13 +30,14 @@ Source de vérité : `types/transitions.ts`, utilisée par la fonction de transi
 | rdv_propose | entretien_fait | conseiller | entretien de cadrage terminé | — | must |
 | entretien_fait | en_proposition | conseiller | fiche corrigée et validée | budget_reel_cents, dates fixes et validee_par renseignés | must |
 | en_proposition | gagnee | systeme | dernière ligne réservée | toutes les lignes de la proposition acceptée sont reservee | must |
+| gagnee | en_proposition | systeme | réservation d’une ligne annulée (E9.8) | la proposition réservée repasse à depot_recu | could |
 | a_corriger | abandonnee | conseiller | abandon confirmé | — | could |
 | validee | abandonnee | conseiller | abandon confirmé | — | could |
 | rdv_propose | abandonnee | conseiller | abandon confirmé | — | could |
 | entretien_fait | abandonnee | conseiller | abandon confirmé | — | could |
 | en_proposition | abandonnee | conseiller | abandon confirmé (proposition sans réponse) | proposition sans_reponse envoyée depuis 14 jours | must (E6.5) |
 
-États finaux : `refusee`, `gagnee`, `abandonnee`. Valeurs couvertes : 12.
+États finaux : `refusee`, `abandonnee`. Valeurs couvertes : 12. `gagnee` (affiché « Conclue ») n’est plus final : l’annulation d’une réservation (E9.8) rouvre le dossier.
 
 ## Proposition (`propositions.statut`)
 
@@ -57,9 +58,10 @@ Source de vérité : `types/transitions.ts`, utilisée par la fonction de transi
 | sans_reponse | changement_demande | conseiller | le client demande un changement | — | must (E6.4) |
 | changement_demande | remplacee | systeme | version suivante créée | version suivante en brouillon_en_cours | must (E6.1) |
 | acceptee | depot_recu | conseiller | dépôt de garantie reçu | — | must |
-| depot_recu | reservee | systeme | dernière ligne réservée | toutes les lignes sont reservee | must |
+| depot_recu | reservee | systeme | dernière ligne réservée | toutes les lignes sont reservee (hors remplacee et retiree) | must |
+| reservee | depot_recu | systeme | réservation d’une ligne annulée (E9.8) | une ligne repasse à confirme | could |
 
-États finaux : `remplacee`, `reservee`. Valeurs couvertes : 12.
+États finaux : `remplacee`. Valeurs couvertes : 12.
 
 ## Ligne de proposition (`proposition_lignes.statut`)
 
@@ -67,15 +69,17 @@ Source de vérité : `types/transitions.ts`, utilisée par la fonction de transi
 | --- | --- | --- | --- | --- | --- |
 | — | a_verifier | systeme | ligne créée par le brouillon | prestation du catalogue, prix catalogue copié | must |
 | — | a_verifier | conseiller | prestation ajoutée à une version modifiable (E6.6) | proposition a_verifier ou prete, prestation active, prix catalogue copié | should |
-| a_verifier | confirme | conseiller | tarif accepté depuis l’agent ou saisi | prix_confirme_cents, source, confirme_le et confirme_par renseignés | must |
+| a_verifier | confirme | conseiller | tarif accepté depuis l’agent ou saisi | prix_confirme_cents, source, confirme_le et confirme_par renseignés ; après le dépôt, ligne de remplacement (E7.4) | must |
 | a_verifier | indisponible | conseiller | vérification « indisponible » acceptée | — | must |
 | confirme | a_verifier | conseiller | nouvelle vérification demandée avant envoi | proposition pas encore envoyée | must |
-| confirme | indisponible | conseiller | prestation devenue indisponible avant la réservation | — | must |
+| confirme | indisponible | conseiller | prestation devenue indisponible avant la réservation | aucun accord ni option encore valable sur la ligne ; possible après le dépôt (E7.4) | must |
 | confirme | reservee | systeme | option confirmée sur le simulateur | option de la ligne en confirmee | must |
+| reservee | confirme | systeme | réservation annulée sur le simulateur (E9.8) | option de la ligne en annulee | could |
 | indisponible | a_verifier | conseiller | nouvelle vérification demandée | — | must |
-| indisponible | remplacee | conseiller | ligne remplacée par une autre prestation | nouvelle ligne créée | should |
+| indisponible | remplacee | conseiller | ligne remplacée par une autre prestation | nouvelle ligne créée ; après le dépôt, accord du client coché (E7.4) | should |
+| indisponible | retiree | conseiller | ligne retirée sans remplacement (E7.4) | proposition depot_recu, accord du client coché, au moins une autre prestation restante | must |
 
-États finaux : `remplacee`, `reservee`. Valeurs couvertes : 5.
+États finaux : `remplacee`, `retiree`. Valeurs couvertes : 6.
 
 ## Accord, option et réservation (`options.statut`)
 

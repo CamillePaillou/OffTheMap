@@ -39,13 +39,14 @@ export const TRANSITIONS_DOSSIER: Transition<StatutDossier>[] = [
   t('rdv_propose', 'entretien_fait', 'conseiller', 'entretien de cadrage terminé'),
   t('entretien_fait', 'en_proposition', 'conseiller', 'fiche corrigée et validée', 'budget_reel_cents, dates fixes et validee_par renseignés'),
   t('en_proposition', 'gagnee', 'systeme', 'dernière ligne réservée', 'toutes les lignes de la proposition acceptée sont reservee'),
+  t('gagnee', 'en_proposition', 'systeme', 'réservation d’une ligne annulée (E9.8)', 'la proposition réservée repasse à depot_recu', 'could'),
   t('a_corriger', 'abandonnee', 'conseiller', 'abandon confirmé', undefined, 'could'),
   t('validee', 'abandonnee', 'conseiller', 'abandon confirmé', undefined, 'could'),
   t('rdv_propose', 'abandonnee', 'conseiller', 'abandon confirmé', undefined, 'could'),
   t('entretien_fait', 'abandonnee', 'conseiller', 'abandon confirmé', undefined, 'could'),
   t('en_proposition', 'abandonnee', 'conseiller', 'abandon confirmé (proposition sans réponse)', 'proposition sans_reponse envoyée depuis 14 jours'), // livrée par E6.5
 ];
-export const FINAUX_DOSSIER: StatutDossier[] = ['refusee', 'gagnee', 'abandonnee'];
+export const FINAUX_DOSSIER: StatutDossier[] = ['refusee', 'abandonnee'];
 
 // ------------------------------------------------------------------ proposition (propositions.statut)
 export const TRANSITIONS_PROPOSITION: Transition<StatutProposition>[] = [
@@ -64,23 +65,26 @@ export const TRANSITIONS_PROPOSITION: Transition<StatutProposition>[] = [
   t('sans_reponse', 'changement_demande', 'conseiller', 'le client demande un changement'), // livrée par E6.4
   t('changement_demande', 'remplacee', 'systeme', 'version suivante créée', 'version suivante en brouillon_en_cours'), // livrée par E6.1
   t('acceptee', 'depot_recu', 'conseiller', 'dépôt de garantie reçu'),
-  t('depot_recu', 'reservee', 'systeme', 'dernière ligne réservée', 'toutes les lignes sont reservee'),
+  t('depot_recu', 'reservee', 'systeme', 'dernière ligne réservée', 'toutes les lignes sont reservee (hors remplacee et retiree)'),
+  t('reservee', 'depot_recu', 'systeme', 'réservation d’une ligne annulée (E9.8)', 'une ligne repasse à confirme', 'could'),
 ];
-export const FINAUX_PROPOSITION: StatutProposition[] = ['remplacee', 'reservee'];
+export const FINAUX_PROPOSITION: StatutProposition[] = ['remplacee'];
 
 // ------------------------------------------------------------------ ligne (proposition_lignes.statut)
 export const TRANSITIONS_LIGNE: Transition<StatutLigne>[] = [
   t(null, 'a_verifier', 'systeme', 'ligne créée par le brouillon', 'prestation du catalogue, prix catalogue copié'),
   t(null, 'a_verifier', 'conseiller', 'prestation ajoutée à une version modifiable (E6.6)', 'proposition a_verifier ou prete, prestation active, prix catalogue copié', 'should'),
-  t('a_verifier', 'confirme', 'conseiller', 'tarif accepté depuis l’agent ou saisi', 'prix_confirme_cents, source, confirme_le et confirme_par renseignés'),
+  t('a_verifier', 'confirme', 'conseiller', 'tarif accepté depuis l’agent ou saisi', 'prix_confirme_cents, source, confirme_le et confirme_par renseignés ; après le dépôt, ligne de remplacement (E7.4)'),
   t('a_verifier', 'indisponible', 'conseiller', 'vérification « indisponible » acceptée'),
   t('confirme', 'a_verifier', 'conseiller', 'nouvelle vérification demandée avant envoi', 'proposition pas encore envoyée'),
-  t('confirme', 'indisponible', 'conseiller', 'prestation devenue indisponible avant la réservation'),
+  t('confirme', 'indisponible', 'conseiller', 'prestation devenue indisponible avant la réservation', 'aucun accord ni option encore valable sur la ligne ; possible après le dépôt (E7.4)'),
   t('confirme', 'reservee', 'systeme', 'option confirmée sur le simulateur', 'option de la ligne en confirmee'),
+  t('reservee', 'confirme', 'systeme', 'réservation annulée sur le simulateur (E9.8)', 'option de la ligne en annulee', 'could'),
   t('indisponible', 'a_verifier', 'conseiller', 'nouvelle vérification demandée'),
-  t('indisponible', 'remplacee', 'conseiller', 'ligne remplacée par une autre prestation', 'nouvelle ligne créée', 'should'),
+  t('indisponible', 'remplacee', 'conseiller', 'ligne remplacée par une autre prestation', 'nouvelle ligne créée ; après le dépôt, accord du client coché (E7.4)', 'should'),
+  t('indisponible', 'retiree', 'conseiller', 'ligne retirée sans remplacement (E7.4)', 'proposition depot_recu, accord du client coché, au moins une autre prestation restante'),
 ];
-export const FINAUX_LIGNE: StatutLigne[] = ['remplacee', 'reservee'];
+export const FINAUX_LIGNE: StatutLigne[] = ['remplacee', 'retiree'];
 
 // ------------------------------------------------------------------ option (options.statut)
 export const TRANSITIONS_OPTION: Transition<StatutOption>[] = [

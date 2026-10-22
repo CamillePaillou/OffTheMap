@@ -30,7 +30,7 @@ export interface Alerte {
 export const REGLES_CHIFFRAGE = {
   margeCents: 0, // décidé : pas de marge
   budget: 'global', // décidé : pour tout le groupe, jamais par personne
-  statutsHorsTotal: ['remplacee', 'indisponible'] as const,
+  statutsHorsTotal: ['remplacee', 'indisponible', 'retiree'] as const,
   seuilBudgetProche: 0.9, // choix de l'équipe
   devise: 'EUR',
   locale: 'fr-FR',

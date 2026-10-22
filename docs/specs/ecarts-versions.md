@@ -13,7 +13,7 @@ Scénario : écarts d'un exemple connu
 
 - On compare la version affichée à la **version précédente du même dossier** (numéro − 1).
 - La comparaison se fait **par prestation** : une nuit d'hôtel ajoutée se lit « 1 → 2 nuits », pas « une ligne retirée, deux ajoutées ». Une date déplacée est un changement de dates.
-- Seules les **lignes retenues** comptent (ni `remplacee` ni `indisponible`), comme dans le total (`REGLES_CHIFFRAGE.statutsHorsTotal`).
+- Seules les **lignes retenues** comptent (ni `remplacee`, ni `retiree`, ni `indisponible`), comme dans le total (`REGLES_CHIFFRAGE.statutsHorsTotal`).
 - Prix d'une ligne : son **prix effectif**, confirmé sinon catalogue. Total d'une prestation : somme de ses `total_ligne_cents`.
 - Pour chaque prestation : `ajoutee`, `retiree` ou `modifiee` (changements : `dates`, `participants`, `prix`), et `delta_cents` (positif : plus cher). Les prestations identiques sont seulement comptées (`inchangees`).
 - Écart du total = total des lignes retenues de la version − celui de la précédente = somme des écarts par prestation.

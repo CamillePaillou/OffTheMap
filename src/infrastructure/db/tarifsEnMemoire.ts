@@ -1,11 +1,14 @@
 /**
  * Tarifs, envoi, remplacement et ajustement des lignes en mémoire, pour les tests. Mêmes règles que changer_ligne,
- * envoyer_proposition (E5.1), remplacer_ligne (E5.2), ajouter_ligne et modifier_ligne (E6.6).
+ * envoyer_proposition (E5.1), remplacer_ligne (E5.2), ajouter_ligne et modifier_ligne (E6.6), retirer_ligne et
+ * changements après le dépôt (E7.4).
  */
 import { ALERTES_BLOQUANTES, type Alerte, type SourcePrix, type StatutProposition, type StatutVerification } from '../../../types';
 import type { EntreeChiffrage, LigneAChiffrer } from '../../domain/chiffrage/chiffrer';
 import { StatutModifieErreur } from '../../ports/statuts';
 import {
+  AccordClientRequisErreur,
+  DerniereLigneErreur,
   EnvoiRefuseErreur,
   LigneModifieeErreur,
   MemePrestationErreur,
@@ -17,9 +20,13 @@ import {
   type ModificationLigne,
   type PrestationRemplacante,
   type RemplacementLigne,
+  type RetraitLigne,
   type TarifsRepository,
 } from '../../ports/tarifs';
 import { ordonnerAjoutables, ordonnerRemplacantes } from './ordonnerRemplacantes';
+
+/** E7.4 : seuls changements de ligne permis après le dépôt (comme changer_ligne). */
+const APRES_DEPOT = ['confirme>indisponible', 'a_verifier>indisponible', 'a_verifier>confirme'];
 
 export interface LigneEnMemoire extends LigneAChiffrer {
   id: string;
@@ -64,7 +71,8 @@ export class TarifsEnMemoire implements TarifsRepository {
 
   async changerLigne(c: ChangementLigne) {
     const { p, l } = this.trouver(c.ligneId)!;
-    if (!['a_verifier', 'prete'].includes(p.statut)) throw new PropositionFigeeErreur(p.statut);
+    const apresDepot = p.statut === 'depot_recu' && APRES_DEPOT.includes(`${c.ancien}>${c.nouveau}`);
+    if (!['a_verifier', 'prete'].includes(p.statut) && !apresDepot) throw new PropositionFigeeErreur(p.statut);
     if (l.statut !== c.ancien) throw new LigneModifieeErreur(l.statut);
     l.statut = c.nouveau;
     l.prix_confirme_cents = c.nouveau === 'confirme' ? c.prixCents : null;
@@ -75,7 +83,8 @@ export class TarifsEnMemoire implements TarifsRepository {
 
   async remplacerLigne(r: RemplacementLigne) {
     const { p, l } = this.trouver(r.ligneId)!;
-    if (!['a_verifier', 'prete'].includes(p.statut)) throw new PropositionFigeeErreur(p.statut);
+    if (!['a_verifier', 'prete', 'depot_recu'].includes(p.statut)) throw new PropositionFigeeErreur(p.statut);
+    if (p.statut === 'depot_recu' && !r.accordClient) throw new AccordClientRequisErreur(r.ligneId);
     if (l.statut !== 'indisponible') throw new LigneModifieeErreur(l.statut);
     if (r.prestationId === l.prestation_id && (r.date ?? l.date) === l.date) throw new MemePrestationErreur(r.prestationId);
     const presta = this.catalogue.get(r.prestationId);
@@ -90,6 +99,17 @@ export class TarifsEnMemoire implements TarifsRepository {
     };
     p.lignes.push(nouvelle);
     return { ligneId: nouvelle.id, statutProposition: this.recalculer(p) };
+  }
+
+  async retirerLigne(r: RetraitLigne) {
+    const { p, l } = this.trouver(r.ligneId)!;
+    if (p.statut !== 'depot_recu') throw new PropositionFigeeErreur(p.statut);
+    if (!r.accordClient) throw new AccordClientRequisErreur(r.ligneId);
+    if (l.statut !== 'indisponible') throw new LigneModifieeErreur(l.statut);
+    if (!p.lignes.some((x) => x.id !== l.id && !['remplacee', 'retiree', 'indisponible'].includes(x.statut))) throw new DerniereLigneErreur(r.ligneId);
+    l.statut = 'retiree';
+    this.journal.push(`retrait:${l.id}`);
+    return this.recalculer(p);
   }
 
   async prestationsRemplacantes(ligneId: string) {
@@ -159,14 +179,16 @@ export class TarifsEnMemoire implements TarifsRepository {
 
   /** Une ligne retenue (ni remplacée ni indisponible) prévoit déjà cette prestation à cette date. */
   private dejaPrevue(p: PropositionEnMemoire, prestationId: string, date: string, sauf?: string) {
-    return p.lignes.some((x) => x.id !== sauf && x.prestation_id === prestationId && x.date === date && x.statut !== 'remplacee' && x.statut !== 'indisponible');
+    return p.lignes.some((x) => x.id !== sauf && x.prestation_id === prestationId && x.date === date && x.statut !== 'remplacee' && x.statut !== 'retiree' && x.statut !== 'indisponible');
   }
 
-  /** Total hors remplacee et indisponible ; la proposition suit (a_verifier ↔ prete). */
+  /** Total hors remplacee, retiree et indisponible ; la proposition suit (a_verifier ↔ prete). */
   private recalculer(p: PropositionEnMemoire): StatutProposition {
     p.total_cents = p.lignes
-      .filter((x) => x.statut !== 'remplacee' && x.statut !== 'indisponible')
+      .filter((x) => x.statut !== 'remplacee' && x.statut !== 'retiree' && x.statut !== 'indisponible')
       .reduce((s, x) => s + (x.prix_confirme_cents ?? x.prix_unitaire_catalogue_cents) * x.participants, 0);
+    // après le dépôt, la proposition ne repasse jamais à vérifier (la réservation, elle, n'est pas simulée ici)
+    if (p.statut === 'depot_recu') return p.statut;
     const cible: StatutProposition = p.lignes.some((x) => x.statut === 'a_verifier' || x.statut === 'indisponible') ? 'a_verifier' : 'prete';
     if (cible !== p.statut) {
       this.journal.push(`${p.statut}>${cible}`);

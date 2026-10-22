@@ -44,7 +44,7 @@ describe('confirmerReservation (E9.5)', () => {
     expect(r).toMatchObject({ ok: true, reservation_id: 'res_123' });
     expect(p.confirmerReservation).toHaveBeenCalledWith({ option_id: option.option_id, cle_approbation: secret, approuve_par: CONSEILLER.nom });
     expect(JSON.stringify({ accords: repo.accords, historique: repo.historique })).not.toContain(secret);
-    expect(repo.accords[0]).toMatchObject({ statut: 'confirmee', reservation_id_simulateur: 'res_123' });
+    expect(repo.accords[0]).toMatchObject({ statut: 'confirmee', reservation_id_simulateur: 'res_123', confirme_par: CONSEILLER.id });
   });
 
   it('si l’option a expiré, revérifie le prix et ne confirme jamais', async () => {

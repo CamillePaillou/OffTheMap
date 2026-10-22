@@ -13,6 +13,7 @@ export interface AccordEnMemoire extends NouvelAccord {
   erreur_option?: string;
   accord_utilise: boolean;
   reservation_id_simulateur?: string;
+  confirme_par?: string;
   reponse_confirmation?: unknown;
   reponse_annulation?: unknown;
   ligne_snapshot?: { prestation_id: string; date: string; participants: number };
@@ -87,7 +88,7 @@ export class AccordsEnMemoire implements AccordsRepository {
   async terminerConfirmation(optionId: string, resultat: ResultatConfirmation) {
     const a = this.accords.find((x) => x.option_id === optionId);
     if (!a) throw new Error(`Option introuvable : ${optionId}`);
-    if (resultat.ok) { a.statut = 'confirmee'; a.reservation_id_simulateur = resultat.reservation_id_simulateur; a.reponse_confirmation = resultat.reponse_serveur; }
+    if (resultat.ok) { a.statut = 'confirmee'; a.reservation_id_simulateur = resultat.reservation_id_simulateur; a.confirme_par = resultat.confirme_par; a.reponse_confirmation = resultat.reponse_serveur; }
     else { a.erreur_option = resultat.raison; a.reponse_confirmation = resultat.reponse_serveur; }
     this.historique.push({ dossier_id: a.dossier_id, proposition_id: a.proposition_id, type: 'option', auteur_id: 'systeme', detail: { type: 'confirmation', option_id: optionId, ...resultat } });
   }

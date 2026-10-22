@@ -18,6 +18,9 @@ import { TRANSITIONS_LIGNE, trouverTransition } from '../../types/transitions';
 import { chiffrer, formaterMontant, type EntreeChiffrage } from '../domain/chiffrage/chiffrer';
 import { StatutModifieErreur } from '../ports/statuts';
 import {
+  AccordClientRequisErreur,
+  DemarcheEnCoursLigneErreur,
+  DerniereLigneErreur,
   EnvoiRefuseErreur,
   LigneModifieeErreur,
   MemePrestationErreur,
@@ -49,7 +52,8 @@ export const schemaTarif = z.object({
 
 export type RefusLigne =
   | 'introuvable' | 'transition_interdite' | 'ligne_modifiee' | 'proposition_figee' | 'pas_de_prix_verifie'
-  | 'prestation_refusee' | 'meme_prestation' | /** E6.6 : déjà prévue à cette date, ou rien ne change. */ 'deja_prevue';
+  | 'prestation_refusee' | 'meme_prestation' | /** E6.6 : déjà prévue à cette date, ou rien ne change. */ 'deja_prevue'
+  | /** E7.4, après le dépôt : */ 'accord_client_requis' | 'derniere_ligne' | 'demarche_en_cours';
 export type ResultatLigne =
   | { ok: true; statutProposition: StatutProposition; /** E5.2 : la ligne créée par le remplacement. */ nouvelleLigneId?: string }
   | { ok: false; erreurs: ErreursChamps }
@@ -75,6 +79,7 @@ async function changer(
   } catch (e) {
     if (e instanceof LigneModifieeErreur) return { ok: false, raison: 'ligne_modifiee' };
     if (e instanceof PropositionFigeeErreur) return { ok: false, raison: 'proposition_figee' };
+    if (e instanceof DemarcheEnCoursLigneErreur) return { ok: false, raison: 'demarche_en_cours' };
     throw e;
   }
   await recalculerAlertes(repo, ligne.propositionId);
@@ -131,7 +136,7 @@ export const schemaRemplacement = z.object({
  */
 export async function remplacerLigne(
   repo: TarifsRepository,
-  entree: { ligneId: string; conseillerId: string; prestationId: unknown; date?: unknown },
+  entree: { ligneId: string; conseillerId: string; prestationId: unknown; date?: unknown; /** E7.4 : exigé après le dépôt. */ accordClient?: boolean },
 ): Promise<ResultatLigne> {
   const saisie = schemaRemplacement.safeParse({ prestationId: entree.prestationId, date: entree.date ?? '' });
   if (!saisie.success) {
@@ -149,16 +154,46 @@ export async function remplacerLigne(
     r = await repo.remplacerLigne({
       ligneId: entree.ligneId, prestationId: saisie.data.prestationId, conseillerId: entree.conseillerId,
       ...(saisie.data.date ? { date: saisie.data.date } : {}),
+      accordClient: entree.accordClient === true,
     });
   } catch (e) {
     if (e instanceof LigneModifieeErreur) return { ok: false, raison: 'ligne_modifiee' };
     if (e instanceof PropositionFigeeErreur) return { ok: false, raison: 'proposition_figee' };
     if (e instanceof PrestationRefuseeErreur) return { ok: false, raison: 'prestation_refusee' };
     if (e instanceof MemePrestationErreur) return { ok: false, raison: 'meme_prestation' };
+    if (e instanceof AccordClientRequisErreur) return { ok: false, raison: 'accord_client_requis' };
     throw e;
   }
   await recalculerAlertes(repo, ligne.propositionId);
   return { ok: true, statutProposition: r.statutProposition, nouvelleLigneId: r.ligneId };
+}
+
+/**
+ * Retire une ligne indisponible sans la remplacer (E7.4) : après le dépôt seulement, avec l'accord du client.
+ * La ligne passe à « retiree », hors total ; la proposition reste au dépôt reçu, ou devient réservée si tout le reste l'est.
+ */
+export async function retirerLigne(
+  repo: TarifsRepository,
+  entree: { ligneId: string; conseillerId: string; accordClient: boolean },
+): Promise<ResultatLigne> {
+  const ligne = await repo.lireLigne(entree.ligneId);
+  if (!ligne) return { ok: false, raison: 'introuvable' };
+  if (!entree.conseillerId.trim() || !trouverTransition(TRANSITIONS_LIGNE, ligne.statut, 'retiree', 'conseiller')) {
+    return { ok: false, raison: 'transition_interdite' };
+  }
+  if (!entree.accordClient) return { ok: false, raison: 'accord_client_requis' };
+  let statutProposition: StatutProposition;
+  try {
+    statutProposition = await repo.retirerLigne({ ligneId: entree.ligneId, conseillerId: entree.conseillerId, accordClient: true });
+  } catch (e) {
+    if (e instanceof LigneModifieeErreur) return { ok: false, raison: 'ligne_modifiee' };
+    if (e instanceof PropositionFigeeErreur) return { ok: false, raison: 'proposition_figee' };
+    if (e instanceof AccordClientRequisErreur) return { ok: false, raison: 'accord_client_requis' };
+    if (e instanceof DerniereLigneErreur) return { ok: false, raison: 'derniere_ligne' };
+    throw e;
+  }
+  await recalculerAlertes(repo, ligne.propositionId);
+  return { ok: true, statutProposition };
 }
 
 const date = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Choisissez une date');

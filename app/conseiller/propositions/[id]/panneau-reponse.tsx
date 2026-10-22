@@ -26,6 +26,16 @@ export function PanneauReponse({ propositionId, statut }: { propositionId: strin
     {},
   );
 
+  if (statut === 'reservee') {
+    return (
+      <section className="rounded-[18px] bg-ciel-pale p-4 text-sm">
+        <p className="font-medium text-encre">Toutes les prestations sont réservées.</p>
+        <Link href={`/conseiller/propositions/${propositionId}/accord`} className="mt-2 inline-block underline underline-offset-4">
+          Voir les réservations
+        </Link>
+      </section>
+    );
+  }
   if (statut === 'depot_recu') {
     return (
       <section className="rounded-[18px] bg-ciel-pale p-4 text-sm">

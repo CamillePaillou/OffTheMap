@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ALERTES_BLOQUANTES } from '../../types';
 import { TarifsEnMemoire, type LigneEnMemoire, type PropositionEnMemoire } from '../infrastructure/db/tarifsEnMemoire';
-import { accepterVerification, confirmerTarif, envoyerProposition, marquerIndisponible, remplacerLigne, revoirLigne, schemaTarif } from './tarifs';
+import { accepterVerification, confirmerTarif, envoyerProposition, marquerIndisponible, remplacerLigne, retirerLigne, revoirLigne, schemaTarif } from './tarifs';
 
 const P = 'p1';
 const ALICE = 'alice';
@@ -243,3 +243,52 @@ describe('remplacer une ligne indisponible (E5.2)', () => {
       .toEqual(['activite-nantes-01', 'activite-nantes-02', 'hotel-nantes-01', 'train-nantes-01']);
   });
 });
+
+describe('prestation indisponible après le dépôt (E7.4)', () => {
+  beforeEach(async () => {
+    repo.catalogue.set('activite-nantes-02', { id: 'activite-nantes-02', nom: 'Balade sur l’Erdre', type: 'activite', destination: 'Nantes', prix_unitaire_cents: 2900, capacite: 12, actif: true });
+    await confirmerTout();
+    p.statut = 'depot_recu'; // envoyée, acceptée, dépôt reçu
+  });
+
+  it('marque indisponible une ligne confirmée, sans repasser la proposition à vérifier', async () => {
+    expect(await marquerIndisponible(repo, { ligneId: 'atelier', conseillerId: ALICE })).toEqual({ ok: true, statutProposition: 'depot_recu' });
+    expect(p.total_cents).toBe(28800);
+  });
+
+  it('refuse le retour à vérifier après le dépôt', async () => {
+    expect(await revoirLigne(repo, { ligneId: 'atelier', conseillerId: ALICE })).toEqual({ ok: false, raison: 'proposition_figee' });
+  });
+
+  it('remplace seulement avec l’accord du client, et la proposition reste au dépôt reçu', async () => {
+    await marquerIndisponible(repo, { ligneId: 'atelier', conseillerId: ALICE });
+    expect(await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: 'activite-nantes-02' }))
+      .toEqual({ ok: false, raison: 'accord_client_requis' });
+    const r = await remplacerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, prestationId: 'activite-nantes-02', accordClient: true });
+    expect(r).toMatchObject({ ok: true, statutProposition: 'depot_recu' });
+    expect(p.lignes.map((l) => l.statut)).toEqual(['confirme', 'confirme', 'remplacee', 'a_verifier']);
+  });
+
+  it('retire une ligne indisponible avec l’accord du client, hors total', async () => {
+    await marquerIndisponible(repo, { ligneId: 'atelier', conseillerId: ALICE });
+    expect(await retirerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, accordClient: false })).toEqual({ ok: false, raison: 'accord_client_requis' });
+    expect(await retirerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, accordClient: true })).toEqual({ ok: true, statutProposition: 'depot_recu' });
+    expect(p.lignes[2]!.statut).toBe('retiree');
+    expect(p.total_cents).toBe(28800);
+  });
+
+  it('ne retire ni une ligne confirmée ni la dernière prestation', async () => {
+    expect(await retirerLigne(repo, { ligneId: 'train', conseillerId: ALICE, accordClient: true })).toEqual({ ok: false, raison: 'transition_interdite' });
+    for (const id of ['train', 'hotel', 'atelier']) await marquerIndisponible(repo, { ligneId: id, conseillerId: ALICE });
+    await retirerLigne(repo, { ligneId: 'train', conseillerId: ALICE, accordClient: true });
+    await retirerLigne(repo, { ligneId: 'hotel', conseillerId: ALICE, accordClient: true });
+    expect(await retirerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, accordClient: true })).toEqual({ ok: false, raison: 'derniere_ligne' });
+  });
+
+  it('ne retire rien avant le dépôt : on remplace, ou on repasse à vérifier', async () => {
+    p.statut = 'prete';
+    await marquerIndisponible(repo, { ligneId: 'atelier', conseillerId: ALICE });
+    expect(await retirerLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, accordClient: true })).toEqual({ ok: false, raison: 'proposition_figee' });
+  });
+});
+

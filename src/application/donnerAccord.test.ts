@@ -66,9 +66,9 @@ describe('donnerAccord', () => {
     expect(repo.historique).toHaveLength(0);
   });
 
-  it('refuse une ligne indisponible', async () => {
+  it('refuse une ligne indisponible, en renvoyant au remplacement ou au retrait (E7.4)', async () => {
     const repo = new AccordsEnMemoire();
-    expect(await donnerAccord(repo, demande({ ligneId: HOTEL, prixAfficheCents: 19200 }))).toEqual({ ok: false, raison: 'ligne_non_confirmee' });
+    expect(await donnerAccord(repo, demande({ ligneId: HOTEL, prixAfficheCents: 19200 }))).toEqual({ ok: false, raison: 'ligne_indisponible' });
     expect(repo.accords).toHaveLength(0);
   });
 

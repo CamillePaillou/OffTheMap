@@ -29,9 +29,9 @@ flowchart LR
 | Conclure une vérification (prix, places) | proposition | — | — | oui | — | faits égaux au JSON du simulateur ; sinon réponse invalide | ConclusionVerification ; comparaison des faits (E8.5) |
 | Trier, corriger la fiche, confirmer un prix | écriture | — | oui | — | — | transition autorisée par la matrice | cas d’usage côté serveur ; trouverTransition() |
 | Envoyer la proposition | écriture | — | oui | — | — | aucune ligne à vérifier ni alerte bloquante | garde de la transition prete → envoyee |
-| Donner l’accord pour une option | écriture | — | oui | — | — | proposition depot_recu, vérification ok ; accord à usage unique, valable 10 minutes | transition de création accord_donne ; index unique par ligne |
-| Poser une option sur le simulateur | écriture chez le prestataire | — | — | — | oui | accord valide, non expiré, non utilisé | transition accord_donne → posee réservée au système ; CHECK accord_utilise |
-| Confirmer une réservation | écriture chez le prestataire | — | oui | — | — | seconde validation : clé d’approbation saisie ; prix de l’option = prix accordé | transition posee → confirmee réservée au conseiller ; CHECK prix en base |
+| Donner l’accord pour une option | écriture | — | oui | — | — | proposition depot_recu, vérification ok ; accord à usage unique, valable 10 minutes | transition de création accord_donne ; index unique par ligne ; fonction SQL enregistrer_accord (service_role) |
+| Poser une option sur le simulateur | écriture chez le prestataire | — | — | — | oui | accord valide, non expiré, non utilisé | transition accord_donne → posee réservée au système ; CHECK accord_utilise ; fonctions SQL consommer_accord puis terminer_pose_option (service_role) |
+| Confirmer une réservation | écriture chez le prestataire | — | oui | — | — | seconde validation : clé d’approbation saisie ; prix de l’option = prix accordé | transition posee → confirmee réservée au conseiller ; CHECK prix en base ; fonction SQL terminer_confirmation (service_role), la clé n’y arrive jamais |
 | Annuler une réservation (Could) | écriture chez le prestataire | — | oui | — | — | clé d’approbation saisie et confirmation | transition confirmee → annulee réservée au conseiller |
 | Écrire le journal | écriture | — | — | — | oui | en même temps que le changement de statut | fonction de transition unique (E0.7) |
 

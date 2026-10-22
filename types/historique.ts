@@ -12,6 +12,10 @@ export type DetailEvenement =
   | { type: 'rappel'; jour: 3 | 7 | 14 }
   | { type: 'depot' }
   | { type: 'changement'; version_remplacee: number; nouvelle_version: number }
+  // E7.4 : événement « changement » après le dépôt, avec l'accord du client
+  | { type: 'remplacement'; ligne_id: string; nouvelle_ligne_id: string; ancienne_prestation: string; nouvelle_prestation: string;
+      ancien_total_cents: number; nouveau_total_catalogue_cents: number; accord_client: true }
+  | { type: 'retrait'; ligne_id: string; ancienne_prestation: string; ancien_total_cents: number; accord_client: true }
   | { type: 'verification'; verification_id: string; ligne_id: string; statut: StatutVerification }
   | { type: 'accord'; option_id: string; ligne_id: string; prix_accorde_cents: number }
   | { type: 'option'; option_id: string; statut: StatutOption; option_id_simulateur?: string; code_erreur?: string }
