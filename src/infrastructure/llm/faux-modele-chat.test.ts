@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ConversationChatbot, repondreChatbot } from '../../application/repondreChatbot';
 import { contientPrix } from '../../domain/chatbot/sansPrix';
 import type { PrestationCatalogue, Prestataires } from '../../ports/prestataires';
-import { comprendQuestion, FauxModeleChat, lireDate, lireDestination, lireVoyageurs } from './faux-modele-chat';
+import { comprendQuestion, FauxModeleChat, lireDate, lireDateImpossible, lireDestination, lireVoyageurs, oublieLesDates } from './faux-modele-chat';
 
 // le catalogue de démonstration (supabase/seed.sql), tel que le simulateur le renvoie
 const p = (id: string, type: PrestationCatalogue['type'], nom: string, destination: string, description: string, tags: string[]): PrestationCatalogue =>
@@ -88,6 +88,107 @@ describe('faux modèle du chatbot (LLM_PROVIDER=fake)', () => {
   it('refuse de réserver et de donner un prix', async () => {
     expect((await demander('Réservez-moi l’hôtel')).texte).toMatch(/Je ne réserve rien moi-même/);
     expect((await demander('Combien coûte Lille ?')).texte).toMatch(/Je ne donne pas de prix/);
+  });
+});
+
+describe('une date qui n’existe pas (32 octobre, 31 février)', () => {
+  it('ne la prend pas pour une date, et dit laquelle n’existe pas', () => {
+    for (const t of ['le 32 octobre', 'le 0 novembre', 'le 31 avril', 'le 30 février', 'le 31/02', 'le 12/13', '2026-13-01', '2026-02-30']) {
+      expect(lireDate(t, '2026-10-22'), t).toBeNull();
+    }
+    expect(lireDateImpossible('Et le 32 octobre', '2026-10-22')).toBe('32 octobre');
+    expect(lireDateImpossible('le 31/02', '2026-10-22')).toBe('31/02');
+    expect(lireDateImpossible('le 29 février', '2026-10-22')).toBe('29 février 2027'); // 2027 n'est pas bissextile
+    expect(lireDate('le 29 février', '2027-10-22')).toBe('2028-02-29');
+    expect(lireDate('le 31 octobre', '2026-10-22')).toBe('2026-10-31');
+    expect(lireDateImpossible('le 31 octobre', '2026-10-22')).toBeNull();
+    expect(comprendQuestion('Et le 32 octobre', '2026-10-22')).toBe(true); // le modèle de règles répond, pas le vrai modèle
+  });
+
+  it('« Et le 32 octobre » : le chatbot le dit au lieu de répondre à côté, puis repart avec la date suivante', async () => {
+    const appels: string[] = [];
+    const espion = { ...deps, prestataires: { ...simulateur, disponibilite: async (l: { prestation_id: string; date: string; participants: number }) => (appels.push(l.date), simulateur.disponibilite(l)) } };
+    const histo: string[] = [];
+    const tour = async (question: string) => {
+      histo.push(question);
+      const r = await repondreChatbot(ConversationChatbot.parse({ messages: histo.map((content, i) => ({ role: i % 2 ? 'assistant' : 'user', content })) }), espion);
+      histo.push(r.texte);
+      return r;
+    };
+    await tour('Où dormir à Lyon ?');
+    await tour('Libre le 31 octobre pour 2 ?');
+    const r = await tour('Et le 32 octobre');
+    expect(r.texte).toMatch(/^Le 32 octobre n’existe pas au calendrier\. Quelle date voulez-vous \?/);
+    expect(r.verification).toBeNull();
+    expect(r.prestations).toEqual([]);
+    expect(appels).toEqual(['2026-10-31']); // pas de vérification au 32 octobre
+    expect((await tour('Et le 1er novembre ?')).verification).toBe('disponible');
+    expect(appels.at(-1)).toBe('2026-11-01');
+  });
+});
+
+describe('la date ne reste pas collée à la conversation (correctif E1.3)', () => {
+  // comme en local sans clé d'équipe : le catalogue répond, la disponibilité est en panne
+  const enPanne = { ...deps, prestataires: { ...simulateur, disponibilite: async () => ({ ok: false as const, panne: 'erreur_serveur' as const }) } };
+  const converser = (...messages: string[]) =>
+    repondreChatbot(ConversationChatbot.parse({ messages: messages.map((content, i) => ({ role: i % 2 ? 'assistant' : 'user', content })) }), enPanne);
+
+  it('après une vérification impossible, les questions suivantes repartent sur le catalogue (conversation rejouée)', async () => {
+    const histo: string[] = [];
+    const tour = async (question: string) => {
+      histo.push(question);
+      const r = await converser(...histo);
+      histo.push(r.texte);
+      return r;
+    };
+    expect((await tour('Où dormir à Lyon ?')).prestations.map((c) => c.nom)).toEqual(['Hôtel des Lumières']);
+    expect((await tour('Libre le 31 octobre pour 2 ?')).verification).toBe('non_verifie'); // le simulateur est en panne
+    for (const [question, nom] of [
+      ['Où dormir à Lyon ?', 'Hôtel des Lumières'],
+      ['Ou dormir a Nantes', 'Hôtel des Machines'],
+      ['que faire a lyon', 'Enquête des traboules'],
+    ] as const) {
+      const r = await tour(question);
+      expect(r.verification, question).toBeNull(); // pas de nouvelle vérification au 31 octobre
+      expect(r.texte, question).not.toMatch(/rien de vérifié/);
+      expect(r.prestations.map((c) => c.nom), question).toContain(nom);
+    }
+  });
+
+  it('« Et le 25 novembre ? » après un échec : la ville la plus récente (Nantes, pas Lyon) et les voyageurs d’avant', async () => {
+    const appels: { prestation_id: string; date: string; participants: number }[] = [];
+    const espion = { ...enPanne, prestataires: { ...enPanne.prestataires, disponibilite: async (l: { prestation_id: string; date: string; participants: number }) => (appels.push(l), { ok: false as const, panne: 'erreur_serveur' as const }) } };
+    const histo: string[] = [];
+    for (const question of ['Que faire à Nantes ?', 'Libre le 31 octobre pour 2 ?', 'Et à Lyon ?', 'Libre le 31 octobre pour 2 ?', 'Que faire a Nantes ?', 'Libre le 31 octobre pour 2 ?', 'Et le 25 novembre ?']) {
+      histo.push(question);
+      const r = await repondreChatbot(ConversationChatbot.parse({ messages: histo.map((content, i) => ({ role: i % 2 ? 'assistant' : 'user', content })) }), espion);
+      histo.push(r.texte);
+    }
+    // la dernière question vérifie l'atelier de Nantes le 25 novembre, pour 2 (ici le simulateur est en panne)
+    expect(appels.at(-1)).toEqual({ prestation_id: 'activite-nantes-01', date: '2026-11-25', participants: 2 });
+    expect(histo.at(-1)).toMatch(/rien de vérifié/);
+  });
+
+  it('« oublie les dates » : plus de vérification avec la date d’avant', async () => {
+    const premiere = await demander('Un atelier à Nantes le 7 novembre pour deux ?');
+    expect(premiere.verification).toBe('disponible');
+    const suite = await demander('Un atelier à Nantes le 7 novembre pour deux ?', premiere.texte, 'oublie les dates dis moi que faire à Nantes');
+    expect(suite.verification).toBeNull();
+    expect(suite.prestations.map((c) => c.nom)).toContain('Atelier de machines imaginaires');
+    const ensuite = await demander('Un atelier à Nantes le 7 novembre pour deux ?', premiere.texte, 'oublie les dates', suite.texte, 'Où dormir à Nantes ?');
+    expect(ensuite.verification).toBeNull();
+  });
+
+  it('une vérification réussie garde la date : « Où dormir ? » vérifie l’hôtel le même jour', async () => {
+    const premiere = await demander('Un atelier à Nantes le 7 novembre pour deux ?');
+    const suite = await demander('Un atelier à Nantes le 7 novembre pour deux ?', premiere.texte, 'Où dormir à Nantes ?');
+    expect(suite.verification).toBe('disponible');
+    expect(suite.texte).toMatch(/C’est libre : Hôtel des Machines, le samedi 7 novembre, pour 2 personnes/);
+  });
+
+  it('reconnaît les façons de dire « oublie les dates »', () => {
+    for (const t of ['oublie les dates', 'Oubliez la date', 'sans date', 'peu importe la date', 'pas de date précise', 'laisse les dates']) expect(oublieLesDates(t), t).toBe(true);
+    for (const t of ['Libre le 31 octobre pour 2 ?', 'Où dormir à Lyon ?', 'quelles dates sont libres ?']) expect(oublieLesDates(t), t).toBe(false);
   });
 });
 

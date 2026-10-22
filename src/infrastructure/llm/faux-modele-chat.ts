@@ -17,22 +17,44 @@ export function lireDestination(texte: string): string | null {
   return m ? m[1]!.charAt(0).toUpperCase() + m[1]!.slice(1) : null;
 }
 
-/** « 7 novembre », « le 07/11 », « 2026-11-07 » → AAAA-MM-JJ, l'année étant la prochaine où la date n'est pas passée. */
-export function lireDate(texte: string, aujourdhui: string): string | null {
+/** Le jour existe-t-il ce mois-là, cette année-là ? (31 avril, 30 février, 29 février 2027 : non) */
+const existe = (annee: number, mois: number, jour: number) =>
+  mois >= 1 && mois <= 12 && jour >= 1 && new Date(Date.UTC(annee, mois - 1, jour)).getUTCDate() === jour;
+
+/**
+ * Une date dans le texte : `{ date }` en AAAA-MM-JJ si elle existe, `{ impossible }` (telle qu'écrite) si elle n'existe
+ * pas au calendrier (« 32 octobre », « 31/02 »), null s'il n'y en a pas.
+ */
+function analyserDate(texte: string, aujourdhui: string): { date: string } | { impossible: string } | null {
   const t = plat(texte);
   const iso = t.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
-  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-  let jour: number | null = null;
-  let mois: number | null = null;
-  const enLettres = t.match(/\b(\d{1,2})(?:er)?\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\b/);
+  if (iso) return existe(Number(iso[1]), Number(iso[2]), Number(iso[3])) ? { date: iso[0] } : { impossible: iso[0] };
+  let jour: number;
+  let mois: number;
+  let ecrit: string;
+  const enLettres = texte.match(/\b(\d{1,2})(?:er)?\s+(janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[ûu]t|septembre|octobre|novembre|d[ée]cembre)\b/i);
   const enChiffres = t.match(/\b(\d{1,2})\/(\d{1,2})\b/);
-  if (enLettres) [jour, mois] = [Number(enLettres[1]), MOIS.indexOf(enLettres[2]!) + 1];
-  else if (enChiffres) [jour, mois] = [Number(enChiffres[1]), Number(enChiffres[2])];
-  if (!jour || !mois || mois > 12 || jour > 31) return null;
+  if (enLettres) [jour, mois, ecrit] = [Number(enLettres[1]), MOIS.indexOf(plat(enLettres[2]!)) + 1, `${Number(enLettres[1])} ${enLettres[2]!.toLowerCase()}`];
+  else if (enChiffres) [jour, mois, ecrit] = [Number(enChiffres[1]), Number(enChiffres[2]), enChiffres[0]];
+  else return null;
   let annee = Number(aujourdhui.slice(0, 4));
   const fmt = (a: number) => `${a}-${String(mois).padStart(2, '0')}-${String(jour).padStart(2, '0')}`;
   if (fmt(annee) < aujourdhui) annee++;
-  return fmt(annee);
+  if (existe(annee, mois, jour)) return { date: fmt(annee) };
+  // le 29 février n'existe que les années bissextiles : on dit de quelle année on parle
+  return { impossible: existe(2028, mois, jour) ? `${ecrit} ${annee}` : ecrit };
+}
+
+/** « 7 novembre », « le 07/11 », « 2026-11-07 » → AAAA-MM-JJ, l'année étant la prochaine où la date n'est pas passée. */
+export function lireDate(texte: string, aujourdhui: string): string | null {
+  const d = analyserDate(texte, aujourdhui);
+  return d && 'date' in d ? d.date : null;
+}
+
+/** « le 32 octobre », « le 31/02 » → la date telle qu'écrite, quand elle n'existe pas au calendrier. */
+export function lireDateImpossible(texte: string, aujourdhui: string): string | null {
+  const d = analyserDate(texte, aujourdhui);
+  return d && 'impossible' in d ? d.impossible : null;
 }
 
 /** « pour deux », « 3 personnes », « à quatre », « 2 adultes » → nombre de voyageurs. */
@@ -44,6 +66,14 @@ export function lireVoyageurs(texte: string): number | null {
   const n = NOMBRES[mot] ?? Number(mot);
   return n >= 1 && n <= 20 ? n : null;
 }
+
+/** « oublie les dates », « sans date », « peu importe la date » : la date d'avant ne compte plus. */
+export function oublieLesDates(texte: string): boolean {
+  return /\b(oubli\w*|laisse\w*|ignore\w*)\s+(les\s+|la\s+)?dates?\b|\bsans\s+dates?\b|\bpeu\s+importe\s+(les\s+|la\s+)?dates?\b|\bpas\s+de\s+dates?\b/.test(plat(texte));
+}
+
+/** Réponse fixe d'une vérification impossible (MESSAGES_FIXES.nonVerifie) : la redemander telle quelle ne sert à rien. */
+const VERIFICATION_ECHOUEE = /rien de verifie/;
 
 type TypePrestation = 'transport' | 'hebergement' | 'activite';
 
@@ -102,10 +132,23 @@ function resumer(prestations: readonly PrestationLue[], mots: string | undefined
 export function comprendQuestion(texte: string, aujourdhui: string): boolean {
   const t = plat(texte);
   return (
-    !!lireDestination(texte) || !!lireType(texte) || !!lireMots(texte) || !!lireDate(texte, aujourdhui) ||
+    !!lireDestination(texte) || !!lireType(texte) || !!lireMots(texte) || !!analyserDate(texte, aujourdhui) ||
     /\b(reserv\w*|prix|combien|tarifs?|couts?|coute|budget|horaires?|ouvert\w*|telephone|adresse|contact|agence|propose\w*|offre|catalogue|destinations?|villes?)\b/.test(t) ||
     /^(bonjour|salut|bonsoir|hello|coucou)\W*$/.test(t.trim())
   );
+}
+
+/**
+ * Messages du visiteur qui comptent encore pour la date : ceux qui suivent la dernière vérification
+ * échouée (réponse de l'assistant) ou le dernier « oublie les dates » (message du visiteur, exclu lui-même).
+ */
+export function visiteurDepuisDerniereRemiseAZero(msgs: RequeteChat['messages']): string[] {
+  let debut = 0;
+  msgs.forEach((m, i) => {
+    const texte = plat(String(m.content ?? ''));
+    if ((m.role === 'assistant' && VERIFICATION_ECHOUEE.test(texte)) || (m.role === 'user' && oublieLesDates(texte))) debut = i + 1;
+  });
+  return msgs.slice(debut).filter((m) => m.role === 'user').map((m) => String(m.content));
 }
 
 export class FauxModeleChat implements ModeleAgent {
@@ -115,8 +158,10 @@ export class FauxModeleChat implements ModeleAgent {
     const aujourdhui = /Aujourd’hui : (\d{4}-\d{2}-\d{2})/.exec(String(msgs[0]?.content))?.[1] ?? new Date().toISOString().slice(0, 10);
     const visiteur = msgs.filter((m) => m.role === 'user').map((m) => String(m.content));
     const dernierVisiteur = visiteur.at(-1) ?? '';
-    // ce que le visiteur a dit depuis le début : il peut donner la date dans un message et la ville dans un autre
-    const toutVisiteur = visiteur.join(' ');
+    // ce que le visiteur a dit le plus récemment : il peut donner la date dans un message et la ville dans un autre,
+    // et changer de ville en cours de route (« Et à Lyon ? » puis « Que faire à Nantes ? » : c'est Nantes qui compte)
+    const plusRecent = <T>(textes: readonly string[], lire: (t: string) => T | null): T | null =>
+      [...textes].reverse().map(lire).find((v) => v !== null && v !== undefined) ?? null;
     const dernier = msgs.at(-1)!;
     const reponse = (content: string): ReponseChat => ({ modele: 'faux-modele-chat', message: { content } });
     const outil = (name: string, args: object): ReponseChat => ({
@@ -125,12 +170,15 @@ export class FauxModeleChat implements ModeleAgent {
     });
 
     // la ville, le type et les mots-clés de la dernière question d'abord, sinon ceux de la conversation
-    const destination = lireDestination(dernierVisiteur) ?? lireDestination(toutVisiteur);
-    // la date et le nombre de voyageurs du dernier message d'abord (« Et le 14 novembre ? »), sinon ceux d'avant
-    const type = lireType(dernierVisiteur) ?? (lireDestination(dernierVisiteur) ? null : lireType(toutVisiteur));
+    const destination = plusRecent(visiteur, lireDestination);
+    const type = lireType(dernierVisiteur) ?? (lireDestination(dernierVisiteur) ? null : plusRecent(visiteur, lireType));
     const motsCles = lireMots(dernierVisiteur);
-    const date = lireDate(dernierVisiteur, aujourdhui) ?? [...visiteur].reverse().map((v) => lireDate(v, aujourdhui)).find(Boolean) ?? null;
-    const voyageurs = lireVoyageurs(dernierVisiteur) ?? [...visiteur].reverse().map(lireVoyageurs).find(Boolean) ?? null;
+    // la date du dernier message d'abord (« Et le 14 novembre ? »), sinon la plus récente d'avant, mais pas une date
+    // donnée avant une vérification qui a échoué ni avant « oublie les dates » : sans cela, chaque nouvelle question
+    // relançait la même vérification impossible et le chatbot répondait en boucle « rien de vérifié ».
+    // Le nombre de voyageurs, lui, reste : ce n'est pas lui qui a fait échouer la vérification.
+    const date = plusRecent(visiteurDepuisDerniereRemiseAZero(msgs), (v) => lireDate(v, aujourdhui));
+    const voyageurs = plusRecent(visiteur, lireVoyageurs);
 
     if (dernier.role === 'tool') {
       const resultat = JSON.parse(dernier.content) as Record<string, unknown>;
@@ -182,6 +230,11 @@ export class FauxModeleChat implements ModeleAgent {
     }
     if (/\b(horaires?|ouvert\w*|telephone|adresse|contact|joindre|agence)\b/.test(question)) {
       return reponse('L’agence est ouverte du mardi au samedi, de 10 h à 19 h, au 12 rue des Écluses à Nantes. Téléphone : 02 40 00 00 00.');
+    }
+    // « Et le 32 octobre ? » : ni vérification à une date qui n'existe pas, ni réponse à côté de la question
+    const impossible = lireDateImpossible(dernierVisiteur, aujourdhui);
+    if (impossible) {
+      return reponse(`Le ${impossible} n’existe pas au calendrier. Quelle date voulez-vous ? Je vérifie si c’est libre.`);
     }
     if (/^(bonjour|salut|bonsoir|hello|coucou)\W*$/.test(question.trim())) {
       return reponse('Bonjour ! Je connais le catalogue de nos partenaires à Nantes, Lyon et Lille, et je peux vérifier si une activité ou un hôtel est libre à une date. Que cherchez-vous ?');
