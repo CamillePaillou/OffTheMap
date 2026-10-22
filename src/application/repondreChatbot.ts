@@ -16,11 +16,12 @@ import { z } from 'zod';
 import { LIMITES } from '../../types/enums';
 import { CONSIGNES_CHATBOT } from '../domain/chatbot/connaissances';
 import { minimiser } from '../domain/chatbot/minimiser';
-import { ArgsChercher, argsVerifier, filtrerCatalogue, OUTILS_CHATBOT, type PrestationVisible } from '../domain/chatbot/outils';
+import { ArgsChercher, argsVerifier, filtrerCatalogue, OUTILS_CHATBOT, type PrestationSansPrix, type PrestationVisible } from '../domain/chatbot/outils';
 import { sansPrix } from '../domain/chatbot/sansPrix';
 import { LlmError } from '../ports/llm-client';
 import type { AppelOutil, MessageChat, ModeleAgent } from '../ports/modele-agent';
 import type { Prestataires } from '../ports/prestataires';
+import type { ResultatSimulateur } from '../../types';
 
 export const LIMITES_CHATBOT = {
   appelsOutilsMax: 3, // par message du visiteur
@@ -68,14 +69,20 @@ export interface ReponseChatbot {
 
 export interface DependancesChatbot {
   modele: ModeleAgent;
-  /** Lecture seule : ni option, ni réservation, ni annulation. */
-  prestataires: Pick<Prestataires, 'catalogue' | 'disponibilite'>;
+  /**
+   * Lecture seule : ni option, ni réservation, ni annulation. Le catalogue arrive sans prix (simulateur, ou à défaut
+   * le catalogue importé par l'agence) ; les disponibilités viennent toujours du simulateur.
+   */
+  prestataires: {
+    catalogue(): Promise<ResultatSimulateur<PrestationSansPrix[]>>;
+    disponibilite: Prestataires['disponibilite'];
+  };
   maintenant?: () => Date;
 }
 
 export const MESSAGES_FIXES = {
   nonVerifie:
-    'Je n’ai pas pu vérifier la disponibilité pour le moment. Décrivez votre week-end : un conseiller vérifiera pour vous et vous répondra par e-mail.',
+    'Je n’ai pas pu joindre nos prestataires à l’instant, donc rien de vérifié. Décrivez votre week-end : un conseiller vérifiera pour vous et vous répondra par e-mail.',
   modeleIndisponible:
     'L’assistant ne répond pas pour le moment. Vous pouvez décrire votre week-end directement : un conseiller vous répondra par e-mail.',
   tropDOutils: 'Je n’ai pas réussi à tout vérifier. Décrivez votre week-end : un conseiller s’en occupe et vous répond par e-mail.',
