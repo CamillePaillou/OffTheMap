@@ -7,7 +7,7 @@ import { versionEnCours } from './versPayloadsDashboard';
 
 const jourDe = (detail: unknown) => Number((detail as { jour?: unknown } | null)?.jour);
 
-/** Rappels (E6.4) : écriture par enregistrer_rappel avec la clé service_role ; lecture au nom du conseiller (RLS). */
+/** Rappels (E6.4, E6.5) : écriture par enregistrer_rappel avec la clé service_role ; lecture au nom du conseiller (RLS). */
 export class RappelsSupabase implements RappelsRepository, RappelsLecture {
   async enAttente(): Promise<PropositionEnAttente[]> {
     const { data, error } = await clientService()
@@ -36,8 +36,9 @@ export class RappelsSupabase implements RappelsRepository, RappelsLecture {
     const supabase = await clientSupabase();
     const { data, error } = await supabase
       .from('propositions')
-      .select('id, dossier_id, version, envoyee_le, dossiers (demandes (version, remplacee_le, nom)), historique_dossier (type, detail)')
+      .select('id, dossier_id, version, envoyee_le, dossiers!inner (statut, demandes (version, remplacee_le, nom)), historique_dossier (type, detail)')
       .eq('statut', 'sans_reponse')
+      .neq('dossiers.statut', 'abandonnee') // E6.5 : un dossier abandonné n'est plus à relancer
       .eq('historique_dossier.type', 'rappel')
       .order('envoyee_le');
     if (error) throw new Error(`propositions à relancer : ${error.message}`);

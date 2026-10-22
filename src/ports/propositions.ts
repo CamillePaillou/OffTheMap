@@ -11,6 +11,11 @@ export interface PropositionsLecture {
   verificationDeLigne(ligneId: string): Promise<VerificationLigne | null>;
 }
 
+export interface ResumeEcartsEcriture {
+  /** E6.3 : écrit propositions.ecarts. Le serveur seul écrit (clé service_role). */
+  enregistrerResumeEcarts(propositionId: string, ecarts: { resume: string; empreinte: string }): Promise<void>;
+}
+
 export interface VerificationsEcriture {
   /** Enregistre le résultat de l'agent tel quel (prix, places, réponse, trace expurgée). Renvoie l'id de la vérification. */
   enregistrer(ligneId: string, demandeParId: string, resultat: ResultatVerification): Promise<string>;

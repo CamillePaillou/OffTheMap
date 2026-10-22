@@ -7,6 +7,7 @@ import { MESSAGES_REFUS_ACCORD, evaluerAccord, prixReverifieCents } from '@/src/
 import { BoutonAccord } from './bouton-accord';
 import { BoutonOption } from './bouton-option';
 import { BoutonConfirmation } from './bouton-confirmation';
+import { BoutonAnnulation } from './bouton-annulation';
 import { accordsDemo } from './depot';
 import { Fil } from '../../../_composants/fil';
 
@@ -65,6 +66,7 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
           const accord = accordsDemo.accordValable(ligne.id, maintenant);
           const optionPosee = accordsDemo.accords.find((a) => a.ligne_id === ligne.id && a.statut === 'posee');
           const reservationConfirmee = accordsDemo.accords.find((a) => a.ligne_id === ligne.id && a.statut === 'confirmee');
+          const reservationAnnulee = accordsDemo.accords.find((a) => a.ligne_id === ligne.id && a.statut === 'annulee');
           const verdict = evaluerAccord({
             statutProposition: proposition.statut,
             ligne,
@@ -87,10 +89,18 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
               </dl>
               {v && <p className="mt-1 text-xs text-ardoise">Vérifié par l’agent à {heure(v.le)}.</p>}
 
-              {reservationConfirmee ? (
-                <p className="mt-4 rounded-lg bg-sauge-pale px-3 py-2 text-sm text-sauge" role="status">
-                  Réservation confirmée : {reservationConfirmee.reservation_id_simulateur ?? 'identifiant non renseigné'}.
+              {reservationAnnulee && !reservationConfirmee && (
+                <p className="mt-4 rounded-lg bg-miel-pale px-3 py-2 text-sm text-[#5c3d0c]" role="status">
+                  Réservation annulée : {reservationAnnulee.reservation_id_simulateur ?? 'identifiant non renseigné'}. Les places sont libérées ; un nouvel accord reste possible.
                 </p>
+              )}
+              {reservationConfirmee ? (
+                <>
+                  <p className="mt-4 rounded-lg bg-sauge-pale px-3 py-2 text-sm text-sauge" role="status">
+                    Réservation confirmée : {reservationConfirmee.reservation_id_simulateur ?? 'identifiant non renseigné'}.
+                  </p>
+                  <BoutonAnnulation propositionId={proposition.id} ligneId={ligne.id} />
+                </>
               ) : optionPosee ? (
                 <>
                   <p className="mt-4 rounded-lg bg-sauge-pale px-3 py-2 text-sm text-sauge" role="status">

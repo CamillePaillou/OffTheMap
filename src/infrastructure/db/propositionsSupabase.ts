@@ -4,7 +4,7 @@ import type { Json } from '../../../types/database';
 import { clientService } from '../../../lib/supabase/service';
 import { clientSupabase } from '../../../lib/supabase/serveur';
 import type { ResultatVerification } from '../../application/verifierPrestation';
-import type { PropositionsLecture, VerificationsEcriture } from '../../ports/propositions';
+import type { PropositionsLecture, ResumeEcartsEcriture, VerificationsEcriture } from '../../ports/propositions';
 import { versProposition, versVerificationLigne, type PropositionBase, type VerificationBase } from './versPayloadsPropositions';
 
 const SELECT_PROPOSITION = `id, dossier_id, version, statut, programme, total_cents, alertes, ecarts, motif_changement,
@@ -82,5 +82,13 @@ export class VerificationsSupabase implements VerificationsEcriture {
       .single();
     if (error) throw new Error(`enregistrement de la vérification : ${error.message}`);
     return data.id;
+  }
+}
+
+/** Résumé des écarts (E6.3), écrit par le serveur seulement (clé service_role), après validation par EcartsIA. */
+export class ResumeEcartsSupabase implements ResumeEcartsEcriture {
+  async enregistrerResumeEcarts(propositionId: string, ecarts: { resume: string; empreinte: string }) {
+    const { error } = await clientService().from('propositions').update({ ecarts }).eq('id', propositionId);
+    if (error) throw new Error(`enregistrement du résumé des écarts : ${error.message}`);
   }
 }

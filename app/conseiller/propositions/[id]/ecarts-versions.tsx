@@ -24,7 +24,7 @@ function Cote({ c, type }: { c: CotePrestation | null; type: EcartPrestation['ty
 }
 
 // Ce qui a changé depuis la version précédente (E6.2) : calculé par le code (src/domain/proposition/ecartsVersions.ts).
-export function EcartsVersionsCarte({ e }: { e: EcartsVersions }) {
+export function EcartsVersionsCarte({ e, children }: { e: EcartsVersions; children?: React.ReactNode }) {
   return (
     <section aria-labelledby="titre-ecarts" className="bo-carte mt-6 p-5 sm:p-6">
       <h2 id="titre-ecarts" className="text-2xl">Ce qui a changé depuis la version {e.version_avant}</h2>
@@ -83,6 +83,7 @@ export function EcartsVersionsCarte({ e }: { e: EcartsVersions }) {
           {e.inchangees} prestation{e.inchangees > 1 ? 's' : ''} inchangée{e.inchangees > 1 ? 's' : ''}.
         </p>
       )}
+      {children /* E6.3 : résumé en mots pour le client */}
     </section>
   );
 }

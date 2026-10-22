@@ -3,8 +3,9 @@
  * Tous les tests et `LLM_PROVIDER=fake` l'utilisent. Il garde la trace exacte de ce qu'il a reçu,
  * pour qu'un test puisse vérifier que rien de sensible n'est parti vers le LLM.
  */
-import { FicheIA, schemaBrouillon } from '../../../types';
+import { EcartsIA, FicheIA, schemaBrouillon } from '../../../types';
 import type { BrouillonIA, DemandePourLLM } from '../../../types';
+import type { EntreeEcarts } from '../../domain/proposition/entreeEcarts';
 import { LlmError } from '../../ports/llm-client';
 import type { EntreeBrouillon, LlmClient } from '../../ports/llm-client';
 
@@ -12,13 +13,14 @@ export interface OptionsFauxClient {
   /** Réponses imposées (pour tester les cas limites) : remplacent la réponse par défaut. */
   ficheRepondue?: unknown;
   brouillonRepondu?: unknown;
+  resumeRepondu?: unknown;
   /** Simule une panne du fournisseur. */
   echec?: LlmError;
 }
 
 export class FauxLlmClient implements LlmClient {
   /** Charge utile sérialisée de chaque appel : c'est ce qui partirait sur le réseau. */
-  readonly appels: { methode: 'genererFiche' | 'genererBrouillon'; charge: string }[] = [];
+  readonly appels: { methode: 'genererFiche' | 'genererBrouillon' | 'resumerEcarts'; charge: string }[] = [];
 
   constructor(private readonly options: OptionsFauxClient = {}) {}
 
@@ -54,6 +56,36 @@ export class FauxLlmClient implements LlmClient {
     if (!r.success) throw new LlmError('reponse_invalide', `brouillon non conforme : ${r.error.message}`);
     return r.data;
   }
+
+  async resumerEcarts(entree: EntreeEcarts): Promise<EcartsIA> {
+    this.appels.push({ methode: 'resumerEcarts', charge: JSON.stringify(entree) });
+    if (this.options.echec) throw this.options.echec;
+    const brute = this.options.resumeRepondu ?? { resume: phraseEcarts(entree) };
+    const r = EcartsIA.safeParse(brute);
+    if (!r.success) throw new LlmError('reponse_invalide', `résumé non conforme : ${r.error.message}`);
+    return r.data;
+  }
+}
+
+/** Une phrase par prestation, puis le coût : ce que ferait le modèle, sans un seul chiffre. */
+function phraseEcarts(e: EntreeEcarts): string {
+  const phrases = e.prestations.map((p) => {
+    if (p.nature === 'ajoutee') return `Nous avons ajouté ${p.nom}.`;
+    if (p.nature === 'retiree') return `Nous avons retiré ${p.nom}.`;
+    const quoi = [
+      p.jours === 'plus' && (p.type === 'hebergement' ? 'une ou plusieurs nuits en plus' : 'des jours en plus'),
+      p.jours === 'moins' && (p.type === 'hebergement' ? 'moins de nuits' : 'moins de jours'),
+      p.jours === 'deplaces' && 'de nouvelles dates',
+      p.participants === 'plus' && 'davantage de participants',
+      p.participants === 'moins' && 'moins de participants',
+      p.prix !== 'identique' && !p.jours && !p.participants && (p.prix === 'hausse' ? 'un tarif plus élevé' : 'un tarif plus doux'),
+    ].filter(Boolean);
+    return `${p.nom} : ${quoi.join(', ') || 'quelques ajustements'}.`;
+  });
+  const cout = { hausse: 'Le coût total augmente', baisse: 'Le coût total diminue', identique: 'Le coût total ne change pas' }[e.total];
+  phrases.push(`${cout}${e.prix_a_confirmer ? ', sous réserve des tarifs que nous confirmons auprès des prestataires' : ''}.`);
+  if (e.prestations_inchangees) phrases.push('Le reste du programme est inchangé.');
+  return phrases.join(' ');
 }
 
 function validerFiche(brute: unknown): FicheIA {

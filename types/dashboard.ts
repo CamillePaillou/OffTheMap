@@ -159,7 +159,9 @@ export const Proposition = z.object({
   marge_cents: cents, // 0 : décidé, pas de marge (REGLES_CHIFFRAGE)
   budget_reference_cents: centsPositif.nullable(), // réel, sinon annoncé, sinon null
   alertes: z.array(z.object({ code: z.enum(CODES_ALERTE), ligne_id: uuid.optional(), message: z.string().min(1) }).strict()),
-  ecarts: z.object({ resume: z.string() }).strict().nullable(), // Should
+  // E6.3 : résumé en mots des écarts avec la version précédente, écrit par l'IA, sans chiffres ; `empreinte` dit pour quels
+  // écarts il a été écrit (s'ils ont changé depuis, l'écran le signale)
+  ecarts: z.object({ resume: z.string(), empreinte: z.string() }).strict().nullable(),
   motif_changement: z.string().nullable(), // E6.1 : changement demandé par le client, sur la version qui y répond
 }).strict();
 export type Proposition = z.infer<typeof Proposition>;
