@@ -10,11 +10,15 @@ import {
   MemePrestationErreur,
   PrestationRefuseeErreur,
   PropositionFigeeErreur,
+  SejourImpossibleErreur,
+  type AjoutLigne,
   type ChangementLigne,
+  type ModificationLigne,
   type RemplacementLigne,
+  type Sejour,
   type TarifsRepository,
 } from '../../ports/tarifs';
-import { ordonnerRemplacantes } from './ordonnerRemplacantes';
+import { ordonnerAjoutables, ordonnerRemplacantes } from './ordonnerRemplacantes';
 
 /** Tarifs et envoi avec la clé service_role, après exigerConseiller() dans l'action serveur. */
 export class TarifsSupabase implements TarifsRepository {
@@ -126,5 +130,63 @@ export class TarifsSupabase implements TarifsRepository {
       .eq('destination', actuelle.destination).eq('actif', true);
     if (e2) throw new Error(`prestations de remplacement : ${e2.message}`);
     return ordonnerRemplacantes(data, actuelle);
+  }
+
+  async ajouterLigne(a: AjoutLigne) {
+    const { data, error } = await clientService().rpc('ajouter_ligne', {
+      p_proposition: a.propositionId,
+      p_prestation: a.prestationId,
+      p_date: a.date,
+      p_participants: a.participants,
+      p_conseiller: a.conseillerId,
+    });
+    if (error?.code === 'OT008') throw new PropositionFigeeErreur(error.message);
+    if (error?.code === 'OT010') throw new PrestationRefuseeErreur(error.message);
+    if (error?.code === 'OT011') throw new MemePrestationErreur(error.message);
+    if (error) throw new Error(`ajouter_ligne : ${error.message}`);
+    const { data: p, error: e2 } = await clientService().from('propositions').select('statut').eq('id', a.propositionId).single();
+    if (e2) throw new Error(`ajouter_ligne : ${e2.message}`);
+    return { ligneId: data, statutProposition: p.statut };
+  }
+
+  async modifierLigne(m: ModificationLigne) {
+    const { data, error } = await clientService().rpc('modifier_ligne', {
+      p_ligne: m.ligneId,
+      p_conseiller: m.conseillerId,
+      ...(m.date ? { p_date: m.date } : {}),
+      ...(m.participants ? { p_participants: m.participants } : {}),
+    });
+    if (error?.code === 'OT002') throw new LigneModifieeErreur(error.message);
+    if (error?.code === 'OT008') throw new PropositionFigeeErreur(error.message);
+    if (error?.code === 'OT011') throw new MemePrestationErreur(error.message);
+    if (error) throw new Error(`modifier_ligne : ${error.message}`);
+    return data;
+  }
+
+  async ajusterNuitsSejour(propositionId: string, delta: -1 | 1, conseillerId: string) {
+    const { data, error } = await clientService().rpc('ajuster_nuits_sejour', { p_proposition: propositionId, p_delta: delta, p_conseiller: conseillerId });
+    if (error?.code === 'OT008') throw new PropositionFigeeErreur(error.message);
+    if (error?.code === 'OT012') throw new SejourImpossibleErreur(error.message);
+    if (error) throw new Error(`ajuster_nuits_sejour : ${error.message}`);
+    return data as unknown as Sejour; // jsonb construit par la fonction : date_debut, date_fin, nb_nuits
+  }
+
+  async modifierBudgetReel(propositionId: string, budgetCents: number, conseillerId: string) {
+    const { error } = await clientService().rpc('modifier_budget_reel', { p_proposition: propositionId, p_budget_cents: budgetCents, p_conseiller: conseillerId });
+    if (error?.code === 'OT008') throw new PropositionFigeeErreur(error.message);
+    if (error) throw new Error(`modifier_budget_reel : ${error.message}`);
+  }
+
+  async prestationsAjoutables(propositionId: string) {
+    // destination(s) des prestations déjà prévues ; à défaut, tout le catalogue actif
+    const { data: lignes, error } = await clientService()
+      .from('proposition_lignes').select('prestations (destination)').eq('proposition_id', propositionId);
+    if (error) throw new Error(`prestations ajoutables : ${error.message}`);
+    const destinations = [...new Set((lignes ?? []).map((l) => l.prestations?.destination).filter((d): d is string => !!d))];
+    let requete = clientService().from('prestations').select('id, nom, type, prix_unitaire_cents, capacite').eq('actif', true);
+    if (destinations.length > 0) requete = requete.in('destination', destinations);
+    const { data, error: e2 } = await requete;
+    if (e2) throw new Error(`prestations ajoutables : ${e2.message}`);
+    return ordonnerAjoutables(data);
   }
 }

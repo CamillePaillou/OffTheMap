@@ -71,6 +71,7 @@ export const FINAUX_PROPOSITION: StatutProposition[] = ['remplacee', 'reservee']
 // ------------------------------------------------------------------ ligne (proposition_lignes.statut)
 export const TRANSITIONS_LIGNE: Transition<StatutLigne>[] = [
   t(null, 'a_verifier', 'systeme', 'ligne créée par le brouillon', 'prestation du catalogue, prix catalogue copié'),
+  t(null, 'a_verifier', 'conseiller', 'prestation ajoutée à une version modifiable (E6.6)', 'proposition a_verifier ou prete, prestation active, prix catalogue copié', 'should'),
   t('a_verifier', 'confirme', 'conseiller', 'tarif accepté depuis l’agent ou saisi', 'prix_confirme_cents, source, confirme_le et confirme_par renseignés'),
   t('a_verifier', 'indisponible', 'conseiller', 'vérification « indisponible » acceptée'),
   t('confirme', 'a_verifier', 'conseiller', 'nouvelle vérification demandée avant envoi', 'proposition pas encore envoyée'),

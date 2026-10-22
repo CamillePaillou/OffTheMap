@@ -66,6 +66,7 @@ Source de vérité : `types/transitions.ts`, utilisée par la fonction de transi
 | De | Vers | Par | Déclencheur | Garde | Priorité |
 | --- | --- | --- | --- | --- | --- |
 | — | a_verifier | systeme | ligne créée par le brouillon | prestation du catalogue, prix catalogue copié | must |
+| — | a_verifier | conseiller | prestation ajoutée à une version modifiable (E6.6) | proposition a_verifier ou prete, prestation active, prix catalogue copié | should |
 | a_verifier | confirme | conseiller | tarif accepté depuis l’agent ou saisi | prix_confirme_cents, source, confirme_le et confirme_par renseignés | must |
 | a_verifier | indisponible | conseiller | vérification « indisponible » acceptée | — | must |
 | confirme | a_verifier | conseiller | nouvelle vérification demandée avant envoi | proposition pas encore envoyée | must |
