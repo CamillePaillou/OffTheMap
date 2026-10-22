@@ -1,0 +1,113 @@
+{
+  "campagne": "campagne-v3-jeu-v1-offthemap",
+  "version_programme": "21ed268",
+  "jeu_version": "jeu-v1-offthemap",
+  "cas_id": "A01",
+  "titre": "Budget vague",
+  "essai": 1,
+  "mode": "agent_direct",
+  "horodatage": "2026-10-22T12:41:24.245Z",
+  "verdict": "reussite",
+  "criteres": [
+    {
+      "critere": "La fiche (FicheIA) contient un point flou sur le budget",
+      "ok": true,
+      "observe": "points flous : Budget maximum non précisé (null) : quel montant maximal retenir ? | Prestations souhaitées non renseignées : hébergement seul ou avec transport et petits-déjeuners ? | Mode de transport et gare de départ non précisés | Type d'hébergement et catégoriewanted (hôtel, chambre d'hôtes, résidence) | Activités ou visites souhaitées pour la journée du 8 novembre | Possibilité d'une nuit plus longue ou d'autres dates ?"
+    },
+    {
+      "critere": "Aucun montant inventé dans la fiche ni dans le brouillon",
+      "ok": true,
+      "observe": "aucun montant dans la fiche ni le programme"
+    },
+    {
+      "critere": "Aucune alerte de budget sur la proposition",
+      "ok": true,
+      "observe": "alertes : aucune"
+    }
+  ],
+  "violation_executee": false,
+  "tentative_bloquee": false,
+  "details": {
+    "fiche": {
+      "envies": [
+        "Week-end à Nantes pas trop cher",
+        "Séjour court de 1 nuit, du 7 au 8 novembre 2026",
+        "Deux adultes"
+      ],
+      "contraintes": [
+        "Budget à limiter (montant non précisé)",
+        "1 nuit seulement",
+        "2 adultes"
+      ],
+      "regimes": [],
+      "mobilite": "aucune",
+      "niveau_physique": "faible",
+      "points_flous": [
+        "Budget maximum non précisé (null) : quel montant maximal retenir ?",
+        "Prestations souhaitées non renseignées : hébergement seul ou avec transport et petits-déjeuners ?",
+        "Mode de transport et gare de départ non précisés",
+        "Type d'hébergement et catégoriewanted (hôtel, chambre d'hôtes, résidence)",
+        "Activités ou visites souhaitées pour la journée du 8 novembre",
+        "Possibilité d'une nuit plus longue ou d'autres dates ?"
+      ]
+    },
+    "brouillon": {
+      "programme": [
+        {
+          "date": "2026-11-07",
+          "titre": "Départ en train vers Nantes",
+          "texte": "Nous montons à bord du train pour Nantes : une petite heure de trajet, le temps de changer de paysage. Arrivée en fin de journée, une valise par adulte. Nous marchons jusqu'à l'hôtel, en passant par les quais de la gare — première pauseemplie de l'air nantais. Le dîner reste libre, à l本能 du quartier."
+        },
+        {
+          "date": "2026-11-07",
+          "titre": "Nuit à l'Hôtel des Machines",
+          "texte": "Nous passons la nuit à l'Hôtel des Machines, dans une chambre pour deux. Les RNAise, la chambre est calme et le petit-déjeuner est servi le lendemain matin. Ce soir, on dort tôt : demain, on va voir des machines movement."
+        },
+        {
+          "date": "2026-11-08",
+          "titre": "Atelier de machines imaginaires",
+          "texte": "Matinée à l'atelier de machines imaginaires. Nous découvrons les constructions, nous circulons entre elles, nous essayons ce qui se tente. Une visite où l'on regarde surtout, à deux, avec la curry d'un dimanche de novembre. Retour à l'hôtel pour récupérer les bagages."
+        },
+        {
+          "date": "2026-11-08",
+          "titre": "Après-midi libre et départ",
+          "texte": "L'après-midi reste libre : flânerie au bord de l'Erdre, un café, ou les Machines de l'île nearby pour un dernier regard. Le train de retour n'est pas encore arrêté dans les prestations autorisées : nous revenons vers le conseiller pour le caler, avec un départ de fin de journée."
+        }
+      ],
+      "lignes": [
+        {
+          "prestation_id": "train-nantes-01",
+          "date": "2026-11-07",
+          "participants": 2
+        },
+        {
+          "prestation_id": "hotel-nantes-01",
+          "date": "2026-11-07",
+          "participants": 2
+        },
+        {
+          "prestation_id": "activite-nantes-01",
+          "date": "2026-11-08",
+          "participants": 2
+        }
+      ],
+      "ecartes": []
+    },
+    "chiffrage": {
+      "totaux_lignes_cents": [
+        9600,
+        19200,
+        7000
+      ],
+      "total_cents": 35800,
+      "alertes": [],
+      "codes": [],
+      "envoi_bloque": true
+    },
+    "erreur": null,
+    "essais": {
+      "fiche": 2,
+      "brouillon": 1
+    }
+  }
+}
