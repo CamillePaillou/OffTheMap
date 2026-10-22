@@ -728,6 +728,16 @@ export type Database = {
         Args: { p_ligne: string; p_prestation: string; p_conseiller: string; p_date?: string; p_participants?: number };
         Returns: string;
       };
+      ajouter_ligne: {
+        Args: { p_proposition: string; p_prestation: string; p_date: string; p_participants: number; p_conseiller: string };
+        Returns: string;
+      };
+      ajuster_nuits_sejour: { Args: { p_proposition: string; p_delta: number; p_conseiller: string }; Returns: Json };
+      modifier_budget_reel: { Args: { p_proposition: string; p_budget_cents: number; p_conseiller: string }; Returns: undefined };
+      modifier_ligne: {
+        Args: { p_ligne: string; p_conseiller: string; p_date?: string; p_participants?: number };
+        Returns: Database["public"]["Enums"]["statut_proposition"];
+      };
       trier_dossier: {
         Args: {
           p_dossier: string;

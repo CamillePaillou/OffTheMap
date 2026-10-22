@@ -407,6 +407,55 @@ select doit_valoir($$select count(*) from propositions where id = '00000000-0000
 select doit_echouer($$select remplacer_ligne('00000000-0000-0000-0000-00000000b0b1', 'test-remplacante-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacer deux fois la même ligne');
 select doit_echouer($$select remplacer_ligne((select id from remplacement), 'activite-nantes-01', '00000000-0000-0000-0000-00000000000a')$$, 'remplacer une ligne à vérifier');
 
+-- ajuster les lignes d'une version (E6.6) : « deux nuits au lieu d'une », les autres lignes et leurs tarifs intacts
+insert into prestations (id, type, nom, destination, prix_unitaire_cents, capacite, actif) values
+  ('test-hotel-066', 'hebergement', 'Hôtel de test', 'Nantes', 9600, 8, true);
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-00000000d066', 'en_proposition');
+insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents)
+  values ('00000000-0000-0000-0000-00000000e066', '00000000-0000-0000-0000-00000000d066', true, true, 'Séjour', 's066@example.org', '2026-11-07', '2026-11-08', 1, '{adulte,adulte}', 60000);
+insert into fiches (demande_id, budget_reel_cents, notes_conseiller) values ('00000000-0000-0000-0000-00000000e066', 55000, 'Deux nuits au lieu d''une');
+insert into propositions (id, dossier_id, version, statut, total_cents) values ('00000000-0000-0000-0000-00000000f066', '00000000-0000-0000-0000-00000000d066', 2, 'prete', 26200);
+insert into proposition_lignes (id, proposition_id, prestation_id, date, participants, prix_unitaire_catalogue_cents, prix_confirme_cents, source, confirme_le, confirme_par, statut) values
+  ('00000000-0000-0000-0000-0000000a0661', '00000000-0000-0000-0000-00000000f066', 'test-hotel-066', '2026-11-07', 2, 9600, 9600, 'agent', now(), '00000000-0000-0000-0000-00000000000a', 'confirme'),
+  ('00000000-0000-0000-0000-0000000a0662', '00000000-0000-0000-0000-00000000f066', 'activite-nantes-01', '2026-11-07', 2, 3500, 3500, 'agent', now(), '00000000-0000-0000-0000-00000000000a', 'confirme');
+select doit_echouer($$select ajouter_ligne('00000000-0000-0000-0000-00000000f066', 'test-hotel-066', '2026-11-07', 2, '00000000-0000-0000-0000-00000000000a')$$, 'même prestation déjà prévue à cette date');
+select doit_echouer($$select ajouter_ligne('00000000-0000-0000-0000-00000000f066', 'test-retiree-01', '2026-11-08', 2, '00000000-0000-0000-0000-00000000000a')$$, 'ajout d''une prestation retirée du catalogue');
+select doit_echouer($$select ajouter_ligne('00000000-0000-0000-0000-00000000f066', 'test-hotel-066', '2026-11-08', 21, '00000000-0000-0000-0000-00000000000a')$$, 'ajout pour plus de 20 participants');
+select doit_valoir($$select count(*) from proposition_lignes where proposition_id = '00000000-0000-0000-0000-00000000f066'$$, 2, 'refus de l''ajout : aucune ligne créée');
+create temp table ligne_ajoutee as select ajouter_ligne('00000000-0000-0000-0000-00000000f066', 'test-hotel-066', '2026-11-08', 2, '00000000-0000-0000-0000-00000000000a') as id;
+select doit_valoir($$select count(*) from proposition_lignes l join ligne_ajoutee a using (id) where l.statut = 'a_verifier'
+  and l.prix_unitaire_catalogue_cents = 9600 and l.prix_confirme_cents is null and l.date = '2026-11-08'$$, 1, 'nuit ajoutée : à vérifier, au prix du catalogue');
+select doit_valoir($$select total_cents from propositions where id = '00000000-0000-0000-0000-00000000f066'$$, 45400, 'total recalculé (192 + 70 + 192 €)');
+select doit_valoir($$select count(*) from propositions where id = '00000000-0000-0000-0000-00000000f066' and statut = 'a_verifier'$$, 1, 'proposition repassée à vérifier');
+select doit_valoir($$select count(*) from historique_dossier where proposition_id = '00000000-0000-0000-0000-00000000f066'
+  and ancien_statut = 'prete' and nouveau_statut = 'a_verifier'$$, 1, 'retour à vérifier journalisé');
+select doit_valoir($$select count(*) from proposition_lignes where id in ('00000000-0000-0000-0000-0000000a0661', '00000000-0000-0000-0000-0000000a0662')
+  and statut = 'confirme' and prix_confirme_cents is not null$$, 2, 'les autres lignes gardent leur tarif confirmé');
+select doit_echouer($$select modifier_ligne('00000000-0000-0000-0000-0000000a0662', '00000000-0000-0000-0000-00000000000a', '2026-11-07', 2)$$, 'modification sans changement');
+select doit_echouer($$select modifier_ligne('00000000-0000-0000-0000-0000000a0661', '00000000-0000-0000-0000-00000000000a', '2026-11-08', null)$$, 'déplacement sur une date déjà prévue pour la prestation');
+select doit_valoir($$select (modifier_ligne('00000000-0000-0000-0000-0000000a0662', '00000000-0000-0000-0000-00000000000a', null, 3) = 'a_verifier')::int$$, 1, 'participants changés');
+select doit_valoir($$select count(*) from proposition_lignes where id = '00000000-0000-0000-0000-0000000a0662' and participants = 3 and statut = 'a_verifier'
+  and prix_confirme_cents is null and source is null and confirme_le is null and confirme_par is null and date = '2026-11-07'$$, 1, 'ligne modifiée : à vérifier, sans prix confirmé, date gardée');
+select doit_valoir($$select total_cents from propositions where id = '00000000-0000-0000-0000-00000000f066'$$, 48900, 'total recalculé (192 + 105 + 192 €)');
+-- séjour : « + » recule le retour d'un jour et ajoute une nuit, dans les dates fixes de la fiche (partant de la demande)
+select doit_valoir($$select (ajuster_nuits_sejour('00000000-0000-0000-0000-00000000f066', 1, '00000000-0000-0000-0000-00000000000a') ->> 'nb_nuits')::int$$, 2, 'séjour : une nuit de plus');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-00000000e066' and date_debut_fixe = '2026-11-07'
+  and date_fin_fixe = '2026-11-09' and nb_nuits_fixe = 2 and budget_reel_cents = 55000 and notes_conseiller = 'Deux nuits au lieu d''une'$$, 1, 'dates fixes du 7 au 9, budget réel et notes intacts');
+select doit_valoir($$select (ajuster_nuits_sejour('00000000-0000-0000-0000-00000000f066', -1, '00000000-0000-0000-0000-00000000000a') ->> 'date_fin')::date - '2026-11-08'::date$$, 0, 'séjour : « − » revient au 8');
+select ajuster_nuits_sejour('00000000-0000-0000-0000-00000000f066', -1, '00000000-0000-0000-0000-00000000000a'); -- 0 nuit, retour le 7
+select doit_echouer($$select ajuster_nuits_sejour('00000000-0000-0000-0000-00000000f066', -1, '00000000-0000-0000-0000-00000000000a')$$, 'séjour : moins de zéro nuit');
+select doit_echouer($$select ajuster_nuits_sejour('00000000-0000-0000-0000-00000000f066', 2, '00000000-0000-0000-0000-00000000000a')$$, 'séjour : plus d''une nuit à la fois');
+-- budget réel : le client accepte de payer plus ; seul le budget change dans la fiche
+select modifier_budget_reel('00000000-0000-0000-0000-00000000f066', 70000, '00000000-0000-0000-0000-00000000000a');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-00000000e066' and budget_reel_cents = 70000
+  and notes_conseiller = 'Deux nuits au lieu d''une' and date_fin_fixe = '2026-11-07'$$, 1, 'budget réel modifié, dates fixes et notes intactes');
+select doit_echouer($$select modifier_budget_reel('00000000-0000-0000-0000-00000000f066', 0, '00000000-0000-0000-0000-00000000000a')$$, 'budget réel nul');
+update propositions set statut = 'envoyee', envoyee_le = now(), envoyee_par = '00000000-0000-0000-0000-00000000000a' where id = '00000000-0000-0000-0000-00000000f066';
+select doit_echouer($$select modifier_budget_reel('00000000-0000-0000-0000-00000000f066', 80000, '00000000-0000-0000-0000-00000000000a')$$, 'budget modifié sur une proposition envoyée');
+select doit_echouer($$select ajuster_nuits_sejour('00000000-0000-0000-0000-00000000f066', 1, '00000000-0000-0000-0000-00000000000a')$$, 'séjour modifié sur une proposition envoyée');
+select doit_echouer($$select ajouter_ligne('00000000-0000-0000-0000-00000000f066', 'test-hotel-066', '2026-11-09', 2, '00000000-0000-0000-0000-00000000000a')$$, 'ajout sur une proposition envoyée');
+select doit_echouer($$select modifier_ligne('00000000-0000-0000-0000-0000000a0661', '00000000-0000-0000-0000-00000000000a', null, 4)$$, 'modification sur une proposition envoyée');
+
 -- RLS : un visiteur ne lit rien, un compte sans profil non plus, un conseiller lit tout
 set role anon;
 select doit_valoir($$select count(*) from demandes$$, 0, 'un visiteur ne lit rien');

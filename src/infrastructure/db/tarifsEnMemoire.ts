@@ -1,4 +1,7 @@
-/** Tarifs, envoi et remplacement en mémoire, pour les tests. Mêmes règles que changer_ligne, envoyer_proposition (E5.1) et remplacer_ligne (E5.2). */
+/**
+ * Tarifs, envoi, remplacement et ajustement des lignes en mémoire, pour les tests. Mêmes règles que changer_ligne,
+ * envoyer_proposition (E5.1), remplacer_ligne (E5.2), ajouter_ligne et modifier_ligne (E6.6).
+ */
 import { ALERTES_BLOQUANTES, type Alerte, type SourcePrix, type StatutProposition, type StatutVerification } from '../../../types';
 import type { EntreeChiffrage, LigneAChiffrer } from '../../domain/chiffrage/chiffrer';
 import { StatutModifieErreur } from '../../ports/statuts';
@@ -8,12 +11,15 @@ import {
   MemePrestationErreur,
   PrestationRefuseeErreur,
   PropositionFigeeErreur,
+  SejourImpossibleErreur,
+  type AjoutLigne,
   type ChangementLigne,
+  type ModificationLigne,
   type PrestationRemplacante,
   type RemplacementLigne,
   type TarifsRepository,
 } from '../../ports/tarifs';
-import { ordonnerRemplacantes } from './ordonnerRemplacantes';
+import { ordonnerAjoutables, ordonnerRemplacantes } from './ordonnerRemplacantes';
 
 export interface LigneEnMemoire extends LigneAChiffrer {
   id: string;
@@ -94,6 +100,66 @@ export class TarifsEnMemoire implements TarifsRepository {
       [...this.catalogue.values()].filter((x) => x.actif && x.destination === actuelle.destination),
       actuelle,
     ).map(({ id, nom, type, prix_unitaire_cents, capacite }) => ({ id, nom, type, prix_unitaire_cents, capacite }));
+  }
+
+  async ajouterLigne(a: AjoutLigne) {
+    const p = this.propositions.get(a.propositionId)!;
+    if (!['a_verifier', 'prete'].includes(p.statut)) throw new PropositionFigeeErreur(p.statut);
+    const presta = this.catalogue.get(a.prestationId);
+    if (!presta?.actif) throw new PrestationRefuseeErreur(a.prestationId);
+    if (this.dejaPrevue(p, a.prestationId, a.date)) throw new MemePrestationErreur(a.prestationId);
+    const nouvelle: LigneEnMemoire = {
+      id: `${a.propositionId}-ajout-${++this.lignesCreees}`,
+      prestation_id: presta.id, type: presta.type, capacite: presta.capacite, actif: true,
+      date: a.date, participants: a.participants,
+      prix_unitaire_catalogue_cents: presta.prix_unitaire_cents, prix_confirme_cents: null,
+      statut: 'a_verifier', source: null, confirme_par: null, verification: null,
+    };
+    p.lignes.push(nouvelle);
+    return { ligneId: nouvelle.id, statutProposition: this.recalculer(p) };
+  }
+
+  async modifierLigne(m: ModificationLigne) {
+    const { p, l } = this.trouver(m.ligneId)!;
+    if (!['a_verifier', 'prete'].includes(p.statut)) throw new PropositionFigeeErreur(p.statut);
+    if (!['a_verifier', 'confirme', 'indisponible'].includes(l.statut)) throw new LigneModifieeErreur(l.statut);
+    const date = m.date ?? l.date;
+    const participants = m.participants ?? l.participants;
+    if (date === l.date && participants === l.participants) throw new MemePrestationErreur('rien ne change');
+    if (date !== l.date && this.dejaPrevue(p, l.prestation_id, date, l.id)) throw new MemePrestationErreur(l.prestation_id);
+    Object.assign(l, { date, participants, statut: 'a_verifier', prix_confirme_cents: null, source: null, confirme_par: null });
+    return this.recalculer(p);
+  }
+
+  async prestationsAjoutables(propositionId: string) {
+    const p = this.propositions.get(propositionId);
+    const destinations = new Set(p?.lignes.map((l) => this.catalogue.get(l.prestation_id)?.destination).filter(Boolean));
+    return ordonnerAjoutables(
+      [...this.catalogue.values()].filter((x) => x.actif && (destinations.size === 0 || destinations.has(x.destination))),
+    ).map(({ id, nom, type, prix_unitaire_cents, capacite }) => ({ id, nom, type, prix_unitaire_cents, capacite }));
+  }
+
+  async ajusterNuitsSejour(propositionId: string, delta: -1 | 1) {
+    const p = this.propositions.get(propositionId)!;
+    if (!['a_verifier', 'prete'].includes(p.statut)) throw new PropositionFigeeErreur(p.statut);
+    const fin = new Date(Date.parse(`${p.date_fin}T00:00:00Z`) + delta * 86_400_000).toISOString().slice(0, 10);
+    const nuits = p.nb_nuits + delta;
+    const jours = (Date.parse(fin) - Date.parse(p.date_debut)) / 86_400_000;
+    if (nuits < 0 || nuits > 14 || jours < 0 || nuits > jours) throw new SejourImpossibleErreur(`${nuits} nuit(s)`);
+    p.date_fin = fin;
+    p.nb_nuits = nuits;
+    return { date_debut: p.date_debut, date_fin: fin, nb_nuits: nuits };
+  }
+
+  async modifierBudgetReel(propositionId: string, budgetCents: number) {
+    const p = this.propositions.get(propositionId)!;
+    if (!['a_verifier', 'prete'].includes(p.statut)) throw new PropositionFigeeErreur(p.statut);
+    p.budget_reference_cents = budgetCents; // le budget réel l'emporte sur l'annoncé (valeursDeReference)
+  }
+
+  /** Une ligne retenue (ni remplacée ni indisponible) prévoit déjà cette prestation à cette date. */
+  private dejaPrevue(p: PropositionEnMemoire, prestationId: string, date: string, sauf?: string) {
+    return p.lignes.some((x) => x.id !== sauf && x.prestation_id === prestationId && x.date === date && x.statut !== 'remplacee' && x.statut !== 'indisponible');
   }
 
   /** Total hors remplacee et indisponible ; la proposition suit (a_verifier ↔ prete). */

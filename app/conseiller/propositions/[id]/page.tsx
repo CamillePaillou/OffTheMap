@@ -14,6 +14,7 @@ import { comparerVersions } from '@/src/domain/proposition/ecartsVersions';
 import { REGLES_CHIFFRAGE } from '@/types/chiffrage';
 import { ActionsLigne, PanneauEnvoi } from './actions-tarifs';
 import { PanneauAbandon } from './panneau-abandon';
+import { AjouterLigne, ModifierBudget, ModifierLigne, ParticipantsPlusMoins, SejourPlusMoins } from './ajuster-lignes';
 import { PanneauChangement } from './panneau-changement';
 import { PanneauReponse } from './panneau-reponse';
 import { CarteMail } from '../../_composants/carte-mail';
@@ -90,6 +91,9 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
     }),
   );
 
+  // E6.6 : prestations du catalogue qu'on peut ajouter, seulement tant que la proposition est modifiable
+  const ajoutables = modifiable ? await tarifs.prestationsAjoutables(proposition.id) : [];
+
   const comptees = proposition.lignes.filter((l) => l.statut !== 'remplacee');
   const confirmees = comptees.filter((l) => l.statut === 'confirme' || l.statut === 'reservee').length;
   const jauge = resume.budget ? Math.min(resume.budget.part_pourcent, 100) : 0;
@@ -112,6 +116,10 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
           {STATUT_PROPOSITION[proposition.statut]}
         </span>
       </div>
+      {/* E6.6 : le séjour de référence (dates fixes de la fiche, sinon de la demande), ajustable tant que la proposition l'est */}
+      {modifiable && chiffrage && (
+        <SejourPlusMoins propositionId={proposition.id} debut={chiffrage.date_debut} fin={chiffrage.date_fin} nuits={chiffrage.nb_nuits} />
+      )}
 
       {proposition.statut === 'remplacee' && (
         <p className="mt-6 rounded-[18px] bg-[#eef1f3] p-4 text-sm text-encre">
@@ -194,6 +202,8 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
             ) : (
               <p className="mt-2 text-sm text-ardoise">Pas de budget de référence.</p>
             )}
+            {/* E6.6 : le client accepte de payer plus (ou moins) : budget réel de la fiche, modifiable ici */}
+            {modifiable && <ModifierBudget propositionId={proposition.id} budgetCents={proposition.budget_reference_cents} />}
           </div>
           <dl className="flex flex-col gap-3 text-sm sm:border-l sm:border-trait sm:pl-6">
             <div>
@@ -249,7 +259,18 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                     ))}
                   </td>
                   <td className="whitespace-nowrap px-3 py-3">{ligne.date}</td>
-                  <td className="px-3 py-3 text-right">{ligne.participants}</td>
+                  <td className="px-3 py-3 text-right">
+                    {modifiable && ['a_verifier', 'confirme', 'indisponible'].includes(ligne.statut) ? (
+                      <ParticipantsPlusMoins
+                        propositionId={proposition.id}
+                        ligneId={ligne.id}
+                        participants={ligne.participants}
+                        confirmee={ligne.statut === 'confirme'}
+                      />
+                    ) : (
+                      ligne.participants
+                    )}
+                  </td>
                   <td className="px-3 py-3 text-right">{euros(ligne.prix_unitaire_catalogue_cents)}</td>
                   <td className={`px-3 py-3 text-right ${HORS_TOTAL.includes(ligne.statut) ? 'text-ardoise line-through' : ''}`}>
                     {euros(ligne.total_ligne_cents)}
@@ -291,6 +312,17 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                         prestationId={ligne.prestation.id}
                         date={ligne.date}
                       />
+                      {modifiable && ['a_verifier', 'confirme', 'indisponible'].includes(ligne.statut) && (
+                        <div className="mt-2">
+                          <ModifierLigne
+                            propositionId={proposition.id}
+                            ligneId={ligne.id}
+                            date={ligne.date}
+                            participants={ligne.participants}
+                            confirmee={ligne.statut === 'confirme'}
+                          />
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-3 py-3 text-right">
@@ -308,6 +340,14 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
             </tbody>
           </table>
         </div>
+        {modifiable && (
+          <AjouterLigne
+            propositionId={proposition.id}
+            prestations={ajoutables}
+            date={comptees.at(-1)?.date ?? proposition.lignes.at(-1)?.date ?? ''}
+            participants={comptees.at(-1)?.participants ?? 2}
+          />
+        )}
       </div>
 
       {alertes.length > 0 && (

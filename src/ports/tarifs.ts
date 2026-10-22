@@ -41,6 +41,33 @@ export interface PrestationRemplacante {
   capacite: number;
 }
 
+/** Ajout d'une prestation à une proposition modifiable (E6.6). */
+export interface AjoutLigne {
+  propositionId: string;
+  prestationId: string;
+  date: string;
+  participants: number;
+  conseillerId: string;
+}
+
+/** Nouvelle date et/ou nouveaux participants pour une ligne (E6.6). Absent : inchangé. */
+export interface ModificationLigne {
+  ligneId: string;
+  conseillerId: string;
+  date?: string;
+  participants?: number;
+}
+
+/** Séjour de référence de la proposition : dates fixes de la fiche (E2.1). */
+export interface Sejour {
+  date_debut: string;
+  date_fin: string;
+  nb_nuits: number;
+}
+
+/** Le séjour ajusté serait impossible : moins de zéro nuit, plus de 14, ou plus de nuits que de jours. */
+export class SejourImpossibleErreur extends Error {}
+
 /** La ligne a changé entre la lecture et l'écriture. */
 export class LigneModifieeErreur extends Error {}
 /** La proposition est envoyée (ou au-delà) : ses tarifs ne se modifient plus. */
@@ -72,4 +99,23 @@ export interface TarifsRepository {
    * puis celles du même type, puis les autres, par nom.
    */
   prestationsRemplacantes(ligneId: string): Promise<PrestationRemplacante[]>;
+  /**
+   * E6.6 : nouvelle ligne « à vérifier » au prix du catalogue ; recalcule le total, fait suivre le statut.
+   * Rejette PropositionFigeeErreur, PrestationRefuseeErreur ou MemePrestationErreur (déjà prévue à cette date).
+   */
+  ajouterLigne(a: AjoutLigne): Promise<{ ligneId: string; statutProposition: StatutProposition }>;
+  /**
+   * E6.6 : la ligne prend la nouvelle date et/ou les nouveaux participants et repasse « à vérifier », sans prix confirmé.
+   * Rejette LigneModifieeErreur, PropositionFigeeErreur ou MemePrestationErreur (rien ne change, ou date déjà prévue).
+   */
+  modifierLigne(m: ModificationLigne): Promise<StatutProposition>;
+  /** E6.6 : prestations actives de la destination de la proposition, pour l'ajout ; par type puis par nom. */
+  prestationsAjoutables(propositionId: string): Promise<PrestationRemplacante[]>;
+  /**
+   * E6.6 : boutons « − » et « + » du séjour. Recule ou avance la date de retour d'un jour et ajoute ou retire une nuit,
+   * dans les dates fixes de la fiche. Rejette PropositionFigeeErreur ou SejourImpossibleErreur.
+   */
+  ajusterNuitsSejour(propositionId: string, delta: -1 | 1, conseillerId: string): Promise<Sejour>;
+  /** E6.6 : budget réel de la fiche (le client accepte de payer plus ou moins). Rejette PropositionFigeeErreur. */
+  modifierBudgetReel(propositionId: string, budgetCents: number, conseillerId: string): Promise<void>;
 }

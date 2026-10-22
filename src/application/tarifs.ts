@@ -9,9 +9,11 @@
  * - L'envoi n'est possible que si aucune ligne n'est à vérifier ni indisponible et aucune alerte n'est bloquante :
  *   sinon il est refusé et le statut ne change pas.
  * - Une ligne indisponible se remplace par une autre prestation du catalogue, sans toucher aux autres lignes (E5.2).
+ * - Sur une version modifiable, le conseiller ajoute une prestation, ou change la date ou les participants d'une ligne,
+ *   pour refléter le changement demandé par le client (E6.6).
  */
 import { z } from 'zod';
-import { ALERTES_BLOQUANTES, type SourcePrix, type StatutLigne, type StatutProposition } from '../../types';
+import { ALERTES_BLOQUANTES, LIMITES, type SourcePrix, type StatutLigne, type StatutProposition } from '../../types';
 import { TRANSITIONS_LIGNE, trouverTransition } from '../../types/transitions';
 import { chiffrer, formaterMontant, type EntreeChiffrage } from '../domain/chiffrage/chiffrer';
 import { StatutModifieErreur } from '../ports/statuts';
@@ -21,6 +23,8 @@ import {
   MemePrestationErreur,
   PrestationRefuseeErreur,
   PropositionFigeeErreur,
+  SejourImpossibleErreur,
+  type Sejour,
   type TarifsRepository,
 } from '../ports/tarifs';
 import type { ErreursChamps } from './deposerDemande';
@@ -45,7 +49,7 @@ export const schemaTarif = z.object({
 
 export type RefusLigne =
   | 'introuvable' | 'transition_interdite' | 'ligne_modifiee' | 'proposition_figee' | 'pas_de_prix_verifie'
-  | 'prestation_refusee' | 'meme_prestation';
+  | 'prestation_refusee' | 'meme_prestation' | /** E6.6 : déjà prévue à cette date, ou rien ne change. */ 'deja_prevue';
 export type ResultatLigne =
   | { ok: true; statutProposition: StatutProposition; /** E5.2 : la ligne créée par le remplacement. */ nouvelleLigneId?: string }
   | { ok: false; erreurs: ErreursChamps }
@@ -155,6 +159,144 @@ export async function remplacerLigne(
   }
   await recalculerAlertes(repo, ligne.propositionId);
   return { ok: true, statutProposition: r.statutProposition, nouvelleLigneId: r.ligneId };
+}
+
+const date = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Choisissez une date');
+const participants = z.coerce.number('Nombre de participants invalide').int('Nombre de participants invalide')
+  .min(1, 'Au moins un participant').max(LIMITES.participantsMax, `${LIMITES.participantsMax} participants au plus`);
+
+export const schemaAjout = z.object({
+  prestationId: z.string().regex(/^[a-z0-9-]+$/, 'Choisissez une prestation du catalogue'),
+  date,
+  participants,
+});
+
+/** Vide : inchangé. Au moins l'un des deux doit changer. */
+export const schemaModification = z.object({
+  date: z.union([z.literal(''), date]).transform((d) => d || undefined),
+  participants: z.union([z.literal(''), participants]).transform((n) => (n === '' ? undefined : n)),
+}).refine((m) => m.date !== undefined || m.participants !== undefined, { message: 'Changez la date ou le nombre de participants', path: ['formulaire'] });
+
+const erreursDe = (issues: readonly z.core.$ZodIssue[]): ErreursChamps => {
+  const erreurs: ErreursChamps = {};
+  for (const i of issues) erreurs[String(i.path[0] ?? 'formulaire')] ??= i.message;
+  return erreurs;
+};
+
+/**
+ * Ajoute une prestation du catalogue à une proposition modifiable (E6.6), par exemple une nuit d'hôtel pour « deux nuits
+ * au lieu d'une » : la ligne naît « à vérifier » au prix du catalogue. Les autres lignes et leurs tarifs restent intacts ;
+ * le total et le statut de la proposition sont recalculés par la base, les alertes par le code.
+ */
+export async function ajouterLigne(
+  repo: TarifsRepository,
+  entree: { propositionId: string; conseillerId: string; prestationId: unknown; date: unknown; participants: unknown },
+): Promise<ResultatLigne> {
+  const saisie = schemaAjout.safeParse({ prestationId: entree.prestationId, date: entree.date, participants: entree.participants });
+  if (!saisie.success) return { ok: false, erreurs: erreursDe(saisie.error.issues) };
+  if (!entree.conseillerId.trim() || !trouverTransition(TRANSITIONS_LIGNE, null, 'a_verifier', 'conseiller')) {
+    return { ok: false, raison: 'transition_interdite' };
+  }
+  let r;
+  try {
+    r = await repo.ajouterLigne({ propositionId: entree.propositionId, conseillerId: entree.conseillerId, ...saisie.data });
+  } catch (e) {
+    if (e instanceof PropositionFigeeErreur) return { ok: false, raison: 'proposition_figee' };
+    if (e instanceof PrestationRefuseeErreur) return { ok: false, raison: 'prestation_refusee' };
+    if (e instanceof MemePrestationErreur) return { ok: false, raison: 'deja_prevue' };
+    throw e;
+  }
+  await recalculerAlertes(repo, entree.propositionId);
+  return { ok: true, statutProposition: r.statutProposition, nouvelleLigneId: r.ligneId };
+}
+
+/**
+ * Change la date et/ou les participants d'une ligne (E6.6) : elle repasse « à vérifier », sans prix confirmé, car le
+ * tarif obtenu ne vaut plus pour une autre date ou un autre groupe. Les autres lignes restent intactes.
+ */
+export async function modifierLigne(
+  repo: TarifsRepository,
+  entree: { ligneId: string; conseillerId: string; date: unknown; participants: unknown },
+): Promise<ResultatLigne> {
+  const saisie = schemaModification.safeParse({ date: entree.date ?? '', participants: entree.participants ?? '' });
+  if (!saisie.success) return { ok: false, erreurs: erreursDe(saisie.error.issues) };
+  const ligne = await repo.lireLigne(entree.ligneId);
+  if (!ligne) return { ok: false, raison: 'introuvable' };
+  // une ligne à vérifier le reste ; confirmée ou indisponible, elle repasse à vérifier (transitions de la matrice)
+  if (!entree.conseillerId.trim()
+    || (ligne.statut !== 'a_verifier' && !trouverTransition(TRANSITIONS_LIGNE, ligne.statut, 'a_verifier', 'conseiller'))) {
+    return { ok: false, raison: 'transition_interdite' };
+  }
+  let statutProposition: StatutProposition;
+  try {
+    statutProposition = await repo.modifierLigne({
+      ligneId: entree.ligneId, conseillerId: entree.conseillerId,
+      ...(saisie.data.date ? { date: saisie.data.date } : {}),
+      ...(saisie.data.participants ? { participants: saisie.data.participants } : {}),
+    });
+  } catch (e) {
+    if (e instanceof LigneModifieeErreur) return { ok: false, raison: 'ligne_modifiee' };
+    if (e instanceof PropositionFigeeErreur) return { ok: false, raison: 'proposition_figee' };
+    if (e instanceof MemePrestationErreur) return { ok: false, raison: 'deja_prevue' };
+    throw e;
+  }
+  await recalculerAlertes(repo, ligne.propositionId);
+  return { ok: true, statutProposition };
+}
+
+export type ResultatSejour = { ok: true; sejour: Sejour } | { ok: false; raison: 'proposition_figee' | 'sejour_impossible' | 'transition_interdite' };
+
+/**
+ * Boutons « − » et « + » du séjour (E6.6) : une nuit de moins ou de plus, la date de retour suit. Écrit dans les dates
+ * fixes de la fiche (ce que le conseiller a convenu avec le client), puis le code recalcule les alertes : une nuit
+ * d'hôtel ajoutée cesse d'être « hors du séjour ». Les lignes ne bougent pas : on les ajuste à part.
+ */
+export async function ajusterSejour(
+  repo: TarifsRepository,
+  entree: { propositionId: string; conseillerId: string; delta: number },
+): Promise<ResultatSejour> {
+  if (!entree.conseillerId.trim() || (entree.delta !== 1 && entree.delta !== -1)) return { ok: false, raison: 'transition_interdite' };
+  let sejour: Sejour;
+  try {
+    sejour = await repo.ajusterNuitsSejour(entree.propositionId, entree.delta, entree.conseillerId);
+  } catch (e) {
+    if (e instanceof PropositionFigeeErreur) return { ok: false, raison: 'proposition_figee' };
+    if (e instanceof SejourImpossibleErreur) return { ok: false, raison: 'sejour_impossible' };
+    throw e;
+  }
+  await recalculerAlertes(repo, entree.propositionId);
+  return { ok: true, sejour };
+}
+
+/** Budget global du groupe en euros entiers, comme dans la fiche (E2.1). */
+export const schemaBudget = z.object({
+  budget: z.coerce.number('Budget en euros entiers').int('Budget en euros entiers').positive('Le budget doit être positif').max(1_000_000),
+});
+
+export type ResultatBudget = { ok: true } | { ok: false; erreurs: ErreursChamps } | { ok: false; raison: 'proposition_figee' | 'transition_interdite' };
+
+/**
+ * « Modifier » le budget sur la page de la proposition (E6.6) : le client accepte de payer plus (ou moins). Écrit le
+ * budget réel de la fiche, puis le code recalcule les alertes de budget. Jamais automatique : c'est une information du
+ * client, que seul le conseiller change.
+ */
+export async function modifierBudget(
+  repo: TarifsRepository,
+  entree: { propositionId: string; conseillerId: string; budget: unknown },
+): Promise<ResultatBudget> {
+  const brut = typeof entree.budget === 'string' ? entree.budget.trim() : entree.budget;
+  if (brut === '' || brut === null || brut === undefined) return { ok: false, erreurs: { budget: 'Indiquez un budget' } }; // vide : pas 0 €
+  const saisie = schemaBudget.safeParse({ budget: brut });
+  if (!saisie.success) return { ok: false, erreurs: { budget: saisie.error.issues[0]!.message } };
+  if (!entree.conseillerId.trim()) return { ok: false, raison: 'transition_interdite' };
+  try {
+    await repo.modifierBudgetReel(entree.propositionId, saisie.data.budget * 100, entree.conseillerId);
+  } catch (e) {
+    if (e instanceof PropositionFigeeErreur) return { ok: false, raison: 'proposition_figee' };
+    throw e;
+  }
+  await recalculerAlertes(repo, entree.propositionId);
+  return { ok: true };
 }
 
 /** Chiffrage (E4.2) et ce qui bloque l'envoi, sans rien écrire : pour l'affichage. */
