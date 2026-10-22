@@ -3,7 +3,7 @@ import { ConclusionVerification } from '../../../types';
 import type { TourTrace } from '../../../types';
 import { comparerFaits, decrireEcarts } from './comparerFaits';
 import type { FaitsServeur } from './comparerFaits';
-import { EXPURGE, contientSecret, expurgerTrace } from './expurger';
+import { EXPURGE, contientSecret, expurgerChaine, expurgerTrace } from './expurger';
 
 const serveur: FaitsServeur = { disponible: true, places_restantes: 2, prix_unitaire_cents: 4500 };
 
@@ -185,5 +185,13 @@ describe('expurgerTrace : une trace relisible, sans clé ni donnée sensible', (
   it('un secret trop court ou absent de l’environnement est ignoré sans tout masquer', () => {
     const trace = [tourAppel()];
     expect(expurgerTrace(trace, [undefined, '', '2'])).toEqual(trace);
+  });
+});
+
+describe('expurgerChaine : le résumé montré au conseiller (E11.2)', () => {
+  it('masque une clé connue et un texte qui imite une clé, garde le reste', () => {
+    expect(expurgerChaine('Vérifié avec cle-equipe-123456.', ['cle-equipe-123456'])).toBe(`Vérifié avec ${EXPURGE}.`);
+    expect(expurgerChaine('Clé : sk-or-v1-fausse-cle-de-campagne')).toBe(`Clé : ${EXPURGE}`);
+    expect(expurgerChaine('Disponible pour deux personnes.')).toBe('Disponible pour deux personnes.');
   });
 });
