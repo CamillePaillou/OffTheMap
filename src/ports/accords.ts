@@ -39,10 +39,15 @@ export interface AccordsRepository {
   /** Enregistre le résultat de la confirmation, sans jamais conserver la clé d'approbation. */
   terminerConfirmation(optionId: string, resultat: ResultatConfirmation): Promise<void>;
   tracerTentativeConfirmation(evenement: TentativeConfirmation): Promise<void>;
+  /** E9.8 : retrouve la réservation confirmée de la ligne (statut `confirmee`), pour l'annuler. */
+  reservationConfirmee(ligneId: string): Promise<AccordOptionEtOption | undefined> | AccordOptionEtOption | undefined;
+  /** E9.8 : enregistre la réponse du simulateur et journalise l'annulation au nom du conseiller, sans jamais conserver la clé. */
+  terminerAnnulation(optionId: string, auteurId: string, resultat: ResultatAnnulation): Promise<void>;
+  tracerTentativeAnnulation(evenement: TentativeConfirmation): Promise<void>;
 }
 
-export interface AccordOption extends NouvelAccord { option_id: string; accord_utilise: boolean; statut: 'accord_donne' | 'posee' | 'echec' | 'confirmee'; }
-export interface AccordOptionEtOption extends AccordOption { option_id_simulateur?: string; expire_option_le?: string; ligne_snapshot: { prestation_id: string; date: string; participants: number }; }
+export interface AccordOption extends NouvelAccord { option_id: string; accord_utilise: boolean; statut: 'accord_donne' | 'posee' | 'echec' | 'confirmee' | 'annulee'; }
+export interface AccordOptionEtOption extends AccordOption { option_id_simulateur?: string; expire_option_le?: string; reservation_id_simulateur?: string; ligne_snapshot: { prestation_id: string; date: string; participants: number }; }
 export type ResultatPoseOption =
   | { ok: true; option_id_simulateur: string; expire_le: string; reponse_serveur: unknown; ligne_snapshot?: { prestation_id: string; date: string; participants: number } }
   | { ok: false; raison: string; reponse_serveur?: unknown };
@@ -53,3 +58,5 @@ export interface TentativeOption {
 
 export type ResultatConfirmation = { ok: true; reservation_id_simulateur: string; reponse_serveur: unknown } | { ok: false; raison: string; reponse_serveur?: unknown };
 export interface TentativeConfirmation { ligne_id: string; auteur_id: string; raison: string; date: string; detail?: unknown }
+
+export type ResultatAnnulation = { ok: true; reservation_id_simulateur: string; reponse_serveur: unknown } | { ok: false; raison: string; reponse_serveur?: unknown };

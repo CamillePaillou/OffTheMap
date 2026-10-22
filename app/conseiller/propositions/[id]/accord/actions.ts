@@ -7,6 +7,7 @@ import { exigerConseiller } from '@/lib/auth/conseiller';
 import { donnerAccord } from '@/src/application/donnerAccord';
 import { poserOption } from '@/src/application/poserOption';
 import { confirmerReservation } from '@/src/application/confirmerReservation';
+import { annulerReservation } from '@/src/application/annulerReservation';
 import { creerPrestataires } from '@/src/infrastructure/prestataires/simulateur';
 import { MESSAGES_REFUS_ACCORD } from '@/src/domain/accord';
 import { accordsDemo } from './depot';
@@ -136,5 +137,38 @@ export async function confirmer(_etat: EtatAccord, formulaire: FormData): Promis
       erreur:
         'Impossible de confirmer. Vérifiez la trace avant toute nouvelle tentative.',
     };
+  }
+}
+
+const messagesAnnulation: Record<string, string> = {
+  conseiller_non_identifie: 'Conseiller non identifié.',
+  cle_absente: 'La clé d’approbation est obligatoire pour annuler.',
+  confirmation_absente: 'Cochez la case pour confirmer l’annulation.',
+  reservation_introuvable: 'Aucune réservation confirmée à annuler sur cette prestation.',
+  simulateur_delai: 'Délai dépassé : l’annulation n’est pas certaine. Vérifiez la trace avant de réessayer.',
+  simulateur_erreur: 'Erreur du simulateur : vérifiez la trace avant de réessayer.',
+  simulateur_refus: 'Le simulateur a refusé l’annulation (clé d’approbation incorrecte ou réservation déjà annulée).',
+  reponse_serveur_incoherente: 'La réponse du simulateur ne correspond pas à la réservation. Vérifiez la trace avant toute action.',
+};
+
+/** E9.8 : annulation d'une réservation confirmée. Clé d'approbation saisie + case de confirmation ; la clé n'est jamais journalisée. */
+export async function annuler(_etat: EtatAccord, formulaire: FormData): Promise<EtatAccord> {
+  const conseiller = await exigerConseiller();
+  const saisie = z.object({ propositionId: z.uuid(), ligneId: z.uuid(), cleApprobation: z.string().min(1).max(500) }).safeParse({
+    propositionId: formulaire.get('propositionId'), ligneId: formulaire.get('ligneId'), cleApprobation: formulaire.get('cleApprobation'),
+  });
+  if (!saisie.success) return { erreur: 'Saisissez la clé d’approbation pour annuler.' };
+  const proposition = PROPOSITION_DEPOT_RECU;
+  if (proposition.id !== saisie.data.propositionId) return { erreur: MESSAGES_REFUS_ACCORD.proposition_introuvable };
+  try {
+    const resultat = await annulerReservation(accordsDemo, creerPrestataires(), {
+      conseiller: { id: conseiller.id, nom: conseiller.nomAffiche }, ligneId: saisie.data.ligneId,
+      cleApprobation: saisie.data.cleApprobation, confirme: formulaire.get('confirme') === 'on',
+    });
+    revalidatePath(`/conseiller/propositions/${proposition.id}/accord`);
+    if (!resultat.ok) return { erreur: messagesAnnulation[resultat.raison] ?? 'Annulation refusée.' };
+    return { ok: true };
+  } catch {
+    return { erreur: 'Impossible d’annuler. Vérifiez la trace avant toute nouvelle tentative.' };
   }
 }
