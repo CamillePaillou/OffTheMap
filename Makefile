@@ -48,12 +48,13 @@ seed: ## Charge les données de démonstration (supabase/seed.sql)
 reset: ## Recrée la base : migrations puis seed (efface les données locales)
 	$(SUPABASE) db reset
 
-test-db: ## Vérifie le schéma, les données de démonstration et rejoue le cas de Sophie (transactions annulées)
+test-db: ## Vérifie le schéma, les données de démonstration, le cas de Sophie et l'espace client (transactions annulées)
 	docker exec -i $(DB_CONTAINER) psql -q -U postgres -d postgres < supabase/scripts/test_contraintes.sql
 	docker exec -i $(DB_CONTAINER) psql -q -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/scripts/test_seed.sql
 	docker exec -i $(DB_CONTAINER) psql -q -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/scripts/test_bout_en_bout.sql
 	docker exec -i $(DB_CONTAINER) psql -q -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/scripts/test_prestations_souhaitees.sql
 	docker exec -i $(DB_CONTAINER) psql -q -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/scripts/test_indisponible_apres_depot.sql
+	docker exec -i $(DB_CONTAINER) psql -q -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/scripts/test_espace_client.sql
 
 essai-llm: .env node_modules ## Appel réel à OpenRouter avec les modèles de .env (E0.19)
 	LLM_ESSAI_REEL=1 node --env-file=.env node_modules/vitest/vitest.mjs run src/infrastructure/llm/openrouter.essai-reel.test.ts
