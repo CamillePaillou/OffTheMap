@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
 import { rappelerSansReponse } from '@/src/application/rappels';
-import { joursDepuis } from '@/src/domain/rappels';
+import { JOUR_ABANDON, joursDepuis } from '@/src/domain/rappels';
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import { RappelsSupabase } from '@/src/infrastructure/db/rappelsSupabase';
 import { instantParis, jour } from './_composants/libelles';
@@ -28,7 +28,7 @@ export default function ConseillerPage() {
 
 async function Apercu() {
   const conseiller = await exigerConseiller();
-  // E6.4 : sans tâche planifiée, les rappels dus (J+3, J+7) sont posés à l'ouverture de l'espace conseiller,
+  // E6.4 : sans tâche planifiée, les rappels dus (J+3, J+7, J+14 qui propose l'abandon, E6.5) sont posés à l'ouverture de l'espace conseiller,
   // avant de lire la liste, pour qu'elle montre les propositions passées en sans_reponse
   const rappels = new RappelsSupabase();
   const maintenant = new Date();
@@ -74,7 +74,10 @@ async function Apercu() {
       {aRelancer.length > 0 && (
         <section aria-labelledby="titre-relancer" className="rounded-[18px] bg-miel-pale p-5 text-[#5c3d0c]">
           <h3 id="titre-relancer" className="text-base text-[#5c3d0c]!">Clients à relancer ({aRelancer.length})</h3>
-          <p className="mt-1 text-sm">Propositions envoyées restées sans réponse : relancez le client, puis enregistrez sa réponse.</p>
+          <p className="mt-1 text-sm">
+            Propositions envoyées restées sans réponse : relancez le client, puis enregistrez sa réponse. À J+{JOUR_ABANDON}, vous pouvez
+            abandonner le dossier depuis la proposition.
+          </p>
           <ul className="mt-3 flex flex-col divide-y divide-[#eedfc2]">
             {aRelancer.map((p) => (
               <li key={p.proposition_id} className="flex items-center gap-4 py-3">
@@ -84,6 +87,7 @@ async function Apercu() {
                   </span>
                   <span className="text-sm">
                     Envoyée le {instantParis(p.envoyee_le)}, il y a {joursDepuis(p.envoyee_le, maintenant)} jours · rappel J+{p.dernier_rappel}
+                    {p.dernier_rappel === JOUR_ABANDON && <span className="font-semibold"> · abandon proposé</span>}
                   </span>
                 </span>
                 <Link href={`/conseiller/propositions/${p.proposition_id}`} className="bo-btn-2 shrink-0 text-sm">

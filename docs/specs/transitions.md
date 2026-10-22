@@ -34,7 +34,7 @@ Source de vérité : `types/transitions.ts`, utilisée par la fonction de transi
 | validee | abandonnee | conseiller | abandon confirmé | — | could |
 | rdv_propose | abandonnee | conseiller | abandon confirmé | — | could |
 | entretien_fait | abandonnee | conseiller | abandon confirmé | — | could |
-| en_proposition | abandonnee | conseiller | abandon confirmé (proposition sans réponse) | — | could |
+| en_proposition | abandonnee | conseiller | abandon confirmé (proposition sans réponse) | proposition sans_reponse envoyée depuis 14 jours | must (E6.5) |
 
 États finaux : `refusee`, `gagnee`, `abandonnee`. Valeurs couvertes : 12.
 

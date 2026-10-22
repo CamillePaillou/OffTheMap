@@ -3,7 +3,8 @@
  *
  * Sans tâche planifiée (ADR-0005 : tout tourne dans le conteneur de l'application), les rappels sont posés par le code
  * à l'ouverture de l'espace conseiller : chaque proposition envoyée depuis 3 jours sans réponse passe en sans_reponse
- * avec un rappel J+3 au journal, puis reçoit un rappel J+7. Le conseiller relance lui-même le client ; aucun mail
+ * avec un rappel J+3 au journal, puis reçoit un rappel J+7, puis un rappel J+14 qui propose l'abandon du dossier
+ * (E6.5, confirmé par le conseiller : abandonDossier.ts). Le conseiller relance lui-même le client ; aucun mail
  * ne part de l'application.
  */
 import { rappelDu, type JourRappel } from '../domain/rappels';

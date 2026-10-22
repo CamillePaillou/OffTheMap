@@ -710,6 +710,7 @@ export type Database = {
         Returns: number;
       };
       enregistrer_rappel: { Args: { p_proposition: string; p_jour: number }; Returns: number };
+      abandonner_dossier: { Args: { p_proposition: string; p_conseiller: string }; Returns: number };
       changer_ligne: {
         Args: {
           p_ligne: string;

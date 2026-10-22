@@ -26,7 +26,7 @@ Scénario : rappel à J+3 puis à J+7
 
 Refus, rien n'est écrit : proposition plus en `envoyee` ni `sans_reponse`, ou rappel (ou un plus tardif) déjà fait (`OT002`) ; rappel avant son jour (`OT012`) ; jour autre que 3 ou 7 (`OT003`). Un index unique garantit un seul rappel par jour et par proposition, même si deux écrans s'ouvrent en même temps. Réservée au serveur (`service_role`).
 
-Le rappel J+14 (proposition d'abandon) est E6.5.
+Le rappel J+14, qui propose l'abandon du dossier, est E6.5 : `docs/specs/abandon-sans-reponse.md`.
 
 ## Ce que voit le conseiller
 
