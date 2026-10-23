@@ -1,0 +1,54 @@
+/**
+ * Port LlmClient (E0.13) : la seule façon pour l'application de parler à un LLM.
+ * Les cas d'usage dépendent de cette interface, jamais d'un fournisseur (OpenRouter, faux client…).
+ *
+ * Règles (plan, sections 5.3 et ADR-0007) :
+ * - une demande n'entre qu'en `DemandePourLLM` (minimisation : ni nom, ni e-mail, ni précision de santé) ;
+ * - chaque réponse est validée par un schéma de `types/ia.ts` AVANT d'être rendue ;
+ * - une réponse non conforme lève `LlmError('reponse_invalide')`, jamais une valeur partielle.
+ */
+import { schemaBrouillon } from '../../types';
+import type { BrouillonIA, DemandePourLLM, EcartsIA, FicheIA, TypePrestation } from '../../types';
+import type { EntreeEcarts } from '../domain/proposition/entreeEcarts';
+
+/** Prestation que le code a laissée passer (destination, capacité) : le LLM ne choisit que parmi elles. */
+export interface PrestationAutorisee {
+  id: string;
+  nom: string;
+  type: TypePrestation;
+}
+
+export interface EntreeBrouillon {
+  demande: DemandePourLLM;
+  fiche: FicheIA;
+  prestationsAutorisees: readonly PrestationAutorisee[];
+  /** Nombre de voyageurs : une ligne ne peut pas dépasser ce nombre. */
+  participants: number;
+}
+
+/** Schéma du brouillon pour cette entrée : prestations autorisées, participants et dates du séjour de référence. */
+export function schemaPourEntree(entree: EntreeBrouillon) {
+  return schemaBrouillon(entree.prestationsAutorisees.map((p) => p.id), entree.participants, {
+    date_debut: entree.demande.date_debut,
+    date_fin: entree.demande.date_fin,
+    types: Object.fromEntries(entree.prestationsAutorisees.map((p) => [p.id, p.type])),
+  });
+}
+
+export type CodeErreurLlm = 'delai' | 'erreur_fournisseur' | 'reponse_invalide' | 'configuration';
+
+export class LlmError extends Error {
+  constructor(public readonly code: CodeErreurLlm, message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = 'LlmError';
+  }
+}
+
+export interface LlmClient {
+  /** Étape 2 : fiche structurée à partir de la demande minimisée. */
+  genererFiche(demande: DemandePourLLM): Promise<FicheIA>;
+  /** Étape 6 : brouillon de proposition, limité aux prestations autorisées. */
+  genererBrouillon(entree: EntreeBrouillon): Promise<BrouillonIA>;
+  /** Étape 9 (E6.3) : résumé en mots des écarts entre deux versions, sans aucun chiffre ni montant. */
+  resumerEcarts(entree: EntreeEcarts): Promise<EcartsIA>;
+}

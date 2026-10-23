@@ -1,0 +1,196 @@
+{
+  "dossier_id": "5a1e0000-0000-4000-8000-000000000001",
+  "statut": "en_proposition",
+  "cree_le": "2026-10-19T09:12:00Z",
+  "demande": {
+    "version": 1,
+    "client": {
+      "nom": "Sophie Martin",
+      "email": "sophie.martin@example.org"
+    },
+    "destination": "Nantes",
+    "dates": {
+      "debut": "2026-11-07",
+      "fin": "2026-11-08",
+      "nb_nuits": 1
+    },
+    "voyageurs": [
+      "adulte",
+      "adulte"
+    ],
+    "budget_annonce": {
+      "montant_cents": 40000
+    },
+    "envies": "Un week-end créatif, sans voiture, avec un atelier.",
+    "contraintes": "Arriver avant midi le samedi.",
+    "prestations_souhaitees": [
+      {
+        "id": "activite-nantes-01",
+        "nom": "Atelier de machines imaginaires",
+        "type": "activite",
+        "destination": "Nantes"
+      },
+      {
+        "id": "hotel-nantes-01",
+        "nom": "Hôtel des Machines",
+        "type": "hebergement",
+        "destination": "Nantes"
+      }
+    ]
+  },
+  "fiche": {
+    "etat": "validee",
+    "erreur": null,
+    "envies": [
+      "atelier créatif",
+      "découverte de la ville à pied"
+    ],
+    "contraintes": [
+      "pas de voiture",
+      "arrivée avant midi le samedi"
+    ],
+    "points_flous": [],
+    "regimes": [
+      "vegetarien"
+    ],
+    "mobilite": null,
+    "niveau_physique": "faible",
+    "budget_reel_cents": 40000,
+    "destination_fixe": null,
+    "dates_fixes": {
+      "debut": "2026-11-07",
+      "fin": "2026-11-08",
+      "nb_nuits": 1
+    },
+    "notes_conseiller": "Préfère un hôtel proche de la gare.",
+    "decision": "validee",
+    "validee_le": "2026-10-21T14:20:00Z"
+  },
+  "propositions": [
+    {
+      "id": "5a1e0000-0000-4000-8000-0000000000a1",
+      "version": 1,
+      "statut": "a_verifier",
+      "total_cents": 36800
+    }
+  ],
+  "historique": [
+    {
+      "date": "2026-10-19T09:12:00Z",
+      "type": "statut",
+      "cible": "dossier",
+      "ancien_statut": null,
+      "nouveau_statut": "nouvelle",
+      "auteur": "systeme",
+      "auteur_nom": null
+    },
+    {
+      "date": "2026-10-19T09:12:02Z",
+      "type": "statut",
+      "cible": "dossier",
+      "ancien_statut": "nouvelle",
+      "nouveau_statut": "fiche_en_cours",
+      "auteur": "systeme",
+      "auteur_nom": null
+    },
+    {
+      "date": "2026-10-19T09:12:40Z",
+      "type": "statut",
+      "cible": "dossier",
+      "ancien_statut": "fiche_en_cours",
+      "nouveau_statut": "fiche_prete",
+      "auteur": "systeme",
+      "auteur_nom": null
+    },
+    {
+      "date": "2026-10-19T10:30:00Z",
+      "type": "statut",
+      "cible": "dossier",
+      "ancien_statut": "fiche_prete",
+      "nouveau_statut": "validee",
+      "auteur": "conseiller",
+      "auteur_nom": "Camille (démo)"
+    },
+    {
+      "date": "2026-10-19T10:32:00Z",
+      "type": "statut",
+      "cible": "dossier",
+      "ancien_statut": "validee",
+      "nouveau_statut": "rdv_propose",
+      "auteur": "conseiller",
+      "auteur_nom": "Camille (démo)"
+    },
+    {
+      "date": "2026-10-19T10:32:01Z",
+      "type": "mail",
+      "cible": null,
+      "ancien_statut": null,
+      "nouveau_statut": null,
+      "auteur": "systeme",
+      "auteur_nom": null
+    },
+    {
+      "date": "2026-10-21T14:00:00Z",
+      "type": "statut",
+      "cible": "dossier",
+      "ancien_statut": "rdv_propose",
+      "nouveau_statut": "entretien_fait",
+      "auteur": "conseiller",
+      "auteur_nom": "Camille (démo)"
+    },
+    {
+      "date": "2026-10-21T14:20:00Z",
+      "type": "statut",
+      "cible": "dossier",
+      "ancien_statut": "entretien_fait",
+      "nouveau_statut": "en_proposition",
+      "auteur": "conseiller",
+      "auteur_nom": "Camille (démo)"
+    },
+    {
+      "date": "2026-10-21T14:21:00Z",
+      "type": "statut",
+      "cible": "proposition",
+      "ancien_statut": null,
+      "nouveau_statut": "brouillon_en_cours",
+      "auteur": "systeme",
+      "auteur_nom": null
+    },
+    {
+      "date": "2026-10-21T14:21:30Z",
+      "type": "statut",
+      "cible": "proposition",
+      "ancien_statut": "brouillon_en_cours",
+      "nouveau_statut": "brouillon_pret",
+      "auteur": "systeme",
+      "auteur_nom": null
+    },
+    {
+      "date": "2026-10-21T14:21:31Z",
+      "type": "statut",
+      "cible": "proposition",
+      "ancien_statut": "brouillon_pret",
+      "nouveau_statut": "a_verifier",
+      "auteur": "systeme",
+      "auteur_nom": null
+    },
+    {
+      "date": "2026-10-21T14:40:00Z",
+      "type": "verification",
+      "cible": null,
+      "ancien_statut": null,
+      "nouveau_statut": null,
+      "auteur": "systeme",
+      "auteur_nom": null
+    },
+    {
+      "date": "2026-10-21T14:45:00Z",
+      "type": "verification",
+      "cible": null,
+      "ancien_statut": null,
+      "nouveau_statut": null,
+      "auteur": "systeme",
+      "auteur_nom": null
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "id": "5a1e0000-0000-4000-8000-0000000000a1",
+  "dossier_id": "5a1e0000-0000-4000-8000-000000000001",
+  "version": 1,
+  "statut": "a_verifier",
+  "programme": [
+    { "date": "2026-11-07", "titre": "Arrivée et atelier", "texte": "Train le matin, atelier de machines imaginaires l’après-midi, nuit à l’Hôtel des Machines." },
+    { "date": "2026-11-08", "titre": "Balade et retour", "texte": "Matinée libre au centre-ville, retour en train." }
+  ],
+  "lignes": [
+    {
+      "id": "5a1e0000-0000-4000-8000-0000000000b1",
+      "prestation": { "id": "train-nantes-01", "nom": "Train Paris – Nantes", "type": "transport", "capacite": 8, "actif": true },
+      "date": "2026-11-07",
+      "participants": 2,
+      "nb_nuits": 1,
+      "prix_unitaire_catalogue_cents": 4800,
+      "prix_confirme": null,
+      "statut": "a_verifier",
+      "total_ligne_cents": 9600,
+      "derniere_verification": null
+    },
+    {
+      "id": "5a1e0000-0000-4000-8000-0000000000b2",
+      "prestation": { "id": "hotel-nantes-01", "nom": "Hôtel de la gare", "type": "hebergement", "capacite": 6, "actif": true },
+      "date": "2026-11-07",
+      "participants": 2,
+      "nb_nuits": 1,
+      "prix_unitaire_catalogue_cents": 9600,
+      "prix_confirme": null,
+      "statut": "a_verifier",
+      "total_ligne_cents": 19200,
+      "derniere_verification": { "statut": "echec", "prix_unitaire_cents": null, "places_restantes": null, "le": "2026-10-21T14:45:00Z" }
+    },
+    {
+      "id": "5a1e0000-0000-4000-8000-0000000000b3",
+      "prestation": { "id": "activite-nantes-01", "nom": "Atelier de machines imaginaires", "type": "activite", "capacite": 10, "actif": true },
+      "date": "2026-11-07",
+      "participants": 2,
+      "nb_nuits": 1,
+      "prix_unitaire_catalogue_cents": 3500,
+      "prix_confirme": { "montant_cents": 4000, "source": "agent", "le": "2026-10-21T14:42:00Z", "par": "Camille (démo)" },
+      "statut": "confirme",
+      "total_ligne_cents": 8000,
+      "derniere_verification": { "statut": "ok", "prix_unitaire_cents": 4000, "places_restantes": 6, "le": "2026-10-21T14:40:00Z" }
+    }
+  ],
+  "total_cents": 36800,
+  "marge_cents": 0,
+  "budget_reference_cents": 40000,
+  "alertes": [
+    { "code": "budget_proche", "message": "Le total atteint 92 % du budget de référence." }
+  ],
+  "ecarts": null,
+  "motif_changement": null
+}

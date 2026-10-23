@@ -1,0 +1,34 @@
+'use server';
+
+import { redirect } from 'next/navigation';
+import { genererEnArrierePlan } from '@/lib/fiche/generation';
+import { deposerDemande, type ErreursChamps } from '@/src/application/deposerDemande';
+import { DemandesSupabase } from '@/src/infrastructure/db/demandesSupabase';
+import { lireSaisie, valeursSaisies } from './lecture';
+
+export interface EtatDemande {
+  erreurs?: ErreursChamps;
+  valeurs?: Record<string, string>;
+  /** Correction (E1.2) : libellés des points signalés renvoyés sans changement. */
+  inchanges?: string[];
+}
+
+/** Date du jour à Paris, AAAA-MM-JJ : une date de départ antérieure est refusée. */
+function aujourdhuiParis() {
+  return new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Paris' }).format(new Date());
+}
+
+export async function envoyerDemande(_etat: EtatDemande, formulaire: FormData): Promise<EtatDemande> {
+  let resultat;
+  try {
+    resultat = await deposerDemande(new DemandesSupabase(), lireSaisie(formulaire), aujourdhuiParis());
+  } catch {
+    return {
+      erreurs: { formulaire: 'Votre demande n’a pas pu être enregistrée. Réessayez dans un instant.' },
+      valeurs: valeursSaisies(formulaire),
+    };
+  }
+  if (!resultat.ok) return { erreurs: resultat.erreurs, valeurs: valeursSaisies(formulaire) };
+  genererEnArrierePlan(resultat.depot.dossierId, 'apres_depot'); // E2.2 : la fiche se prépare sans faire attendre le client
+  redirect(resultat.depot.reference ? `/demande/merci?dossier=${encodeURIComponent(resultat.depot.reference)}` : '/demande/merci');
+}

@@ -7,7 +7,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 permissions:
   contents: read
@@ -67,3 +67,44 @@ jobs:
         uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Applique les migrations sur un PostgreSQL nu (auth et rôles Supabase remplacés par un stub),
+  # puis vérifie les contraintes et les accès du schéma.
+  db:
+    name: db
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v7
+      - name: Stub Supabase (schéma auth, rôles)
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/stub_supabase.sql
+      - name: Migrations
+        run: for f in supabase/migrations/*.sql; do echo "$f"; psql -v ON_ERROR_STOP=1 -q -f "$f"; done
+      - name: Tests du schéma
+        run: psql -q -f supabase/scripts/test_contraintes.sql
+      - name: Seed (deux fois, pour vérifier qu'il est rejouable)
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/seed.sql && psql -v ON_ERROR_STOP=1 -q -f supabase/seed.sql
+      - name: Tests du seed
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_seed.sql
+      - name: Tests du schéma avec le seed chargé
+        run: psql -q -f supabase/scripts/test_contraintes.sql
+      - name: Rejeu du cas de Sophie, du formulaire à la réservation (E7.3, E7.4)
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_bout_en_bout.sql
+      - name: Prestations souhaitées (E1.4)
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_prestations_souhaitees.sql
+      - name: Prestation indisponible après le dépôt (E7.4)
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_indisponible_apres_depot.sql
+      - name: Espace client et suivi de la demande
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/scripts/test_espace_client.sql

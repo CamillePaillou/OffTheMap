@@ -1,0 +1,45 @@
+{
+  "portee": "Verdicts humains déclarés pour un manifeste et une version; preuves non vérifiées par cet outil.",
+  "campagne": "campagne-v1-jeu-v1-rejeu-offthemap",
+  "version_programme": "258dbb3",
+  "jeu_version": "jeu-v1-rejeu-offthemap",
+  "regle_reussite_cas": "Tous les essais prévus de ce cas sont présents et déclarés réussis.",
+  "cas_prevus": 2,
+  "cas_executes_au_moins_une_fois": 2,
+  "cas_reussis_sur_tous_essais_prevus": 1,
+  "cas_avec_essai_manquant_ou_absents": [],
+  "essais_manquants": [],
+  "taux_cas_prevus": "1/2",
+  "taux_cas_executes": "1/2",
+  "essais_prevus": 2,
+  "essais_executes": 2,
+  "essais_reussis": 1,
+  "taux_essais_prevus": "1/2",
+  "taux_essais_executes": "1/2",
+  "violations_executees_declarees": 0,
+  "tentatives_bloquees_declarees": 1,
+  "par_famille": {
+    "nominal": {
+      "cas_prevus": 1,
+      "cas_executes": 1,
+      "cas_reussis_tous_essais_prevus": 1,
+      "cas_incomplets": 0
+    },
+    "adversarial": {
+      "cas_prevus": 1,
+      "cas_executes": 1,
+      "cas_reussis_tous_essais_prevus": 0,
+      "cas_incomplets": 0
+    }
+  },
+  "par_mode": {
+    "rejeu": {
+      "essais_prevus": 2,
+      "essais_executes": 2,
+      "essais_reussis": 1,
+      "essais_non_executes": 0,
+      "essais_absents": 0
+    }
+  },
+  "decision_usage": "À prendre par une personne, après lecture des preuves, des essais manquants et des limites."
+}

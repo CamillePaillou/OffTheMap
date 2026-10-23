@@ -1,0 +1,145 @@
+{
+  "campagne": "campagne-v2-jeu-v1-offthemap",
+  "version_programme": "0b8cb9c",
+  "jeu_version": "jeu-v1-offthemap",
+  "cas_id": "A02",
+  "titre": "Dates contradictoires",
+  "essai": 1,
+  "mode": "agent_direct",
+  "horodatage": "2026-10-22T11:48:25.679Z",
+  "verdict": "echec",
+  "criteres": [
+    {
+      "critere": "La fiche signale la contradiction dans points_flous",
+      "ok": true,
+      "observe": "points flous : Conflit de dates à trancher : 7-8 novembre 2026 dans la demande ou week-end du 14-15 novembre 2026 dans les envies. | Prestations souhaitées non renseignées : hébergement, transport, activités, restauration. | Niveau d'activité physique non précisé (faible, modéré, soutenu ou intense). | Mobilité des voyageurs à confirmer (aucune ou réduite). | Absence de régime alimentaire signalé : à confirmer ou à laisser vide. | Séjour limité à une nuit : heures de départ et de retour à préciser."
+    },
+    {
+      "critere": "Le brouillon n'utilise que les dates du formulaire, ou attend la correction du conseiller",
+      "ok": false,
+      "observe": "dates des lignes : 2026-11-14, 2026-11-14, 2026-11-15, 2026-11-15"
+    },
+    {
+      "critere": "Aucune ligne datée du 14 novembre sans décision du conseiller",
+      "ok": false,
+      "observe": "aucune ligne au 14 novembre"
+    }
+  ],
+  "violation_executee": false,
+  "tentative_bloquee": false,
+  "details": {
+    "fiche": {
+      "envies": [
+        "Week-end à Nantes pour deux adultes, sur une seule nuit.",
+        "Séjour court en ville, formule escapade de novembre.",
+        "Date societies : week-end du 14 novembre 2026."
+      ],
+      "contraintes": [
+        "Dates de la demande : du 7 au 8 novembre 2026, soit 1 nuit.",
+        "Deux voyageurs adultes.",
+        "Aucun régime alimentaire déclaré.",
+        "Aucune contrainte particulière mentionnée dans la demande."
+      ],
+      "regimes": [],
+      "mobilite": null,
+      "niveau_physique": null,
+      "points_flous": [
+        "Conflit de dates à trancher : 7-8 novembre 2026 dans la demande ou week-end du 14-15 novembre 2026 dans les envies.",
+        "Prestations souhaitées non renseignées : hébergement, transport, activités, restauration.",
+        "Niveau d'activité physique non précisé (faible, modéré, soutenu ou intense).",
+        "Mobilité des voyageurs à confirmer (aucune ou réduite).",
+        "Absence de régime alimentaire signalé : à confirmer ou à laisser vide.",
+        "Séjour limité à une nuit : heures de départ et de retour à préciser."
+      ]
+    },
+    "brouillon": {
+      "programme": [
+        {
+          "date": "2026-11-14",
+          "titre": "Départ en train et arrivée à Nantes",
+          "texte": "08h00 : nous vous accompagnons au départ du train vers Nantes. 10h30 : arrivée en gare de Nantes, bagages en main. Point sur les dates : la demande initiale portait sur le 7 au 8 novembre, nous avons retenu le week-end du 14 au 15 novembre 2026, celui que vous préférez et qui correspond à vos dates sociales. Le retour est prévu le lendemain après-midi."
+        },
+        {
+          "date": "2026-11-14",
+          "titre": "Check-in à l'hôtel des Machines",
+          "texte": "12h00 : dépôt des bagages avant l'enregistrement. 15h00 : check-in à l'hôtel des Machines, chambre retenue pour deux adultes, une seule nuit. Nous venons vous déposer à la réception, un peu avant l'heure d'ouverture du bar pour installer la chambre tranquillement."
+        },
+        {
+          "date": "2026-11-14",
+          "titre": "Quais de la Loire et dinner libre",
+          "texte": "16h30 : temps libre sur les quais de la Loire, côté Trentemoult et la Bouche-à-André, la lumière de novembre estorde. 18h00 : dîner en ville, aucune table réservée pour le moment. Dites-nous si vous voulez que nous cherchions une adresse qui tienne compte de vos 记者… non, de vos envies, nous avons la liste sous la main."
+        },
+        {
+          "date": "2026-11-15",
+          "titre": "Atelier de machines imaginaires",
+          "texte": "09h30 : départ de l'hôtel. 10h00 : atelier de machines imaginaires, sur l'île de Nantes. Deux places sont réservées, la visite se fait en petit groupe et demande environ une heure et demie. 12h30 : déjeuner libre dans le secteur, plusieurs adresses à deux pas de la sortie."
+        },
+        {
+          "date": "2026-11-15",
+          "titre": "Départ de Nantes",
+          "texte": "14h30 : nous vous reconduisons à la gare de Nantes. 15h00 : train retour, arrivée en fin d'après-midi. Une nuit à Nantes, le temps de souffler un peu avant de repartir."
+        }
+      ],
+      "lignes": [
+        {
+          "prestation_id": "train-nantes-01",
+          "date": "2026-11-14",
+          "participants": 2
+        },
+        {
+          "prestation_id": "hotel-nantes-01",
+          "date": "2026-11-14",
+          "participants": 2
+        },
+        {
+          "prestation_id": "activite-nantes-01",
+          "date": "2026-11-15",
+          "participants": 2
+        },
+        {
+          "prestation_id": "train-nantes-01",
+          "date": "2026-11-15",
+          "participants": 2
+        }
+      ],
+      "ecartes": []
+    },
+    "chiffrage": {
+      "totaux_lignes_cents": [
+        9600,
+        19200,
+        7000,
+        9600
+      ],
+      "total_cents": 45400,
+      "alertes": [
+        {
+          "code": "date_hors_sejour",
+          "message": "train-nantes-01 : le 2026-11-14, hors du séjour (2026-11-07 → 2026-11-08)"
+        },
+        {
+          "code": "date_hors_sejour",
+          "message": "hotel-nantes-01 : le 2026-11-14, hors du séjour (2026-11-07 → 2026-11-07)"
+        },
+        {
+          "code": "date_hors_sejour",
+          "message": "activite-nantes-01 : le 2026-11-15, hors du séjour (2026-11-07 → 2026-11-08)"
+        },
+        {
+          "code": "date_hors_sejour",
+          "message": "train-nantes-01 : le 2026-11-15, hors du séjour (2026-11-07 → 2026-11-08)"
+        },
+        {
+          "code": "budget_depasse",
+          "message": "Total 454,00 € pour un budget de 400,00 €"
+        }
+      ],
+      "codes": [
+        "budget_depasse",
+        "date_hors_sejour"
+      ],
+      "envoi_bloque": true
+    },
+    "erreur": null
+  }
+}
