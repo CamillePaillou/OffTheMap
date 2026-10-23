@@ -85,14 +85,24 @@ Les prestations (catalogue, disponibilités, options, réservations) viennent du
 - **Mode rejeu de l'agent (E11.3)** : `AGENT_MODE=rejeu` dans `.env` pour démontrer la vérification sans OpenRouter. Les réponses du modèle sont rejouées depuis une vérification enregistrée, le simulateur est appelé en direct, et l'écran affiche « Rejeu » (`docs/agent/contrat-agent.md`). `reel` (par défaut) rétablit le modèle.
 - Pannes que le simulateur ne produit pas : `SIMULATEUR_PANNE=delai` ou `erreur_serveur` dans `.env` (puis relancer l'application) ; l'adaptateur rend alors une erreur explicite et aucun prix. `aucune` rétablit le fonctionnement normal.
 
+## Modèle et agent
+
+- `LLM_PROVIDER=fake` (par défaut) : faux client sans réseau, suffisant pour l'application et les tests. `openrouter` appelle un vrai modèle.
+- Avec `openrouter`, chaque membre met **sa propre** clé dans `LLM_API_KEY` (`.env` seulement). Modèles gratuits uniquement : un identifiant sans `:free` est refusé. Modèle principal `recursive/flint-v1.0:free`, réserve `nvidia/nemotron-3-ultra-550b-a55b:free` (`minimax/minimax-m3.1-flash` n'est plus gratuit depuis le 22/10/2026).
+- `make essai-agent` vérifie que le modèle appelle bien l'outil avant toute campagne.
+- Campagne d'évaluation de l'agent (E11.2) : `evaluation/README.md` ; note d'usage : `evaluation/note-usage.md`.
+
 ## Variables d'environnement
 
 `.env.example` liste toutes les variables, sans valeur sensible. Toute nouvelle variable y est ajoutée dans la même PR.
 
-Les clés (LLM, service_role de Supabase, simulateur, mails) restent côté serveur : jamais de préfixe `NEXT_PUBLIC_`, qui les inlinerait dans le bundle du navigateur. Deux garde-fous en CI (E7.5) : gitleaks (job `secrets`) sur l'historique, et `lib/securite.test.ts`, qui vérifie qu'aucun fichier d'environnement autre que `.env.example` n'est versionné et qu'aucun composant client n'importe, même indirectement, un module lisant une variable serveur.
+Les clés (LLM, service_role de Supabase, simulateur) restent côté serveur : jamais de préfixe `NEXT_PUBLIC_`, qui les inlinerait dans le bundle du navigateur. Deux garde-fous en CI (E7.5) : gitleaks (job `secrets`) sur l'historique, et `lib/securite.test.ts`, qui vérifie qu'aucun fichier d'environnement autre que `.env.example` n'est versionné et qu'aucun composant client n'importe, même indirectement, un module lisant une variable serveur.
 
 ## Planning
 
+- Tableau kanban : projet GitHub « OffTheMap » (https://github.com/users/CamillePaillou/projects/2), une carte par issue, liée à sa PR.
+- Branches : chaque issue sur sa branche ; PR vers `dev` avec 1 approbation ; puis PR de `dev` vers `main` avec 1 approbation et les contrôles `ci` et `secrets` au vert. Les deux branches sont protégées : pas de push direct.
 - `docs/planning/pert.md` : PERT du sprint depuis le J1 (dates au plus tôt et au plus tard, marges, chemin critique), tiré des issues.
 - `docs/rituels/` : Sprint Goal, Definition of Done, Sprint Planning, dailies et rétrospectives.
 - `docs/recette/bout-en-bout.md` : le cas de Sophie rejoué du formulaire au dépôt (E7.3), et les écarts trouvés ; rejeu automatique dans `make test-db` et la CI.
+- `docs/livrables/` : dossier de conception (E12.1), fiche de changement CR-01 (E12.2), dossier de livraison (E12.3), note d'échec (E9.7).

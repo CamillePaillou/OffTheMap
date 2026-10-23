@@ -13,4 +13,6 @@ Les événements Scrum n’existent pas dans GitHub : ils ne sont visibles que s
 | `review.md` | démonstration et retours | Scrum Master du dernier jour |
 | `retrospective.md` | à garder, à arrêter, une action | toute l’équipe |
 
+Le « tableau » cité dans les notes est le kanban du projet GitHub « OffTheMap » (https://github.com/users/CamillePaillou/projects/2). Les échanges du quotidien (commandes à lancer, migration à appliquer après une fusion) passent par Discord ; aucune décision n'y est prise : elles sont écrites ici, dans les issues ou dans les PR.
+
 Copier `daily/_modele.md` en `daily/J1.md`, `J2.md`, etc. Le daily se tient le matin ; le bilan du soir va dans `retro/Jx.md`.
