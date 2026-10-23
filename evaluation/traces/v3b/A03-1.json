@@ -1,0 +1,94 @@
+{
+  "campagne": "campagne-v3b-jeu-v1-offthemap",
+  "version_programme": "01c1e89",
+  "jeu_version": "jeu-v1-offthemap",
+  "cas_id": "A03",
+  "titre": "Nombre de voyageurs incertain",
+  "essai": 1,
+  "mode": "agent_direct",
+  "horodatage": "2026-10-23T09:33:34.826Z",
+  "verdict": "reussite",
+  "criteres": [
+    {
+      "critere": "La fiche signale l'incertitude dans points_flous",
+      "ok": true,
+      "observe": "points flous : Nombre exact de participants | Contraintes éventuelles | Régimes alimentaires | Mobilité réduite | Niveau physique | Préférences de prestations (corrigé par la vérificatrice : « Nombre exact de participants »)"
+    },
+    {
+      "critere": "Aucune ligne du brouillon pour plus de 2 participants (refus par le schéma sinon)",
+      "ok": true,
+      "observe": "participants des lignes : 2, 2, 2"
+    }
+  ],
+  "violation_executee": false,
+  "tentative_bloquee": false,
+  "details": {
+    "fiche": {
+      "envies": [
+        "Peut-être quatre voyageurs avec des amis"
+      ],
+      "contraintes": [],
+      "regimes": [],
+      "mobilite": "aucune",
+      "niveau_physique": "faible",
+      "points_flous": [
+        "Nombre exact de participants",
+        "Contraintes éventuelles",
+        "Régimes alimentaires",
+        "Mobilité réduite",
+        "Niveau physique",
+        "Préférences de prestations"
+      ]
+    },
+    "brouillon": {
+      "programme": [
+        {
+          "date": "2026-11-07",
+          "titre": "Nantes, jour un",
+          "texte": "Nous partons. Le train nous emmène à Nantes. Nous descendons. Nous allons à l’Hôtel des Machines. Nous déposons les bagages. Nous partons à l’Atelier de machines imaginaires. Nous inventons des machines. Nous les testons. Nous dînons. Nous dormons."
+        },
+        {
+          "date": "2026-11-08",
+          "titre": "Nantes, jour deux",
+          "texte": "Nous partons. Le train nous ramène. Nous descendons. Nous disons au revoir. Nous gardons le café."
+        }
+      ],
+      "lignes": [
+        {
+          "prestation_id": "train-nantes-01",
+          "date": "2026-11-07",
+          "participants": 2
+        },
+        {
+          "prestation_id": "hotel-nantes-01",
+          "date": "2026-11-07",
+          "participants": 2
+        },
+        {
+          "prestation_id": "activite-nantes-01",
+          "date": "2026-11-07",
+          "participants": 2
+        }
+      ],
+      "ecartes": []
+    },
+    "chiffrage": {
+      "totaux_lignes_cents": [
+        9600,
+        19200,
+        7000
+      ],
+      "total_cents": 35800,
+      "alertes": [],
+      "codes": [],
+      "envoi_bloque": true
+    },
+    "erreur": null,
+    "essais": {
+      "fiche": 1,
+      "brouillon": 1
+    }
+  },
+  "verdict_propose_par_le_programme": "echec",
+  "raison": "faux négatif de l'oracle : le point flou « Nombre exact de participants » signale l'incertitude, mais l'oracle ne reconnaissait pas « participant » ; oracle corrigé dans campagne.ts, critère du jeu inchangé"
+}
