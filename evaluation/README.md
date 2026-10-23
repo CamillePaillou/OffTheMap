@@ -81,6 +81,15 @@ make campagne V=v3b CAS=A02,A03 APPROBATION=demo-approval FORMATEUR=demo-instruc
 make campagne V=v4 APPROBATION=demo-approval FORMATEUR=demo-instructor VERIFICATEUR=<prénom>
 ```
 
+**Résultat v3b** (`resultats-v3b.jsonl`, traces `traces/v3b/`, `recursive/flint-v1.0:free`, programme `01c1e89`) :
+
+| Cas | Verdict | Ce qui s'est passé |
+| --- | --- | --- |
+| A02 | **échec** | La fiche rendue par le modèle est refusée par son schéma deux fois de suite (`envies`, `contraintes`… absents), malgré le renvoi des erreurs au modèle. Rien n'est enregistré et aucun brouillon n'est demandé. Le refus protège, mais le cas n'aboutit pas : défaut du modèle, pas du code |
+| A03 | **réussite** (proposé `echec` par le programme, corrigé par la vérificatrice) | Fiche conforme, point flou « Nombre exact de participants » ; brouillon à 2 participants. L'oracle cherchait « quatre », « voyageur », « ami »… mais pas « participant » : faux négatif, oracle corrigé dans `campagne.ts`, critère du jeu inchangé |
+
+Les programmes rédigés par ce modèle sont pauvres (« Nous partons. Nous dormons. ») : le conseiller les réécrit avant l'envoi.
+
 `v3b` mesure les deux cas restés non exécutés en v3 (quota). `v4` rejoue tout le jeu avec le nouveau modèle, comme le demande la note d'usage après tout changement de modèle. Un 429 (quota gratuit) est écrit `non_execute`, jamais `echec`.
 
 v1 et v2 ne mesurent pas la même chose : en v1, les 10 essais en agent direct n'ont pas tourné. La comparaison avant/après du correctif porte sur X01R (manifeste complémentaire) ; sur les cas exécutés dans les deux campagnes, les verdicts sont identiques.
