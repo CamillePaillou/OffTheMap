@@ -23,7 +23,7 @@ const contexte = (surcharge: Partial<ContexteBrouillon['demande']> = {}): Contex
   },
   fiche: {
     envies: ['atelier créatif'], contraintes: ['sans voiture'], regimes: ['vegetarien'], mobilite: null, niveau_physique: 'faible', points_flous: [],
-    budget_reel_cents: 40000, date_debut_fixe: '2026-11-07', date_fin_fixe: '2026-11-08', nb_nuits_fixe: 1,
+    budget_reel_cents: 40000, destination_fixe: null, date_debut_fixe: '2026-11-07', date_fin_fixe: '2026-11-08', nb_nuits_fixe: 1,
   },
   catalogue: CATALOGUE,
 });
@@ -91,6 +91,33 @@ describe('obtenir un brouillon de proposition (E4.4)', () => {
     expect(JSON.parse(llm.appels[0]!.charge).demande.prestations_souhaitees).toEqual(['activite-nantes-01']);
     const ecrit = brouillons.ecrit as Extract<ResultatBrouillon, { lignes: unknown }>;
     expect(ecrit.lignes[0]!.prestation_id).toBe('activite-nantes-01');
+  });
+
+  it('une seule ligne d’hôtel pour un séjour de 3 nuits : la ligne porte les 3 nuits, le total suit', async () => {
+    const ctx = contexte();
+    Object.assign(ctx.fiche, { date_debut_fixe: '2026-11-07', date_fin_fixe: '2026-11-10', nb_nuits_fixe: 3, budget_reel_cents: 100000 });
+    const brouillons = new BrouillonsEnMemoire(ctx);
+    await genererBrouillon({ brouillons, llm: new FauxLlmClient({ brouillonRepondu: BROUILLON }) }, 'p1');
+    const ecrit = brouillons.ecrit as Extract<ResultatBrouillon, { lignes: unknown }>;
+    expect(ecrit.lignes.map((l) => [l.prestation_id, l.nb_nuits])).toEqual([['train-nantes-01', 1], ['hotel-nantes-01', 3], ['activite-nantes-01', 1]]);
+    expect(ecrit.total_cents).toBe((4800 + 9600 * 3 + 3500) * 2);
+    expect(ecrit.alertes.map((a) => a.code)).not.toContain('nuits_incoherentes');
+  });
+
+  it('destination fixée après l’entretien : elle remplace celle de la demande', async () => {
+    const ctx = contexte({ destination: null });
+    ctx.fiche.destination_fixe = 'Nantes';
+    const llm = new FauxLlmClient({ brouillonRepondu: BROUILLON });
+    const brouillons = new BrouillonsEnMemoire(ctx);
+    expect(await genererBrouillon({ brouillons, llm }, 'p1')).toMatchObject({ ok: true });
+    expect(JSON.parse(llm.appels[0]!.charge).demande.destination).toBe('Nantes');
+  });
+
+  it('sans destination (ni demandée ni fixée) : erreur, le modèle n’est pas appelé', async () => {
+    const llm = new FauxLlmClient({ brouillonRepondu: BROUILLON });
+    const brouillons = new BrouillonsEnMemoire(contexte({ destination: null }));
+    expect(await genererBrouillon({ brouillons, llm }, 'p1')).toMatchObject({ ok: false, statut: 'erreur', erreur: 'aucune destination : la fixer sur la fiche du dossier' });
+    expect(llm.appels).toHaveLength(0);
   });
 
   it('budget réel dépassé : alerte calculée par le code', async () => {

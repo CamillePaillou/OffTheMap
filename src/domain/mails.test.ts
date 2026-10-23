@@ -15,8 +15,8 @@ import { resumeEvenement } from './resumeEvenement';
 
 const SEJOUR: Sejour = { nom: 'Inès Martin', destination: 'Nantes', date_debut: '2026-11-07', date_fin: '2026-11-08', conseiller: 'Camille (démo)' };
 const NBSP = ' ';
-const ligne = (nom: string, statut: LigneMail['statut'], prix: number | null, participants = 2): LigneMail =>
-  ({ nom, date: '2026-11-07', participants, statut, prix_confirme_cents: prix, verifie_le: prix === null ? null : '2026-10-21T14:42:00.000Z' });
+const ligne = (nom: string, statut: LigneMail['statut'], prix: number | null, participants = 2, nb_nuits = 1): LigneMail =>
+  ({ nom, date: '2026-11-07', participants, nb_nuits, statut, prix_confirme_cents: prix, verifie_le: prix === null ? null : '2026-10-21T14:42:00.000Z' });
 
 describe('mails modèles (E5.4)', () => {
   it('quatre modèles fixes', () => {
@@ -51,6 +51,12 @@ describe('mails modèles (E5.4)', () => {
     expect(m.corps).toContain(`- 7 novembre 2026 · Atelier · 2 pers. × 40,00${NBSP}€ = 80,00${NBSP}€ (prix vérifié le 21/10 à 16 h 42)`);
     expect(m.corps).toContain(`Total pour le groupe : 176,00${NBSP}€`);
     expect(m.corps).not.toContain('Hôtel');
+  });
+
+  it('proposition : un hôtel de plusieurs nuits compte toutes ses nuits', () => {
+    const m = mailProposition(SEJOUR, [ligne('Hôtel', 'confirme', 9600, 2, 3)]);
+    expect(m.corps).toContain(`- 7 novembre 2026 · Hôtel · 2 pers. × 3 nuits × 96,00${NBSP}€ = 576,00${NBSP}€`);
+    expect(m.corps).toContain(`Total pour le groupe : 576,00${NBSP}€`);
   });
 
   it('proposition : refusée si un prix n’est pas vérifié — rien ne part avec un prix non vérifié', () => {

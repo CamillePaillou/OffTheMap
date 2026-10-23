@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import type { StatutLigne, StatutVerification } from '@/types';
+import { AValider, ZONE_A_VALIDER } from '../../_composants/a-valider';
 import { accepter, envoyer, indisponible, remplacer, retirer, revoir, saisirTarif, type EtatAction } from './tarifs';
 
 const champ = 'rounded-lg border-[1.5px] border-ballast bg-carte px-2 py-1';
@@ -171,13 +172,17 @@ export function ActionsLigne({ propositionId, ligneId, statut, figee, apresDepot
 }
 
 /** Envoi (E5.1) : le bouton reste désactivé tant qu'une ligne est à vérifier ou indisponible, ou qu'une alerte bloque. */
-export function PanneauEnvoi({ propositionId, bloquants }: { propositionId: string; bloquants: string[] }) {
+export function PanneauEnvoi({ propositionId, bloquants, aValider = false }: { propositionId: string; bloquants: string[]; aValider?: boolean }) {
   const [etat, action, enCours] = useActionState<EtatAction, FormData>(() => envoyer(propositionId), {});
   const raisons = etat.bloquants ?? bloquants;
   const bloque = raisons.length > 0;
+  const attendu = aValider && !bloque && !etat.envoyee;
   return (
-    <form action={action} className="bo-carte flex flex-col gap-3 p-5">
-      <h2 className="text-xl">Envoi au client</h2>
+    <form id="envoi" action={action} className={`bo-carte flex flex-col gap-3 p-5 ${attendu ? ZONE_A_VALIDER : 'scroll-mt-6'}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-xl">Envoi au client</h2>
+        {attendu && <AValider />}
+      </div>
       <button
         type="submit"
         disabled={bloque || enCours}

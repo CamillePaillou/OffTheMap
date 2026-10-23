@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { FicheIA, schemaBrouillon } from '../../../types';
 import type { CodeAlerte } from '../../../types';
-import { chiffrer, ecartVerification, ErreurChiffrage, formaterMontant, valeursDeReference } from './chiffrer';
+import { chiffrer, ecartVerification, ErreurChiffrage, formaterMontant, nuitsDesHebergements, valeursDeReference } from './chiffrer';
 import type { EntreeChiffrage, LigneAChiffrer } from './chiffrer';
 
 interface Cas { id: string; titre: string; entree: EntreeChiffrage; attendu: { totaux_lignes_cents: number[]; total_cents: number; alertes: CodeAlerte[] } }
@@ -183,5 +183,45 @@ describe('un montant dans le texte généré est refusé', () => {
       const fiche = { envies: [texte], contraintes: [], regimes: [], mobilite: null, niveau_physique: null, points_flous: [] };
       expect(FicheIA.safeParse(fiche).success).toBe(false);
     }
+  });
+});
+
+describe('nuits d’une ligne d’hébergement', () => {
+  const hotel = (e: EntreeChiffrage) => ligne(e, 'hotel-nantes-01');
+
+  it('total de la ligne = prix × participants × nuits ; les nuits couvertes comptent pour la cohérence', () => {
+    const e = { ...casA(), date_fin: '2026-11-10', nb_nuits: 3 };
+    hotel(e).nb_nuits = 3;
+    const r = chiffrer(e);
+    expect(r.totaux_lignes_cents[1]).toBe(9600 * 2 * 3);
+    expect(r.codes).not.toContain('nuits_incoherentes');
+  });
+
+  it('une dernière nuit au-delà de la veille du départ est hors du séjour', () => {
+    const e = casA(); // départ le 7, retour le 8 : une nuit
+    hotel(e).nb_nuits = 2;
+    expect(chiffrer(e).alertes).toContainEqual(expect.objectContaining({ code: 'date_hors_sejour', message: expect.stringContaining('du 2026-11-07 au 2026-11-08') }));
+  });
+
+  it('plusieurs nuits pour une activité, ou des nuits invalides : la proposition n’est pas chiffrée', () => {
+    for (const [prestation, nuits] of [['activite-nantes-01', 2], ['hotel-nantes-01', 0], ['hotel-nantes-01', 15], ['hotel-nantes-01', 1.5]] as const) {
+      const e = casA();
+      ligne(e, prestation).nb_nuits = nuits;
+      expect(() => chiffrer(e)).toThrowError(ErreurChiffrage);
+    }
+  });
+
+  it('brouillon : chaque hôtel court jusqu’au prochain, ou jusqu’à la veille du départ', () => {
+    const l = (type: 'hebergement' | 'activite' | 'transport', date: string) => ({ type, date });
+    // une seule ligne d'hôtel pour 5 nuits
+    expect(nuitsDesHebergements([l('transport', '2026-11-07'), l('hebergement', '2026-11-07'), l('activite', '2026-11-08')], '2026-11-12')).toEqual([1, 5, 1]);
+    // changement d'hôtel le 9 : 2 nuits puis 3
+    expect(nuitsDesHebergements([l('hebergement', '2026-11-09'), l('hebergement', '2026-11-07')], '2026-11-12')).toEqual([3, 2]);
+    // au moins une nuit, même placé le jour du départ (l'alerte date_hors_sejour le signale)
+    expect(nuitsDesHebergements([l('hebergement', '2026-11-12')], '2026-11-12')).toEqual([1]);
+  });
+
+  it('écart revérifié sur une ligne de plusieurs nuits', () => {
+    expect(ecartVerification(9600, 9900, 2, 3)).toEqual({ par_personne_cents: 300, ligne_cents: 1800 });
   });
 });

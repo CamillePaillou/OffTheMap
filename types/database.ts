@@ -207,6 +207,7 @@ export type Database = {
           contraintes: string[];
           cree_le: string;
           date_debut_fixe: string | null;
+          destination_fixe: string | null;
           date_fin_fixe: string | null;
           decision: Database["public"]["Enums"]["decision_tri"] | null;
           demande_id: string;
@@ -229,6 +230,7 @@ export type Database = {
           contraintes?: string[];
           cree_le?: string;
           date_debut_fixe?: string | null;
+          destination_fixe?: string | null;
           date_fin_fixe?: string | null;
           decision?: Database["public"]["Enums"]["decision_tri"] | null;
           demande_id: string;
@@ -250,6 +252,7 @@ export type Database = {
           contraintes?: string[];
           cree_le?: string;
           date_debut_fixe?: string | null;
+          destination_fixe?: string | null;
           date_fin_fixe?: string | null;
           decision?: Database["public"]["Enums"]["decision_tri"] | null;
           demande_id?: string;
@@ -364,6 +367,7 @@ export type Database = {
           reponse_confirmation: Json | null;
           reponse_annulation: Json | null;
           reponse_option: Json | null;
+          nuits_simulateur: Json;
           reservation_id_simulateur: string | null;
           statut: Database["public"]["Enums"]["statut_option"];
           verification_id: string;
@@ -387,6 +391,7 @@ export type Database = {
           reponse_confirmation?: Json | null;
           reponse_annulation?: Json | null;
           reponse_option?: Json | null;
+          nuits_simulateur?: Json;
           reservation_id_simulateur?: string | null;
           statut?: Database["public"]["Enums"]["statut_option"];
           verification_id: string;
@@ -409,6 +414,7 @@ export type Database = {
           reponse_confirmation?: Json | null;
           reponse_annulation?: Json | null;
           reponse_option?: Json | null;
+          nuits_simulateur?: Json;
           reservation_id_simulateur?: string | null;
           statut?: Database["public"]["Enums"]["statut_option"];
           verification_id?: string;
@@ -511,6 +517,7 @@ export type Database = {
           date: string;
           id: string;
           participants: number;
+          nb_nuits: number;
           prestation_id: string;
           prix_confirme_cents: number | null;
           prix_unitaire_catalogue_cents: number;
@@ -527,6 +534,7 @@ export type Database = {
           date: string;
           id?: string;
           participants: number;
+          nb_nuits?: number;
           prestation_id: string;
           prix_confirme_cents?: number | null;
           prix_unitaire_catalogue_cents: number;
@@ -542,6 +550,7 @@ export type Database = {
           date?: string;
           id?: string;
           participants?: number;
+          nb_nuits?: number;
           prestation_id?: string;
           prix_confirme_cents?: number | null;
           prix_unitaire_catalogue_cents?: number;
@@ -718,7 +727,7 @@ export type Database = {
       enregistrer_rappel: { Args: { p_proposition: string; p_jour: number }; Returns: number };
       abandonner_dossier: { Args: { p_proposition: string; p_conseiller: string }; Returns: number };
       enregistrer_accord: {
-        Args: { p_ligne: string; p_conseiller: string; p_accord_le: string; p_expire_le: string; p_prix_cents: number };
+        Args: { p_ligne: string; p_conseiller: string; p_accord_le: string; p_expire_le: string; p_prix_cents: number; p_source_prix?: Database["public"]["Enums"]["source_prix"] };
         Returns: string;
       };
       consommer_accord: { Args: { p_option: string; p_maintenant: string }; Returns: boolean };
@@ -730,6 +739,7 @@ export type Database = {
           p_expire_le: string | null;
           p_reponse: Json;
           p_raison: string | null;
+          p_nuits?: Json;
         };
         Returns: undefined;
       };
@@ -741,6 +751,7 @@ export type Database = {
           p_reservation_id_simulateur: string | null;
           p_reponse: Json;
           p_raison: string | null;
+          p_nuits?: Json;
         };
         Returns: Database["public"]["Enums"]["statut_proposition"];
       };
@@ -774,13 +785,13 @@ export type Database = {
         Returns: Database["public"]["Enums"]["statut_proposition"];
       };
       ajouter_ligne: {
-        Args: { p_proposition: string; p_prestation: string; p_date: string; p_participants: number; p_conseiller: string };
+        Args: { p_proposition: string; p_prestation: string; p_date: string; p_participants: number; p_conseiller: string; p_nb_nuits?: number };
         Returns: string;
       };
       ajuster_nuits_sejour: { Args: { p_proposition: string; p_delta: number; p_conseiller: string }; Returns: Json };
       modifier_budget_reel: { Args: { p_proposition: string; p_budget_cents: number; p_conseiller: string }; Returns: undefined };
       modifier_ligne: {
-        Args: { p_ligne: string; p_conseiller: string; p_date?: string; p_participants?: number };
+        Args: { p_ligne: string; p_conseiller: string; p_date?: string; p_participants?: number; p_nb_nuits?: number };
         Returns: Database["public"]["Enums"]["statut_proposition"];
       };
       trier_dossier: {
@@ -798,6 +809,8 @@ export type Database = {
         Returns: Database["public"]["Enums"]["statut_dossier"];
       };
       demarrer_brouillon: { Args: { p_dossier: string; p_conseiller: string }; Returns: string };
+      destination_dossier: { Args: { p_dossier: string }; Returns: string | null };
+      verifier_nuits: { Args: { p_prestation: string; p_nb_nuits: number }; Returns: undefined };
       creer_version_suivante: { Args: { p_proposition: string; p_conseiller: string; p_motif: string; p_resultat: Json }; Returns: string };
       terminer_brouillon: {
         Args: { p_proposition: string; p_resultat: Json };
@@ -829,8 +842,8 @@ export type Database = {
           p_budget_reel_cents: number | null;
           p_date_debut_fixe: string | null;
           p_date_fin_fixe: string | null;
-          p_nb_nuits_fixe: number | null;
           p_notes_conseiller: string | null;
+          p_destination_fixe?: string | null;
         };
         Returns: undefined;
       };

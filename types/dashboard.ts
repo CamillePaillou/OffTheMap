@@ -5,7 +5,7 @@
  * Principes : montants en centimes ; valeur indisponible = null, jamais 0 ; dates en UTC ISO-8601.
  */
 import { z } from 'zod';
-import { CODES_ALERTE } from './chiffrage';
+import { CODES_ALERTE, REGLES_CHIFFRAGE } from './chiffrage';
 import {
   ARRETS_AGENT, AUTEURS_EVENEMENT, DECISIONS_TRI, LIMITES, MOBILITES, NIVEAUX_PHYSIQUES, REGIMES, SOURCES_PRIX, STATUTS_DOSSIER,
   STATUTS_LIGNE, STATUTS_PROPOSITION, STATUTS_VERIFICATION, TRANCHES_AGE, TYPES_EVENEMENT, TYPES_PRESTATION,
@@ -107,6 +107,7 @@ export const DetailDossier = z.object({
     niveau_physique: z.enum(NIVEAUX_PHYSIQUES).nullable(),
     // corrigé après l'entretien ; jamais écrasé par une régénération
     budget_reel_cents: centsPositif.nullable(),
+    destination_fixe: z.string().nullable(), // null : celle de la demande, ou aucune
     dates_fixes: z.object({ debut: dateJour.nullable(), fin: dateJour.nullable(), nb_nuits: z.number().int().min(0).max(LIMITES.nuitsMax).nullable() }).strict(),
     notes_conseiller: z.string().nullable(),
     decision: z.enum(DECISIONS_TRI).nullable(),
@@ -134,6 +135,7 @@ export const LigneProposition = z.object({
   }).strict(),
   date: dateJour,
   participants: z.number().int().min(1).max(LIMITES.participantsMax),
+  nb_nuits: z.number().int().min(1).max(REGLES_CHIFFRAGE.nuitsMaxParLigne), // hébergement : nuits depuis `date` ; 1 sinon
   prix_unitaire_catalogue_cents: cents,
   prix_confirme: z.object({ montant_cents: cents, source: z.enum(SOURCES_PRIX), le: instant, par: z.string().min(1) }).strict().nullable(),
   statut: z.enum(STATUTS_LIGNE),
@@ -150,9 +152,10 @@ export const LigneProposition = z.object({
   .refine((l) => ['a_verifier', 'indisponible', 'remplacee', 'retiree'].includes(l.statut) || l.prix_confirme !== null, {
     message: 'une ligne confirmée ou réservée a un prix confirmé',
   })
-  .refine((l) => l.total_ligne_cents === (l.prix_confirme?.montant_cents ?? l.prix_unitaire_catalogue_cents) * l.participants, {
-    message: 'total de ligne = (prix confirmé, sinon catalogue) × participants',
-  });
+  .refine((l) => l.total_ligne_cents === (l.prix_confirme?.montant_cents ?? l.prix_unitaire_catalogue_cents) * l.participants * l.nb_nuits, {
+    message: 'total de ligne = (prix confirmé, sinon catalogue) × participants × nuits',
+  })
+  .refine((l) => l.prestation.type === 'hebergement' || l.nb_nuits === 1, { message: 'seul un hébergement compte plusieurs nuits' });
 export type LigneProposition = z.infer<typeof LigneProposition>;
 
 export const Proposition = z.object({

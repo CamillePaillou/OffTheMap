@@ -67,7 +67,10 @@ export async function poser(_etat: EtatAccord, formulaire: FormData): Promise<Et
     });
     // même en échec : l'accord a pu être consommé, la page ne doit plus le proposer
     revalidatePath(`/conseiller/propositions/${proposition.id}/accord`);
-    if (!resultat.ok) return { erreur: MESSAGES_POSE_OPTION[resultat.raison] ?? 'La pose de l’option a échoué. Consultez la trace.' };
+    if (!resultat.ok) {
+      const message = MESSAGES_POSE_OPTION[resultat.raison] ?? 'La pose de l’option a échoué. Consultez la trace.';
+      return { erreur: resultat.detail ? `${message} ${resultat.detail}` : message };
+    }
     return { ok: true };
   } catch {
     return { erreur: 'Le prestataire n’a pas pu être joint. Regardez la trace avant de recommencer.' };

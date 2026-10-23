@@ -4,8 +4,8 @@
  * et une confirmation explicite (case cochée). La clé n'est jamais journalisée ni stockée ; l'agent n'y a pas accès.
  * La réponse du simulateur est vérifiée avant d'être enregistrée, et chaque refus est tracé.
  */
-import type { AccordsRepository } from '../ports/accords';
-import type { Prestataires } from '../ports/prestataires';
+import { nuitsDeLaDemarche, type AccordsRepository } from '../ports/accords';
+import type { Prestataires, ReservationConfirmee } from '../ports/prestataires';
 
 export interface DemandeAnnulation {
   conseiller: { id: string; nom: string };
@@ -39,22 +39,31 @@ export async function annulerReservation(repo: AccordsRepository, prestataires: 
   const reservation = await repo.reservationConfirmee(d.ligneId);
   if (!reservation?.reservation_id_simulateur || reservation.statut !== 'confirmee') return refuser('reservation_introuvable');
 
-  const resultat = await prestataires.annulerReservation({
-    reservation_id: reservation.reservation_id_simulateur, cle_approbation: d.cleApprobation, approuve_par: d.conseiller.nom,
-  });
-  if (!resultat.ok) {
-    // Délai ou erreur : on ne sait pas si l'annulation a eu lieu. La réservation reste « confirmée » chez nous
-    // et la tentative est tracée ; le conseiller vérifie avant de réessayer.
-    const raison = resultat.panne === 'refus' ? 'simulateur_refus' : resultat.panne === 'delai' ? 'simulateur_delai' : 'simulateur_erreur';
-    await repo.terminerAnnulation(reservation.option_id, auteur, { ok: false, raison, reponse_serveur: resultat });
-    return { ok: false, raison, reponse_serveur: resultat };
+  // Un hébergement de N nuits a N réservations chez le simulateur : toutes sont annulées, dans l'ordre.
+  const annulees: ReservationConfirmee[] = [];
+  const reponseServeur = (derniere?: unknown) => {
+    const toutes = derniere === undefined ? annulees : [...annulees, derniere];
+    return toutes.length === 1 ? toutes[0] : toutes; // une nuit : la réponse telle quelle, comme avant
+  };
+  for (const nuit of nuitsDeLaDemarche(reservation)) {
+    const resultat = await prestataires.annulerReservation({
+      reservation_id: nuit.reservation_id ?? reservation.reservation_id_simulateur, cle_approbation: d.cleApprobation, approuve_par: d.conseiller.nom,
+    });
+    if (!resultat.ok) {
+      // Délai ou erreur : on ne sait pas si l'annulation a eu lieu. La réservation reste « confirmée » chez nous
+      // et la tentative est tracée (avec les nuits déjà annulées) ; le conseiller vérifie avant de réessayer.
+      const raison = resultat.panne === 'refus' ? 'simulateur_refus' : resultat.panne === 'delai' ? 'simulateur_delai' : 'simulateur_erreur';
+      await repo.terminerAnnulation(reservation.option_id, auteur, { ok: false, raison, reponse_serveur: reponseServeur(resultat) });
+      return { ok: false, raison, reponse_serveur: reponseServeur(resultat) };
+    }
+    const reponse = resultat.valeur;
+    if (reponse.reservation_id !== (nuit.reservation_id ?? reservation.reservation_id_simulateur) || reponse.statut !== 'annulee') {
+      await repo.terminerAnnulation(reservation.option_id, auteur, { ok: false, raison: 'reponse_serveur_incoherente', reponse_serveur: reponseServeur(reponse) });
+      return { ok: false, raison: 'reponse_serveur_incoherente', reponse_serveur: reponseServeur(reponse) };
+    }
+    annulees.push(reponse);
   }
-
-  const reponse = resultat.valeur;
-  if (reponse.reservation_id !== reservation.reservation_id_simulateur || reponse.statut !== 'annulee') {
-    await repo.terminerAnnulation(reservation.option_id, auteur, { ok: false, raison: 'reponse_serveur_incoherente', reponse_serveur: reponse });
-    return { ok: false, raison: 'reponse_serveur_incoherente', reponse_serveur: reponse };
-  }
-  await repo.terminerAnnulation(reservation.option_id, auteur, { ok: true, reservation_id_simulateur: reponse.reservation_id, reponse_serveur: reponse });
-  return { ok: true, reservation_id: reponse.reservation_id, reponse_serveur: reponse };
+  const premiere = annulees[0]!;
+  await repo.terminerAnnulation(reservation.option_id, auteur, { ok: true, reservation_id_simulateur: premiere.reservation_id, reponse_serveur: reponseServeur() });
+  return { ok: true, reservation_id: premiere.reservation_id, reponse_serveur: reponseServeur() };
 }

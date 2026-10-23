@@ -1,6 +1,6 @@
 # Règles de chiffrage (E4.1)
 
-**Contrat associé** : `types/chiffrage.ts`. Exemples chiffrés, à reprendre tels quels dans les tests d'E4.2 : `docs/specs/chiffrage-exemples.json`. **Fonction de chiffrage (E4.2)** : `chiffrer` dans `src/domain/chiffrage/chiffrer.ts`, avec `valeursDeReference` (section 3), `ecartVerification` et `formaterMontant` ; ses tests rejouent les huit exemples. Les choix faits sans le client sont listés en section 5 et inscrits au registre des décisions.
+**Contrat associé** : `types/chiffrage.ts`. Exemples chiffrés, à reprendre tels quels dans les tests d'E4.2 : `docs/specs/chiffrage-exemples.json`. **Fonction de chiffrage (E4.2)** : `chiffrer` dans `src/domain/chiffrage/chiffrer.ts`, avec `valeursDeReference` (section 3), `ecartVerification` et `formaterMontant` ; ses tests rejouent les neuf exemples. Les choix faits sans le client sont listés en section 5 et inscrits au registre des décisions.
 
 ## 1. Principes
 
@@ -15,8 +15,8 @@
 | Ligne | Une prestation, une date, un nombre de participants (format du simulateur). |
 | Transport | Le simulateur vend un **aller-retour** par personne : une seule ligne, à la date du départ. Pas de ligne pour le retour. |
 | Prix unitaire utilisé | `prix_confirme_cents` s'il existe, sinon `prix_unitaire_catalogue_cents` (copie figée à la création). |
-| Total de ligne | prix unitaire utilisé × participants. Identique à la colonne calculée `total_ligne_cents` en base. |
-| Hébergement | Prix par personne **et par nuit** : une ligne par nuit. Deux nuits = deux lignes. |
+| Total de ligne | prix unitaire utilisé × participants × nuits. Identique à la colonne calculée `total_ligne_cents` en base. |
+| Hébergement | Prix par personne **et par nuit**. Une ligne porte ses nuits (`nb_nuits`, 1 à 14) à partir de sa date (première nuit) : cinq nuits dans le même hôtel = une ligne de 5 nuits. Les autres types ont toujours 1 nuit. Le brouillon calcule les nuits : chaque hôtel court jusqu'au prochain hôtel, ou jusqu'à la veille du départ. À la réservation, le simulateur ne posant qu'une date à la fois, une ligne de N nuits donne N options puis N réservations (une seule démarche, un seul accord). |
 | Total de la proposition | Somme des totaux de ligne, lignes `remplacee`, `retiree` (E7.4) et `indisponible` exclues : une prestation qu'on ne peut pas vendre n'entre pas dans le prix. Leur total de ligne reste calculé, comme en base. Une ligne indisponible bloque de toute façon l'envoi. |
 | Budget | **Global, pour tout le groupe**, jamais par personne. Le formulaire demande « Budget total pour tout le groupe ». Le total de la proposition est comparé tel quel à ce budget. |
 | Marge | **Aucune** (décidé). |
@@ -34,15 +34,15 @@ Le code écrit les alertes dans `propositions.alertes`. Une alerte **bloquante**
 | --- | --- | --- |
 | `capacite_depassee` | participants > capacité **du catalogue** (valeur fixe). Les places réellement restantes, qui baissent avec les options et les réservations, sont vérifiées par l'agent, pas par le chiffrage | oui |
 | `participants_superieurs_voyageurs` | participants > nombre de voyageurs du dossier | oui |
-| `date_hors_sejour` | date hors du séjour fixé. Activité et transport : du premier au dernier jour inclus. Hébergement : du premier jour à la veille du départ | oui |
+| `date_hors_sejour` | date hors du séjour fixé. Activité et transport : du premier au dernier jour inclus. Hébergement : toutes ses nuits, du premier jour à la veille du départ | oui |
 | `prestation_inactive` | prestation retirée du catalogue (`actif` faux) | oui |
-| `nuits_incoherentes` | nombre de dates d'hébergement distinctes ≠ nuits de référence | non |
+| `nuits_incoherentes` | nombre de nuits d'hébergement distinctes (toutes les nuits de chaque ligne) ≠ nuits de référence | non |
 | `budget_depasse` | total > budget de référence | non |
 | `budget_proche` | total ≥ 90 % du budget de référence et non dépassé (seuil choisi par l'équipe) | non |
 
 - **Budget de référence** : `budget_reel_cents` de la fiche ; s'il est vide, `budget_annonce_cents` de la demande ; s'il n'y en a aucun, pas d'alerte de budget.
 - **Séjour de référence** : dates fixes de la fiche ; sinon dates de la demande.
-- **Nuits de référence** : `nb_nuits_fixe` de la fiche ; sinon `nb_nuits` de la demande.
+- **Nuits de référence** : `nb_nuits_fixe` de la fiche (calculé depuis les dates fixes) ; sinon `nb_nuits` de la demande (calculé depuis ses dates).
 - Les contrôles portent sur toutes les lignes sauf `remplacee`, y compris les lignes indisponibles.
 - Une ligne « à vérifier » n'est pas une alerte : elle bloque déjà l'envoi par son statut.
 
@@ -60,6 +60,7 @@ Catalogue du simulateur : train Nantes 48 €, hôtel Nantes 96 € par nuit, at
 | F | 2 adultes, du 7 au 9 nov., 2 nuits fixées, budget 400 € : train, une seule ligne d'hôtel (le 7), atelier | 358,00 € | `nuits_incoherentes` |
 | G | 4 adultes, Lyon, sans budget : train et jeu de piste | 364,00 € | aucune |
 | H | Comme A, atelier indisponible | 288,00 € | aucune (l'atelier sort du total ; l'envoi reste bloqué par son statut) |
+| I | Comme C, mais une seule ligne d'hôtel le 7, de 2 nuits | 550,00 € | `budget_depasse` |
 
 Le fichier JSON donne l'entrée complète et le résultat attendu de chaque cas. Un test vérifie que ses totaux et ses alertes sont cohérents ; E4.2 doit le faire passer à sa fonction.
 

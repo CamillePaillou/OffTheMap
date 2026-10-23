@@ -46,6 +46,7 @@ export async function demanderChangement(
     prestation_id: l.prestation_id,
     date: l.date,
     participants: l.participants,
+    nb_nuits: l.nb_nuits,
     prix_unitaire_catalogue_cents: l.prestation.prix_unitaire_cents,
   }));
 

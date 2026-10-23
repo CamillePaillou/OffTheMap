@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { versProposition, versVerificationLigne, type PropositionBase, type VerificationBase } from './versPayloadsPropositions';
 
 const ligne = (surcharge: Partial<PropositionBase['proposition_lignes'][number]> = {}): PropositionBase['proposition_lignes'][number] => ({
-  id: 'a1e00000-0000-4000-8000-000009000001', date: '2026-11-07', participants: 2, prix_unitaire_catalogue_cents: 3500,
+  id: 'a1e00000-0000-4000-8000-000009000001', date: '2026-11-07', participants: 2, nb_nuits: 1, prix_unitaire_catalogue_cents: 3500,
   prix_confirme_cents: null, source: null, confirme_le: null, statut: 'a_verifier', total_ligne_cents: 7000, cree_le: '2026-10-14T08:00:00+00:00',
   prestations: { id: 'activite-nantes-01', nom: 'Atelier de machines imaginaires', type: 'activite', capacite: 10, actif: true },
   profils: null,

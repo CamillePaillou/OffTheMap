@@ -9,7 +9,7 @@ const ALICE = 'alice';
 // Version 2 créée par E6.1 après « deux nuits au lieu d'une » : 2 adultes à Nantes, prix confirmés ; séjour du 7 au 9.
 function ligne(id: string, prestation_id: string, type: LigneEnMemoire['type'], prix: number): LigneEnMemoire {
   return {
-    id, prestation_id, type, capacite: 8, actif: true, date: '2026-11-07', participants: 2, prix_unitaire_catalogue_cents: prix,
+    id, prestation_id, type, capacite: 8, actif: true, date: '2026-11-07', participants: 2, nb_nuits: 1, prix_unitaire_catalogue_cents: prix,
     prix_confirme_cents: prix, statut: 'confirme', source: 'agent', confirme_par: ALICE, verification: null,
   };
 }
@@ -19,7 +19,7 @@ let p: PropositionEnMemoire;
 beforeEach(() => {
   repo = new TarifsEnMemoire();
   p = {
-    id: P, statut: 'prete', voyageurs: 2, date_debut: '2026-11-07', date_fin: '2026-11-09', nb_nuits: 2,
+    id: P, statut: 'prete', destination: 'Nantes', voyageurs: 2, date_debut: '2026-11-07', date_fin: '2026-11-09', nb_nuits: 2,
     budget_reference_cents: 60000, total_cents: 35800, alertes: [], envoyee_par: null,
     lignes: [
       ligne('train', 'train-nantes-01', 'transport', 4800),
@@ -196,8 +196,22 @@ describe('changer la date ou les participants d’une ligne (E6.6)', () => {
     expect(p.lignes[0]).toMatchObject({ participants: 3, statut: 'a_verifier', prix_confirme_cents: null });
   });
 
-  it('il faut changer la date ou les participants', () => {
-    expect(schemaModification.safeParse({ date: '', participants: '' }).success).toBe(false);
+  it('nuits d’un hôtel : la ligne repasse à vérifier, son total suit (prix × participants × nuits)', async () => {
+    expect(await modifierLigne(repo, { ligneId: 'hotel', conseillerId: ALICE, date: '', participants: '', nbNuits: '2' })).toMatchObject({ ok: true });
+    expect(p.lignes[1]).toMatchObject({ nb_nuits: 2, statut: 'a_verifier', prix_confirme_cents: null });
+    expect(p.total_cents).toBe(4800 * 2 + 9600 * 2 * 2 + 3500 * 2);
+    expect(p.alertes.map((a) => a.code)).not.toContain('nuits_incoherentes'); // séjour de 2 nuits, couvert par la ligne
+  });
+
+  it('plusieurs nuits pour une activité : refusé, rien ne change', async () => {
+    expect(await modifierLigne(repo, { ligneId: 'atelier', conseillerId: ALICE, date: '', participants: '', nbNuits: '2' })).toEqual({ ok: false, raison: 'nuits_refusees' });
+    expect(p.lignes[2]).toMatchObject({ nb_nuits: 1, statut: 'confirme' });
+  });
+
+  it('il faut changer la date, les participants ou les nuits', () => {
+    expect(schemaModification.safeParse({ date: '', participants: '', nbNuits: '' }).success).toBe(false);
+    expect(schemaModification.parse({ date: '', participants: '', nbNuits: '3' })).toMatchObject({ nbNuits: 3 });
+    expect(schemaModification.safeParse({ date: '', participants: '', nbNuits: '15' }).success).toBe(false);
     expect(schemaModification.parse({ date: '2026-11-08', participants: '' })).toEqual({ date: '2026-11-08', participants: undefined });
   });
 });

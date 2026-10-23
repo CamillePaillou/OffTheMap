@@ -11,7 +11,7 @@ const SELECT_LISTE = `id, statut, cree_le,
 
 const SELECT_DETAIL = `id, statut, cree_le,
   demandes (version, remplacee_le, nom, email, destination, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents, envies, contraintes, prestations_souhaitees,
-    fiches (envies, contraintes, points_flous, regimes, mobilite, niveau_physique, budget_reel_cents, date_debut_fixe, date_fin_fixe,
+    fiches (envies, contraintes, points_flous, regimes, mobilite, niveau_physique, budget_reel_cents, destination_fixe, date_debut_fixe, date_fin_fixe,
       nb_nuits_fixe, notes_conseiller, decision, validee_le, erreur_generation)),
   propositions (id, version, statut, total_cents)`;
 

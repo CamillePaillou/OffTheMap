@@ -18,6 +18,7 @@ export function lignesPourMail(p: Proposition): LigneMail[] {
     nom: l.prestation.nom,
     date: l.date,
     participants: l.participants,
+    nb_nuits: l.nb_nuits,
     statut: l.statut,
     prix_confirme_cents: l.prix_confirme?.montant_cents ?? null,
     verifie_le: l.prix_confirme?.le ?? null,

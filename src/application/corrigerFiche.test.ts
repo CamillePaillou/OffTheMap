@@ -15,30 +15,42 @@ class FichesEnMemoire implements FichesRepository {
   }
 }
 
-const saisie = { budget_reel_euros: 380, date_debut_fixe: '2026-11-07', date_fin_fixe: '2026-11-08', nb_nuits_fixe: 1, notes_conseiller: '  Rappeler mardi  ' };
+const saisie = { budget_reel_euros: 380, destination_fixe: '', date_debut_fixe: '2026-11-07', date_fin_fixe: '2026-11-08', notes_conseiller: '  Rappeler mardi  ' };
 
 describe('corriger la fiche après l’entretien (E2.1)', () => {
-  it('enregistre le budget réel en centimes, les dates fixes et les notes', async () => {
+  it('enregistre le budget réel en centimes, les dates fixes et les notes ; sans destination, celle de la demande vaut', async () => {
     const repo = new FichesEnMemoire(new Set(['d1']));
     expect(await corrigerFiche(repo, 'd1', saisie)).toEqual({ ok: true });
     expect(repo.corrections.get('d1')).toEqual({
-      budget_reel_cents: 38000, date_debut_fixe: '2026-11-07', date_fin_fixe: '2026-11-08', nb_nuits_fixe: 1, notes_conseiller: 'Rappeler mardi',
+      budget_reel_cents: 38000, destination_fixe: null, date_debut_fixe: '2026-11-07', date_fin_fixe: '2026-11-08', notes_conseiller: 'Rappeler mardi',
     });
+  });
+
+  it('fixe une destination en texte libre (le client n’en avait pas, ou en change), même hors catalogue', async () => {
+    const repo = new FichesEnMemoire(new Set(['d1']));
+    expect(await corrigerFiche(repo, 'd1', { ...saisie, destination_fixe: '  Tanzanie ' })).toEqual({ ok: true });
+    expect(repo.corrections.get('d1')?.destination_fixe).toBe('Tanzanie');
   });
 
   it('un champ vidé vaut null', async () => {
     const repo = new FichesEnMemoire(new Set(['d1']));
-    await corrigerFiche(repo, 'd1', { budget_reel_euros: null, date_debut_fixe: null, date_fin_fixe: null, nb_nuits_fixe: null, notes_conseiller: '' });
-    expect(repo.corrections.get('d1')).toEqual({ budget_reel_cents: null, date_debut_fixe: null, date_fin_fixe: null, nb_nuits_fixe: null, notes_conseiller: null });
+    await corrigerFiche(repo, 'd1', { budget_reel_euros: null, destination_fixe: '', date_debut_fixe: null, date_fin_fixe: null, notes_conseiller: '' });
+    expect(repo.corrections.get('d1')).toEqual({ budget_reel_cents: null, destination_fixe: null, date_debut_fixe: null, date_fin_fixe: null, notes_conseiller: null });
+  });
+
+  it('ne reçoit plus de nombre de nuits : elles se déduisent des dates fixes (corriger_fiche)', async () => {
+    const repo = new FichesEnMemoire(new Set(['d1']));
+    await corrigerFiche(repo, 'd1', { ...saisie, nb_nuits_fixe: 9 });
+    expect(repo.corrections.get('d1')).not.toHaveProperty('nb_nuits_fixe');
   });
 
   it.each([
     [{ budget_reel_euros: 0 }, 'budget_reel_euros'],
     [{ budget_reel_euros: 12.5 }, 'budget_reel_euros'],
     [{ date_debut_fixe: '2026-11-08', date_fin_fixe: '2026-11-07' }, 'date_fin_fixe'],
-    [{ nb_nuits_fixe: 2 }, 'nb_nuits_fixe'],
-    [{ nb_nuits_fixe: 15, date_fin_fixe: '2026-11-30' }, 'nb_nuits_fixe'],
+    [{ date_fin_fixe: '2026-11-30' }, 'date_fin_fixe'], // 23 nuits : 14 au plus
     [{ date_debut_fixe: '7/11/2026' }, 'date_debut_fixe'],
+    [{ destination_fixe: 'x'.repeat(121) }, 'destination_fixe'],
   ])('refuse %o sans rien écrire, erreur sur %s', async (surcharge, champ) => {
     const repo = new FichesEnMemoire(new Set(['d1']));
     const r = await corrigerFiche(repo, 'd1', { ...saisie, ...surcharge });

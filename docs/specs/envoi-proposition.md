@@ -45,8 +45,8 @@ Pour refléter le changement demandé par le client (« deux nuits au lieu d'une
 
 | Action | Effet |
 | --- | --- |
-| Ajouter une prestation (prestation, date, participants) | Nouvelle ligne `a_verifier`, au prix du catalogue copié (transition `— → a_verifier` par le conseiller, Should). La liste propose les prestations actives de la destination de la proposition : hébergements, transports, activités, puis par nom |
-| Changer la date et/ou les participants d'une ligne à vérifier, confirmée ou indisponible | La ligne prend les nouvelles valeurs et repasse `a_verifier` **sans prix confirmé** (le tarif obtenu ne vaut plus pour une autre date ou un autre groupe) ; prix catalogue inchangé (même prestation). Les participants se changent aussi par les boutons « − » / « + » de la colonne « Pers. » (confirmation demandée si la ligne était confirmée) |
+| Ajouter une prestation (prestation, date, participants, nuits pour un hôtel) | Nouvelle ligne `a_verifier`, au prix du catalogue copié (transition `— → a_verifier` par le conseiller, Should). La liste propose les prestations actives de la destination de la proposition : hébergements, transports, activités, puis par nom |
+| Changer la date et/ou les participants d'une ligne à vérifier, confirmée ou indisponible | La ligne prend les nouvelles valeurs et repasse `a_verifier` **sans prix confirmé** (le tarif obtenu ne vaut plus pour une autre date ou un autre groupe) ; prix catalogue inchangé (même prestation). Les participants se changent aussi par les boutons « − » / « + » de la colonne « Pers. », et les nuits d'un hôtel par ceux de la colonne « Nuits » (confirmation demandée si la ligne était confirmée ; plusieurs nuits pour un autre type : refus OT012) |
 | Séjour « − » / « + » (en tête de la proposition) | Une nuit de moins ou de plus, la date de retour suit, dans les **dates fixes de la fiche** (E2.1) ; sans dates fixes, on part des dates de la demande. Budget réel et notes intacts. Les alertes de dates sont recalculées : après « deux nuits au lieu d'une », la nuit d'hôtel ajoutée cesse d'être « hors du séjour ». Les lignes ne bougent pas. Base : `ajuster_nuits_sejour` ; refus : moins de 0 ou plus de 14 nuits, plus de nuits que de jours (OT012) |
 | « Modifier le budget » (sous le total) | Le client accepte de payer plus ou moins : nouveau **budget réel** en euros entiers, dans la fiche (E2.1) ; dates fixes et notes intactes. Les alertes de budget sont recalculées (550 € pour 600 € : « budget presque atteint » au lieu de « budget dépassé »). Un champ plutôt que « − » / « + » : un budget n'avance pas par pas fixes. Jamais automatique. Base : `modifier_budget_reel` |
 | Les autres lignes | **Intactes**, tarifs confirmés compris |
@@ -58,8 +58,8 @@ Refus, sans rien écrire : proposition envoyée (OT008) ; prestation inconnue ou
 
 | Règle | Où c'est garanti |
 | --- | --- |
-| Bouton « Envoyer au client » désactivé tant qu'une ligne est à vérifier ou indisponible, ou qu'une alerte bloque ; les raisons sont listées | `etatEnvoi` ; `PanneauEnvoi` |
-| Même si le bouton est contourné, l'envoi est **refusé et le statut ne change pas** | `envoyerProposition` recalcule tout ; `envoyer_proposition` (SQL) revérifie lignes et alertes bloquantes (OT009) |
+| Bouton « Envoyer au client » désactivé tant qu'une ligne est à vérifier ou indisponible, qu'une alerte bloque, ou que le dossier n'a pas de destination (ni fixée, ni demandée) ; les raisons sont listées | `etatEnvoi` ; `PanneauEnvoi` |
+| Même si le bouton est contourné, l'envoi est **refusé et le statut ne change pas** | `envoyerProposition` recalcule tout ; `envoyer_proposition` (SQL) revérifie destination, lignes et alertes bloquantes (OT009) |
 | `prete → envoyee` au nom du conseiller, avec `envoyee_le` et `envoyee_par` | `envoyer_proposition` → `changer_statut` |
 | Alertes bloquantes : mêmes codes en base et dans le code | test « la base refuse les mêmes alertes bloquantes que le code » |
 

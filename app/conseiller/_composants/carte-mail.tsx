@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { AValider, ZONE_A_VALIDER } from './a-valider';
 import { marquerEnvoye, type EtatMail } from './mails';
 
 interface Props {
@@ -15,15 +16,21 @@ interface Props {
   imprimer?: string;
   /** Ouvert d'emblée (mail à envoyer tout de suite). */
   ouvert?: boolean;
+  /** C'est l'étape qui attend le conseiller : la carte est entourée, porte « À envoyer » et s'ouvre. */
+  aValider?: boolean;
 }
 
 /** Mail modèle (E5.4) : aperçu, ouverture dans la messagerie, puis « marquer comme envoyé » (journal). */
-export function CarteMail({ dossierId, propositionId, modele, titre, sujet, corps, mailto, imprimer, ouvert = false }: Props) {
+export function CarteMail({ dossierId, propositionId, modele, titre, sujet, corps, mailto, imprimer, ouvert = false, aValider = false }: Props) {
   const [etat, action, enCours] = useActionState<EtatMail, FormData>(() => marquerEnvoye(dossierId, propositionId, modele), {});
+  const attendu = aValider && !etat.envoye;
   return (
-    <details open={ouvert} className={`bo-carte group p-4 ${etat.envoye ? 'ring-2 ring-ciel-pale' : ''}`}>
+    <details id={`mail-${modele}`} open={ouvert || attendu} className={`bo-carte group p-4 ${etat.envoye ? 'ring-2 ring-ciel-pale' : attendu ? ZONE_A_VALIDER : ''}`}>
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-encre [&::-webkit-details-marker]:hidden">
-        <span>{titre}</span>
+        <span className="flex flex-wrap items-center gap-2">
+          {titre}
+          {attendu && <AValider texte="À envoyer" />}
+        </span>
         <span className="text-sm font-normal text-encre-doux">
           {etat.envoye ? 'envoyé' : <span className="group-open:hidden">voir</span>}
           {!etat.envoye && <span className="hidden group-open:inline">fermer</span>}

@@ -7,9 +7,9 @@ import {
 import { StatutModifieErreur } from '../../ports/statuts';
 
 const COLONNES_DEMANDE = 'nom, email, destination, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents, envies, contraintes, regimes, mobilite, prestations_souhaitees';
-const COLONNES_FICHE = 'envies, contraintes, points_flous, regimes, mobilite, niveau_physique, budget_reel_cents, date_debut_fixe, date_fin_fixe, nb_nuits_fixe';
+const COLONNES_FICHE = 'envies, contraintes, points_flous, regimes, mobilite, niveau_physique, budget_reel_cents, destination_fixe, date_debut_fixe, date_fin_fixe, nb_nuits_fixe';
 
-const REFUS: Record<string, RefusDemarrage> = { OT001: 'introuvable', OT002: 'statut_modifie', OT004: 'deja_une_proposition', OT005: 'fiche_incomplete' };
+const REFUS: Record<string, RefusDemarrage> = { OT001: 'introuvable', OT002: 'statut_modifie', OT004: 'deja_une_proposition', OT005: 'fiche_incomplete', OT015: 'destination_manquante' };
 
 /** Brouillon de proposition avec la clé service_role (jamais côté navigateur). */
 export class GenerationBrouillonSupabase implements GenerationBrouillonRepository {

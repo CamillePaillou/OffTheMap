@@ -64,7 +64,7 @@ export function versDossierResume(d: LigneDossierListe): DossierResume {
 // ------------------------------------------------------------------ détail
 export type LigneFicheDetail = Ligne<'fiches',
   | 'envies' | 'contraintes' | 'points_flous' | 'regimes' | 'mobilite' | 'niveau_physique' | 'budget_reel_cents'
-  | 'date_debut_fixe' | 'date_fin_fixe' | 'nb_nuits_fixe' | 'notes_conseiller' | 'decision' | 'validee_le' | 'erreur_generation'>;
+  | 'destination_fixe' | 'date_debut_fixe' | 'date_fin_fixe' | 'nb_nuits_fixe' | 'notes_conseiller' | 'decision' | 'validee_le' | 'erreur_generation'>;
 
 export type LigneDossierDetail = Ligne<'dossiers', 'id' | 'statut' | 'cree_le'> & {
   demandes: (Ligne<'demandes',
@@ -135,6 +135,7 @@ export function versDetailDossier(d: LigneDossierDetail, historique: LigneHistor
           mobilite: f.mobilite,
           niveau_physique: f.niveau_physique,
           budget_reel_cents: f.budget_reel_cents,
+          destination_fixe: f.destination_fixe,
           dates_fixes: { debut: f.date_debut_fixe, fin: f.date_fin_fixe, nb_nuits: f.nb_nuits_fixe },
           notes_conseiller: f.notes_conseiller,
           decision: f.decision,

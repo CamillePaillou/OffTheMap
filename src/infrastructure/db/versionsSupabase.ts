@@ -10,7 +10,7 @@ export class VersionsSupabase implements VersionsRepository {
     const { data, error } = await clientService()
       .from('propositions')
       .select(`statut, programme,
-        proposition_lignes (prestation_id, date, participants, statut, cree_le,
+        proposition_lignes (prestation_id, date, participants, nb_nuits, statut, cree_le,
           prestations (id, type, nom, destination, prix_unitaire_cents, capacite, actif)),
         dossiers (demandes (version, remplacee_le, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents,
           fiches (date_debut_fixe, date_fin_fixe, nb_nuits_fixe, budget_reel_cents)))`)
@@ -26,7 +26,7 @@ export class VersionsSupabase implements VersionsRepository {
       programme: data.programme as { date: string; titre: string; texte: string }[] | null,
       lignes: [...data.proposition_lignes]
         .sort((a, b) => a.date.localeCompare(b.date) || a.cree_le.localeCompare(b.cree_le))
-        .map((l) => ({ prestation_id: l.prestation_id, date: l.date, participants: l.participants, statut: l.statut, prestation: l.prestations! })),
+        .map((l) => ({ prestation_id: l.prestation_id, date: l.date, participants: l.participants, nb_nuits: l.nb_nuits, statut: l.statut, prestation: l.prestations! })),
       reference: { voyageurs: demande.voyageurs.length, ...valeursDeReference(demande, demande.fiches ?? null) },
     };
   }

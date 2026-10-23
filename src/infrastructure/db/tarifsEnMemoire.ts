@@ -12,6 +12,7 @@ import {
   EnvoiRefuseErreur,
   LigneModifieeErreur,
   MemePrestationErreur,
+  NuitsRefuseesErreur,
   PrestationRefuseeErreur,
   PropositionFigeeErreur,
   SejourImpossibleErreur,
@@ -37,6 +38,8 @@ export interface LigneEnMemoire extends LigneAChiffrer {
 
 export interface PropositionEnMemoire extends Omit<EntreeChiffrage, 'lignes'> {
   id: string;
+  /** Destination du dossier (fixée, sinon demandée) : sans elle, envoi refusé. */
+  destination: string | null;
   statut: StatutProposition;
   lignes: LigneEnMemoire[];
   total_cents: number;
@@ -93,7 +96,7 @@ export class TarifsEnMemoire implements TarifsRepository {
     const nouvelle: LigneEnMemoire = {
       id: `${r.ligneId}-remplacement-${++this.lignesCreees}`,
       prestation_id: presta.id, type: presta.type, capacite: presta.capacite, actif: true,
-      date: r.date ?? l.date, participants: r.participants ?? l.participants,
+      date: r.date ?? l.date, participants: r.participants ?? l.participants, nb_nuits: presta.type === 'hebergement' ? l.nb_nuits : 1,
       prix_unitaire_catalogue_cents: presta.prix_unitaire_cents, prix_confirme_cents: null,
       statut: 'a_verifier', source: null, confirme_par: null, verification: null,
     };
@@ -128,10 +131,11 @@ export class TarifsEnMemoire implements TarifsRepository {
     const presta = this.catalogue.get(a.prestationId);
     if (!presta?.actif) throw new PrestationRefuseeErreur(a.prestationId);
     if (this.dejaPrevue(p, a.prestationId, a.date)) throw new MemePrestationErreur(a.prestationId);
+    if ((a.nbNuits ?? 1) > 1 && presta.type !== 'hebergement') throw new NuitsRefuseesErreur(a.prestationId);
     const nouvelle: LigneEnMemoire = {
       id: `${a.propositionId}-ajout-${++this.lignesCreees}`,
       prestation_id: presta.id, type: presta.type, capacite: presta.capacite, actif: true,
-      date: a.date, participants: a.participants,
+      date: a.date, participants: a.participants, nb_nuits: a.nbNuits ?? 1,
       prix_unitaire_catalogue_cents: presta.prix_unitaire_cents, prix_confirme_cents: null,
       statut: 'a_verifier', source: null, confirme_par: null, verification: null,
     };
@@ -145,9 +149,11 @@ export class TarifsEnMemoire implements TarifsRepository {
     if (!['a_verifier', 'confirme', 'indisponible'].includes(l.statut)) throw new LigneModifieeErreur(l.statut);
     const date = m.date ?? l.date;
     const participants = m.participants ?? l.participants;
-    if (date === l.date && participants === l.participants) throw new MemePrestationErreur('rien ne change');
+    const nb_nuits = m.nbNuits ?? l.nb_nuits;
+    if (date === l.date && participants === l.participants && nb_nuits === l.nb_nuits) throw new MemePrestationErreur('rien ne change');
     if (date !== l.date && this.dejaPrevue(p, l.prestation_id, date, l.id)) throw new MemePrestationErreur(l.prestation_id);
-    Object.assign(l, { date, participants, statut: 'a_verifier', prix_confirme_cents: null, source: null, confirme_par: null });
+    if (nb_nuits > 1 && l.type !== 'hebergement') throw new NuitsRefuseesErreur(l.prestation_id);
+    Object.assign(l, { date, participants, nb_nuits, statut: 'a_verifier', prix_confirme_cents: null, source: null, confirme_par: null });
     return this.recalculer(p);
   }
 
@@ -186,7 +192,7 @@ export class TarifsEnMemoire implements TarifsRepository {
   private recalculer(p: PropositionEnMemoire): StatutProposition {
     p.total_cents = p.lignes
       .filter((x) => x.statut !== 'remplacee' && x.statut !== 'retiree' && x.statut !== 'indisponible')
-      .reduce((s, x) => s + (x.prix_confirme_cents ?? x.prix_unitaire_catalogue_cents) * x.participants, 0);
+      .reduce((s, x) => s + (x.prix_confirme_cents ?? x.prix_unitaire_catalogue_cents) * x.participants * x.nb_nuits, 0);
     // après le dépôt, la proposition ne repasse jamais à vérifier (la réservation, elle, n'est pas simulée ici)
     if (p.statut === 'depot_recu') return p.statut;
     const cible: StatutProposition = p.lignes.some((x) => x.statut === 'a_verifier' || x.statut === 'indisponible') ? 'a_verifier' : 'prete';
@@ -209,7 +215,7 @@ export class TarifsEnMemoire implements TarifsRepository {
 
   async envoyer(propositionId: string, conseillerId: string) {
     const p = this.propositions.get(propositionId)!;
-    const bloque = p.lignes.some((l) => l.statut === 'a_verifier' || l.statut === 'indisponible')
+    const bloque = !p.destination || p.lignes.some((l) => l.statut === 'a_verifier' || l.statut === 'indisponible')
       || p.alertes.some((a) => ALERTES_BLOQUANTES.includes(a.code));
     if (bloque) throw new EnvoiRefuseErreur(propositionId);
     if (p.statut !== 'prete') throw new StatutModifieErreur('prete', p.statut);

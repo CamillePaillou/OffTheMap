@@ -52,7 +52,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   }
 
   const lignes = proposition.lignes.filter((l) => l.statut !== 'remplacee' && l.statut !== 'indisponible');
-  const total = lignes.reduce((s, l) => s + l.prix_confirme!.montant_cents * l.participants, 0);
+  const total = lignes.reduce((s, l) => s + l.total_ligne_cents, 0); // prix vérifié × participants × nuits
   // la plus ancienne vérification : le total n'est pas plus récent qu'elle
   const verifieLe = lignes.map((l) => l.prix_confirme!.le).sort()[0]!;
   const programme = proposition.programme ?? [];
@@ -128,11 +128,15 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
                   <td className="py-2.5 pr-4 whitespace-nowrap">{jourCourt(l.date)}</td>
                   <td className="py-2.5 pr-4">
                     {l.prestation.nom}
+                    {l.nb_nuits > 1 && <span className="block text-xs text-encre-doux">{l.nb_nuits} nuits</span>}
                     <span className="block text-xs text-encre-doux">Prix vérifié {dateDeVerification(l.prix_confirme!.le)}</span>
                   </td>
                   <td className="py-2.5 pr-4 text-right">{l.participants}</td>
-                  <td className="py-2.5 pr-4 text-right">{euros(l.prix_confirme!.montant_cents)}</td>
-                  <td className="py-2.5 text-right">{euros(l.prix_confirme!.montant_cents * l.participants)}</td>
+                  <td className="py-2.5 pr-4 text-right">
+                    {euros(l.prix_confirme!.montant_cents)}
+                    {l.prestation.type === 'hebergement' && <span className="block text-xs text-encre-doux">par nuit</span>}
+                  </td>
+                  <td className="py-2.5 text-right">{euros(l.total_ligne_cents)}</td>
                 </tr>
               ))}
             </tbody>

@@ -16,13 +16,14 @@ import {
 } from '../../ports/accords';
 
 const SELECT_OPTION = `id, ligne_id, statut, accord_par, accord_le, accord_expire_le, prix_accorde_cents, accord_utilise,
-  option_id_simulateur, expire_le, reservation_id_simulateur, confirme_le, reponse_confirmation, proposition_lignes (proposition_id, prestation_id, date, participants, propositions (dossier_id))`;
+  option_id_simulateur, expire_le, reservation_id_simulateur, confirme_le, reponse_confirmation, nuits_simulateur,
+  proposition_lignes (proposition_id, prestation_id, date, participants, nb_nuits, propositions (dossier_id))`;
 
 interface OptionBase {
   id: string; ligne_id: string; statut: string; accord_par: string; accord_le: string; accord_expire_le: string;
   prix_accorde_cents: number; accord_utilise: boolean; option_id_simulateur: string | null; expire_le: string | null;
-  reservation_id_simulateur: string | null; confirme_le: string | null; reponse_confirmation: unknown;
-  proposition_lignes: { proposition_id: string; prestation_id: string; date: string; participants: number; propositions: { dossier_id: string } };
+  reservation_id_simulateur: string | null; confirme_le: string | null; reponse_confirmation: unknown; nuits_simulateur: unknown;
+  proposition_lignes: { proposition_id: string; prestation_id: string; date: string; participants: number; nb_nuits: number; propositions: { dossier_id: string } };
 }
 
 const iso = (t: string) => new Date(t).toISOString();
@@ -46,9 +47,15 @@ function versAccord(o: OptionBase): AccordOptionEtOption {
     reservation_id_simulateur: o.reservation_id_simulateur ?? undefined,
     confirme_le: o.confirme_le ? iso(o.confirme_le) : undefined,
     reponse_confirmation: o.reponse_confirmation ?? undefined,
-    ligne_snapshot: { prestation_id: l.prestation_id, date: l.date, participants: l.participants },
+    ligne_snapshot: { prestation_id: l.prestation_id, date: l.date, participants: l.participants, nb_nuits: l.nb_nuits },
+    nuits: NuitsSimulateur.parse(o.nuits_simulateur ?? []),
   };
 }
+
+/** Écrit par terminer_pose_option et terminer_confirmation depuis le cas d'usage : relu tel quel, mais vérifié. */
+const NuitsSimulateur = z.array(z.object({
+  date: z.string(), option_id: z.string(), prix_total_cents: z.number().int().nonnegative(), reservation_id: z.string().optional(),
+}).strict());
 
 /**
  * Accords, options, réservations et annulations (E9.3 à E9.5 et E9.8, branchés en base par E7.4) : écritures par les fonctions SQL
@@ -66,6 +73,7 @@ export class AccordsSupabase implements AccordsRepository {
       p_accord_le: a.accord_le,
       p_expire_le: a.accord_expire_le,
       p_prix_cents: a.prix_accorde_cents,
+      ...(a.source_prix ? { p_source_prix: a.source_prix } : {}),
     });
     if (error?.code === 'OT012') throw new DemarcheEnCoursErreur(a.ligne_id);
     if (error) throw new Error(`enregistrer_accord : ${error.message}`);
@@ -102,6 +110,7 @@ export class AccordsSupabase implements AccordsRepository {
       p_expire_le: r.ok ? r.expire_le : null,
       p_reponse: (r.reponse_serveur ?? null) as Json,
       p_raison: r.ok ? null : r.raison,
+      ...(r.ok && r.nuits ? { p_nuits: r.nuits as unknown as Json } : {}),
     });
     if (error) throw new Error(`terminer_pose_option : ${error.message}`);
   }
@@ -132,6 +141,7 @@ export class AccordsSupabase implements AccordsRepository {
       p_reservation_id_simulateur: r.ok ? r.reservation_id_simulateur : null,
       p_reponse: (r.reponse_serveur ?? null) as Json,
       p_raison: r.ok ? null : r.raison,
+      ...(r.ok && r.nuits ? { p_nuits: r.nuits as unknown as Json } : {}),
     });
     if (error) throw new Error(`terminer_confirmation : ${error.message}`);
   }

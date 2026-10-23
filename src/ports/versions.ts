@@ -12,6 +12,7 @@ export interface LigneEnvoyee {
   prestation_id: string;
   date: string;
   participants: number;
+  nb_nuits: number;
   statut: StatutLigne;
   /** La prestation telle qu'elle est AUJOURD'HUI au catalogue : la nouvelle version en copie le prix. */
   prestation: PrestationDuCatalogue;

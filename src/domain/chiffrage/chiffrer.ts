@@ -17,8 +17,10 @@ export interface LigneAChiffrer {
   /** Capacité fixe du catalogue (les places restantes sont l'affaire de l'agent). */
   capacite: number;
   actif: boolean;
-  date: string; // AAAA-MM-JJ
+  date: string; // AAAA-MM-JJ ; hébergement : première nuit
   participants: number;
+  /** Hébergement : nuits consécutives depuis `date` ; 1 pour les autres types. */
+  nb_nuits: number;
   /** Copie figée du catalogue à la création de la ligne. */
   prix_unitaire_catalogue_cents: number;
   prix_confirme_cents: number | null;
@@ -81,14 +83,16 @@ export function chiffrer(e: EntreeChiffrage): ResultatChiffrage {
       alerter('participants_superieurs_voyageurs', `${l.prestation_id} : ${l.participants} participants pour ${e.voyageurs} voyageurs`, l);
     }
     if (!l.actif) alerter('prestation_inactive', `${l.prestation_id} : prestation retirée du catalogue`, l);
-    // Hébergement : du premier jour à la veille du départ ; activité et transport : jusqu'au dernier jour inclus.
+    // Hébergement : du premier jour à la veille du départ, dernière nuit comprise ; activité et transport : jusqu'au dernier jour inclus.
     const fin = l.type === 'hebergement' ? veilleDepart : e.date_fin;
-    if (l.date < e.date_debut || l.date > fin) {
-      alerter('date_hors_sejour', `${l.prestation_id} : le ${l.date}, hors du séjour (${e.date_debut} → ${fin})`, l);
+    const derniere = l.type === 'hebergement' ? decaler(l.date, l.nb_nuits - 1) : l.date;
+    if (l.date < e.date_debut || derniere > fin) {
+      const quand = derniere === l.date ? `le ${l.date}` : `du ${l.date} au ${derniere}`;
+      alerter('date_hors_sejour', `${l.prestation_id} : ${quand}, hors du séjour (${e.date_debut} → ${fin})`, l);
     }
   }
 
-  const nuits = new Set(controlees.filter((l) => l.type === 'hebergement').map((l) => l.date)).size;
+  const nuits = new Set(controlees.filter((l) => l.type === 'hebergement').flatMap((l) => nuitsDeLigne(l))).size;
   if (nuits !== e.nb_nuits) alerter('nuits_incoherentes', `${nuits} nuit(s) d’hébergement pour ${e.nb_nuits} prévue(s)`);
 
   const budget = e.budget_reference_cents;
@@ -116,15 +120,28 @@ export function prixUnitaire(l: Pick<LigneAChiffrer, 'prix_confirme_cents' | 'pr
   return l.prix_confirme_cents ?? l.prix_unitaire_catalogue_cents;
 }
 
-/** Identique à la colonne calculée `total_ligne_cents`. */
-export function totalLigne(l: LigneAChiffrer): number {
-  return prixUnitaire(l) * l.participants;
+/** Identique à la colonne calculée `total_ligne_cents` : prix (par personne et par nuit) × participants × nuits. */
+export function totalLigne(l: Pick<LigneAChiffrer, 'prix_confirme_cents' | 'prix_unitaire_catalogue_cents' | 'participants' | 'nb_nuits'>): number {
+  return prixUnitaire(l) * l.participants * l.nb_nuits;
 }
 
 /** Écart après vérification : prix revérifié − prix catalogue. Positif = plus cher. */
-export function ecartVerification(catalogueCents: number, reverifieCents: number, participants: number) {
+export function ecartVerification(catalogueCents: number, reverifieCents: number, participants: number, nbNuits = 1) {
   const parPersonne = reverifieCents - catalogueCents;
-  return { par_personne_cents: parPersonne, ligne_cents: parPersonne * participants };
+  return { par_personne_cents: parPersonne, ligne_cents: parPersonne * participants * nbNuits };
+}
+
+/**
+ * Nuits des lignes d'hébergement d'un brouillon : chaque hôtel court de sa date jusqu'au prochain hôtel, ou jusqu'à la
+ * veille du départ. Une ligne unique pour 5 nuits demandées en compte donc 5. Au moins 1, au plus la limite d'une ligne.
+ */
+export function nuitsDesHebergements(lignes: readonly { type: TypePrestation; date: string }[], dateFin: string): number[] {
+  const debuts = [...new Set(lignes.filter((l) => l.type === 'hebergement').map((l) => l.date))].sort();
+  return lignes.map((l) => {
+    if (l.type !== 'hebergement') return 1;
+    const suivant = debuts.find((d) => d > l.date) ?? dateFin;
+    return Math.min(Math.max(joursEntre(l.date, suivant), 1), REGLES_CHIFFRAGE.nuitsMaxParLigne);
+  });
 }
 
 /** « 358,00 € » (espace insécable U+00A0 avant €). */
@@ -157,7 +174,20 @@ function atteintSeuil(total: number, budget: number): boolean {
 }
 
 function jourPrecedent(date: string): string {
-  return new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+  return decaler(date, -1);
+}
+
+function decaler(date: string, jours: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + jours * 86_400_000).toISOString().slice(0, 10);
+}
+
+function joursEntre(debut: string, fin: string): number {
+  return Math.round((Date.parse(`${fin}T00:00:00Z`) - Date.parse(`${debut}T00:00:00Z`)) / 86_400_000);
+}
+
+/** Dates des nuits couvertes par une ligne d'hébergement. */
+function nuitsDeLigne(l: LigneAChiffrer): string[] {
+  return Array.from({ length: l.nb_nuits }, (_, i) => decaler(l.date, i));
 }
 
 const entierPositifOuNul = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 0;
@@ -177,6 +207,8 @@ function verifierEntree(e: EntreeChiffrage): void {
     if (!entierPositifOuNul(l.prix_unitaire_catalogue_cents)) throw new ErreurChiffrage(`${ou} : tarif catalogue absent ou invalide`);
     if (l.prix_confirme_cents !== null && !entierPositifOuNul(l.prix_confirme_cents)) throw new ErreurChiffrage(`${ou} : prix confirmé invalide`);
     if (!Number.isInteger(l.participants) || l.participants < 1) throw new ErreurChiffrage(`${ou} : participants invalides`);
+    if (!Number.isInteger(l.nb_nuits) || l.nb_nuits < 1 || l.nb_nuits > REGLES_CHIFFRAGE.nuitsMaxParLigne) throw new ErreurChiffrage(`${ou} : nuits invalides`);
+    if (l.type !== 'hebergement' && l.nb_nuits !== 1) throw new ErreurChiffrage(`${ou} : seul un hébergement compte plusieurs nuits`);
     if (!DATE.test(l.date)) throw new ErreurChiffrage(`${ou} : date invalide`);
   });
 }

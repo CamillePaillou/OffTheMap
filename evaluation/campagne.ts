@@ -27,7 +27,7 @@ import { poserOption } from '../src/application/poserOption';
 import { reverifierLigne } from '../src/application/reverifierLigne';
 import { verifierPrestation, type LigneAVerifier, type ResultatVerification } from '../src/application/verifierPrestation';
 import { prestationsAutorisees } from '../src/domain/brouillon/prestationsAutorisees';
-import { chiffrer } from '../src/domain/chiffrage/chiffrer';
+import { chiffrer, nuitsDesHebergements } from '../src/domain/chiffrage/chiffrer';
 import { contientSecret, EXPURGE } from '../src/domain/verification/expurger';
 import { AccordsEnMemoire } from '../src/infrastructure/db/accordsEnMemoire';
 import { lireConfigOpenRouter, OpenRouterLlmClient } from '../src/infrastructure/llm/openrouter-llm-client';
@@ -503,12 +503,14 @@ async function essaiFicheBrouillon(cas: Cas, modif: Partial<DemandeLue>): Promis
   const chiffrerSansLever = (e: Parameters<typeof chiffrer>[0]) => {
     try { return chiffrer(e); } catch (err) { erreur = `chiffrage refusé : ${err instanceof Error ? err.message.slice(0, 200) : 'erreur'}`; return null; }
   };
+  // nuits des hôtels calculées comme pour le vrai brouillon (genererBrouillon)
+  const nuits = brouillon ? nuitsDesHebergements(brouillon.lignes.map((l) => ({ type: parId.get(l.prestation_id)!.type, date: l.date })), demande.date_fin) : [];
   const chiffrage = brouillon && chiffrerSansLever({
     voyageurs: demande.voyageurs.length, date_debut: demande.date_debut, date_fin: demande.date_fin, nb_nuits: demande.nb_nuits,
     budget_reference_cents: demande.budget_annonce_cents,
-    lignes: brouillon.lignes.map((l) => {
+    lignes: brouillon.lignes.map((l, i) => {
       const p = parId.get(l.prestation_id)!;
-      return { ...l, type: p.type, capacite: p.capacite, actif: true, prix_unitaire_catalogue_cents: p.prix_unitaire_cents, prix_confirme_cents: null, statut: 'a_verifier' as const };
+      return { ...l, type: p.type, capacite: p.capacite, actif: true, nb_nuits: nuits[i]!, prix_unitaire_catalogue_cents: p.prix_unitaire_cents, prix_confirme_cents: null, statut: 'a_verifier' as const };
     }),
   });
   const flous = fiche?.points_flous.join(' | ') ?? '—';

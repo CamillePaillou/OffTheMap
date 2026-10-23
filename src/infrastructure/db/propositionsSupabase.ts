@@ -8,7 +8,7 @@ import type { PropositionsLecture, ResumeEcartsEcriture, VerificationsEcriture }
 import { versProposition, versVerificationLigne, type PropositionBase, type VerificationBase } from './versPayloadsPropositions';
 
 const SELECT_PROPOSITION = `id, dossier_id, version, statut, programme, total_cents, alertes, ecarts, motif_changement,
-  proposition_lignes (id, date, participants, prix_unitaire_catalogue_cents, prix_confirme_cents, source, confirme_le, statut,
+  proposition_lignes (id, date, participants, nb_nuits, prix_unitaire_catalogue_cents, prix_confirme_cents, source, confirme_le, statut,
     total_ligne_cents, cree_le,
     prestations (id, nom, type, capacite, actif),
     profils (nom_affiche),
