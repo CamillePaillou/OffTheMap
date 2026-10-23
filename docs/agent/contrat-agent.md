@@ -76,3 +76,12 @@ Le test s’exécute avec `npm test -- src/application/verifierPrestation.test.t
 | Date | Relecteur | Ambiguïté trouvée | Correction |
 | --- | --- | --- | --- |
 | | | | |
+
+## Mode rejeu annoncé (E11.3)
+
+Pour démontrer la boucle quand OpenRouter est indisponible (quota gratuit atteint, modèle retiré), `AGENT_MODE=rejeu` dans `.env`, puis relancer l'application.
+
+- **Ce qui est rejoué :** seulement les messages du modèle (appel d'outil, puis conclusion), tirés d'une vérification faite avec un vrai modèle gratuit pour la **même** prestation, la **même** date et le **même** nombre de participants. On prend la plus récente en base, sinon l'enregistrement de la campagne E11.2 (`fixtures/rejeu/agent.json`, cas N01 v3 : atelier de Nantes, 7 novembre, 2 participants). Le faux client, le seed et un rejeu ne servent jamais d'enregistrement.
+- **Ce qui reste réel :** les contrôles du programme (outil autorisé, arguments identiques à la ligne, 3 tours), l'appel au simulateur et la comparaison des faits annoncés à sa réponse. Un enregistrement dont le prix ne correspond plus est refusé (`reponse_invalide`), comme le serait un vrai modèle.
+- **Ce que voit le conseiller :** une bannière « Rejeu » sur la page de la ligne tant que le mode est actif ; sur la vérification, la pastille « Rejeu » et le modèle « rejeu de … » (`verifications.modele`). Sans enregistrement pour la ligne : un message clair, aucune vérification écrite.
+- Code : `src/domain/verification/rejeu.ts`, `src/infrastructure/llm/modele-rejeu.ts`, `src/infrastructure/db/enregistrementsAgent.ts` ; tests : `src/infrastructure/llm/modele-rejeu.test.ts`.

@@ -1,0 +1,62 @@
+[
+  {
+    "source": "evaluation/traces/v3/N01-1.json (campagne E11.2 v3, modèle réel)",
+    "modele": "minimax/minimax-m3.1-flash:free",
+    "enregistre_le": "2026-10-22T12:40:24.456Z",
+    "ligne": {
+      "prestation_id": "activite-nantes-01",
+      "date": "2026-11-07",
+      "participants": 2
+    },
+    "trace": [
+      {
+        "numero": 1,
+        "horodatage": "2026-10-22T12:40:24.456Z",
+        "appel": {
+          "nom": "verifier_disponibilite",
+          "arguments": {
+            "prestation_id": "activite-nantes-01",
+            "date": "2026-11-07",
+            "participants": 2
+          }
+        },
+        "conclusion": null,
+        "decision": {
+          "statut": "accepte",
+          "raison": null,
+          "ecarts": []
+        },
+        "http_statut": 200,
+        "reponse_simulateur": {
+          "prestation_id": "activite-nantes-01",
+          "date": "2026-11-07",
+          "participants": 2,
+          "disponible": true,
+          "places_restantes": 10,
+          "prix_unitaire_cents": 3500,
+          "prix_total_cents": 7000
+        },
+        "duree_ms": 1410
+      },
+      {
+        "numero": 2,
+        "horodatage": "2026-10-22T12:40:25.866Z",
+        "appel": null,
+        "conclusion": {
+          "statut": "ok",
+          "prix_unitaire_cents": 3500,
+          "places_restantes": 10,
+          "resume": "La prestation est disponible le 2026-11-07 pour 2 participants, avec 10 places restantes."
+        },
+        "decision": {
+          "statut": "accepte",
+          "raison": null,
+          "ecarts": []
+        },
+        "http_statut": null,
+        "reponse_simulateur": null,
+        "duree_ms": 1640
+      }
+    ]
+  }
+]
