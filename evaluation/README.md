@@ -67,6 +67,22 @@ python3 <dépôt du formateur>/content/j4/synthese.py evaluation/jeu-v1-rejeu.js
 
 **v3, A02 et A03.** La fiche est conforme et signale le point flou dans les deux cas, mais le brouillon n'a pas pu être demandé : OpenRouter a répondu `HTTP 429 free-models-per-day`, modèle de réserve compris. Le programme a d'abord proposé `echec` ; la vérificatrice a corrigé en `non_execute`, avec la preuve dans les traces (champ `verdict_propose_par_le_programme`). Le programme de campagne classe désormais ce cas lui-même. À reprendre quand le quota revient, en retest partiel : `make campagne V=v3b CAS=A02,A03 …` (les autres cas restent dans le fichier, non exécutés).
 
+### Retest après le changement de modèle
+
+`minimax/minimax-m3.1-flash` n'est plus gratuit depuis le 22/10/2026 au soir. Le modèle principal devient `recursive/flint-v1.0:free` (`.env.example`) ; chaque membre utilise sa propre clé OpenRouter, dans son `.env` seulement.
+
+- **Sans modèle, sur `dev` du 23/10 (`e7089d6`, après les migrations des nuits par ligne et des options par nuit)** : N02, N03, E02, E03, X02, X03 et, en rejeu, N01R et X01R réussissent toujours (`SANS_MODELE=1`, simulateur local, base migrée et seedée). Les cas qui demandent le modèle restent à mesurer avec lui.
+- **Avec le nouveau modèle**, sur un poste qui a `LLM_API_KEY` dans `.env` :
+
+```sh
+make reset                                 # base propre (après make up)
+make essai-agent                           # le modèle appelle-t-il l'outil ? sinon, ne pas lancer la campagne
+make campagne V=v3b CAS=A02,A03 APPROBATION=demo-approval FORMATEUR=demo-instructor VERIFICATEUR=<prénom>
+make campagne V=v4 APPROBATION=demo-approval FORMATEUR=demo-instructor VERIFICATEUR=<prénom>
+```
+
+`v3b` mesure les deux cas restés non exécutés en v3 (quota). `v4` rejoue tout le jeu avec le nouveau modèle, comme le demande la note d'usage après tout changement de modèle. Un 429 (quota gratuit) est écrit `non_execute`, jamais `echec`.
+
 v1 et v2 ne mesurent pas la même chose : en v1, les 10 essais en agent direct n'ont pas tourné. La comparaison avant/après du correctif porte sur X01R (manifeste complémentaire) ; sur les cas exécutés dans les deux campagnes, les verdicts sont identiques.
 
 | Famille (v2) | Cas réussis | Détail |
