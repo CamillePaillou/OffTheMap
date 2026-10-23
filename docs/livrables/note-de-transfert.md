@@ -8,7 +8,7 @@
 
 | | |
 | --- | --- |
-| **Version** | Branche `dev` du dépôt `CamillePaillou/OffTheMap`, étiquette `v1.0`|
+| **Version** | Tag `v1.0` sur la branche `main` du dépôt `CamillePaillou/OffTheMap` (`git checkout v1.0`) ; le développement continue sur `dev` |
 | **Ce que fait le service** | Un conseiller prépare une proposition de voyage sur mesure, de la demande à la réservation. Côté voyageur : formulaire avec chatbot, suivi sans compte par numéro de dossier, compte facultatif pour répondre en ligne. Parcours et périmètre : E12.3, section 1 |
 | **Verdict de recette** | Accepté avec réserves (E12.3, section 2) ; démonstration validée par le client le 22/10 (`docs/rituels/review.md`) |
 | **Ce qui n'existe pas** | Paiement réel, rendez-vous en ligne, envoi automatique des mails (ils partent de la messagerie du conseiller), vrais prestataires (remplacés par le simulateur du formateur) |
