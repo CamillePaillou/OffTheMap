@@ -41,3 +41,14 @@ export function creerModeleChat(env: Record<string, string | undefined> = proces
   }
   throw new LlmError('configuration', `LLM_PROVIDER « ${fournisseur} » inconnu (fake ou openrouter)`);
 }
+
+/**
+ * Mode de l'agent de vérification (E11.3) selon `AGENT_MODE` : `reel` par défaut (OpenRouter), ou `rejeu` pour une
+ * démonstration sans OpenRouter (réponses du modèle rejouées, simulateur appelé en direct). Toute autre valeur est
+ * refusée, pour ne jamais passer en rejeu sans l'avoir demandé.
+ */
+export function modeAgent(env: Record<string, string | undefined> = process.env): 'reel' | 'rejeu' {
+  const mode = env.AGENT_MODE?.trim() || 'reel';
+  if (mode === 'reel' || mode === 'rejeu') return mode;
+  throw new LlmError('configuration', `AGENT_MODE « ${mode} » inconnu (reel ou rejeu)`);
+}

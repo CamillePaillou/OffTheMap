@@ -82,6 +82,7 @@ Les prestations (catalogue, disponibilités, options, réservations) viennent du
 - `make up` le construit depuis GitHub et le lance en mode démonstration : API sur http://localhost:8765, tableau de bord en lecture seule sur http://localhost:8765/dashboard. Aucun clone à faire.
 - Clés de démonstration : équipe `demo-key`, approbation `demo-approval` (la clé d'approbation est saisie par le conseiller, jamais envoyée par l'agent). La clé d'équipe se règle dans `.env` : `SIMULATEUR_TEAM_KEY`.
 - Pour viser le serveur du formateur plutôt que le simulateur local, changer `SIMULATEUR_URL` et `SIMULATEUR_TEAM_KEY` dans `.env`.
+- **Mode rejeu de l'agent (E11.3)** : `AGENT_MODE=rejeu` dans `.env` pour démontrer la vérification sans OpenRouter. Les réponses du modèle sont rejouées depuis une vérification enregistrée, le simulateur est appelé en direct, et l'écran affiche « Rejeu » (`docs/agent/contrat-agent.md`). `reel` (par défaut) rétablit le modèle.
 - Pannes que le simulateur ne produit pas : `SIMULATEUR_PANNE=delai` ou `erreur_serveur` dans `.env` (puis relancer l'application) ; l'adaptateur rend alors une erreur explicite et aucun prix. `aucune` rétablit le fonctionnement normal.
 
 ## Variables d'environnement
