@@ -23,6 +23,19 @@ make up
 
 Le premier `make up` télécharge les images Supabase : compter quelques minutes. Les clés locales de Supabase sont écrites dans `.env.supabase` (non versionné) ; il n'y a rien à copier à la main.
 
+Pour la démonstration, se connecter sur `/conseiller` avec `conseiller@offthemap.test` / `offthemap-demo`. Pour **valider une option** (confirmer la réservation, seconde validation sur l'écran d'accord), saisir la clé d'approbation **`demo-approval`**.
+
+## Livrables
+
+| Livrable | Fichier |
+| --- | --- |
+| Dossier de conception (E12.1) | [docs/livrables/E12.1-dossier-conception.md](docs/livrables/E12.1-dossier-conception.md) |
+| Fiche de changement CR-01 (E12.2) | [docs/livrables/E12.2-fiche-changement-CR-01.md](docs/livrables/E12.2-fiche-changement-CR-01.md) |
+| Dossier de livraison (E12.3) | [docs/livrables/E12.3-dossier-livraison.md](docs/livrables/E12.3-dossier-livraison.md) |
+| Note d'échec (E9.7) | [docs/livrables/E9.7-note-echec.md](docs/livrables/E9.7-note-echec.md) |
+| Note de transfert | [docs/livrables/note-de-transfert.md](docs/livrables/note-de-transfert.md) |
+| Recette de bout en bout (E7.3) | [docs/recette/bout-en-bout.md](docs/recette/bout-en-bout.md) : le cas de Sophie rejoué du formulaire au dépôt, et les écarts trouvés ; rejeu automatique dans `make test-db` et la CI |
+
 ## Commandes
 
 | Commande | Effet |
@@ -41,6 +54,35 @@ Une nouvelle migration se crée avec `npx supabase migration new <nom>`.
 ## Données de démonstration
 
 `make seed` (et `make reset`) charge `supabase/seed.sql` : le compte du conseiller (`conseiller@offthemap.test`, mot de passe `offthemap-demo`, base locale uniquement), les 9 prestations du simulateur du formateur et 13 dossiers fictifs à Nantes, un par étape clé, du dossier tout juste reçu jusqu'à la réservation confirmée. Le seed est rejouable : il remplace les dossiers de démonstration sans créer de doublon. `make test-db` le vérifie.
+
+## Connexion du conseiller
+
+`/conseiller` exige une connexion (Supabase Auth, e-mail et mot de passe) : sans session, le proxy (`proxy.ts`) renvoie vers `/connexion`. Chaque page du back-office appelle `exigerConseiller()` (`lib/auth/conseiller.ts`), qui vérifie la session et le profil du conseiller.
+
+Compte de démonstration créé par le seed (base locale uniquement) : `conseiller@offthemap.test` / `offthemap-demo`.
+
+## Simulateur
+
+Les prestations (catalogue, disponibilités, options, réservations) viennent du simulateur du formateur (dépôt `PANDORMedia/gestion-projet-agentique-web3`, `server/app.py`), appelé uniquement par le serveur à travers `src/infrastructure/prestataires/simulateur.ts` (port `src/ports/prestataires.ts`).
+
+- `make up` le construit depuis GitHub et le lance en mode démonstration : API sur http://localhost:8765, tableau de bord en lecture seule sur http://localhost:8765/dashboard. Aucun clone à faire.
+- Clés de démonstration : équipe `demo-key`, approbation `demo-approval` (la clé d'approbation est saisie par le conseiller, jamais envoyée par l'agent). La clé d'équipe se règle dans `.env` : `SIMULATEUR_TEAM_KEY`.
+- Pour viser le serveur du formateur plutôt que le simulateur local, changer `SIMULATEUR_URL` et `SIMULATEUR_TEAM_KEY` dans `.env`.
+- **Mode rejeu de l'agent (E11.3)** : `AGENT_MODE=rejeu` dans `.env` pour démontrer la vérification sans OpenRouter. Les réponses du modèle sont rejouées depuis une vérification enregistrée, le simulateur est appelé en direct, et l'écran affiche « Rejeu » (`docs/agent/contrat-agent.md`). `reel` (par défaut) rétablit le modèle.
+- Pannes que le simulateur ne produit pas : `SIMULATEUR_PANNE=delai` ou `erreur_serveur` dans `.env` (puis relancer l'application) ; l'adaptateur rend alors une erreur explicite et aucun prix. `aucune` rétablit le fonctionnement normal.
+
+## Modèle et agent
+
+- `LLM_PROVIDER=fake` (par défaut) : faux client sans réseau, suffisant pour l'application et les tests. `openrouter` appelle un vrai modèle.
+- Avec `openrouter`, chaque membre met **sa propre** clé dans `LLM_API_KEY` (`.env` seulement). Modèles gratuits uniquement : un identifiant sans `:free` est refusé. Modèle principal `recursive/flint-v1.0:free`, réserve `nvidia/nemotron-3-ultra-550b-a55b:free` (`minimax/minimax-m3.1-flash` n'est plus gratuit depuis le 22/10/2026).
+- `make essai-agent` vérifie que le modèle appelle bien l'outil avant toute campagne.
+- Campagne d'évaluation de l'agent (E11.2) : `evaluation/README.md` ; note d'usage : `evaluation/note-usage.md`.
+
+## Variables d'environnement
+
+`.env.example` liste toutes les variables, sans valeur sensible. Toute nouvelle variable y est ajoutée dans la même PR.
+
+Les clés (LLM, service_role de Supabase, simulateur) restent côté serveur : jamais de préfixe `NEXT_PUBLIC_`, qui les inlinerait dans le bundle du navigateur. Deux garde-fous en CI (E7.5) : gitleaks (job `secrets`) sur l'historique, et `lib/securite.test.ts`, qui vérifie qu'aucun fichier d'environnement autre que `.env.example` n'est versionné et qu'aucun composant client n'importe, même indirectement, un module lisant une variable serveur.
 
 ## Types et contrats
 
@@ -69,40 +111,10 @@ docker exec -i supabase_db_off-the-map psql -U postgres -d postgres -v ON_ERROR_
 
 Le script travaille dans une transaction annulée à la fin : il ne laisse aucune donnée. Il se termine par « TOUS LES TESTS SONT PASSÉS ».
 
-## Connexion du conseiller
 
-`/conseiller` exige une connexion (Supabase Auth, e-mail et mot de passe) : sans session, le proxy (`proxy.ts`) renvoie vers `/connexion`. Chaque page du back-office appelle `exigerConseiller()` (`lib/auth/conseiller.ts`), qui vérifie la session et le profil du conseiller.
-
-Compte de démonstration créé par le seed (base locale uniquement) : `conseiller@offthemap.test` / `offthemap-demo`.
-
-## Simulateur du formateur
-
-Les prestations (catalogue, disponibilités, options, réservations) viennent du simulateur du formateur (dépôt `PANDORMedia/gestion-projet-agentique-web3`, `server/app.py`), appelé uniquement par le serveur à travers `src/infrastructure/prestataires/simulateur.ts` (port `src/ports/prestataires.ts`).
-
-- `make up` le construit depuis GitHub et le lance en mode démonstration : API sur http://localhost:8765, tableau de bord en lecture seule sur http://localhost:8765/dashboard. Aucun clone à faire.
-- Clés de démonstration : équipe `demo-key`, approbation `demo-approval` (la clé d'approbation est saisie par le conseiller, jamais envoyée par l'agent). La clé d'équipe se règle dans `.env` : `SIMULATEUR_TEAM_KEY`.
-- Pour viser le serveur du formateur plutôt que le simulateur local, changer `SIMULATEUR_URL` et `SIMULATEUR_TEAM_KEY` dans `.env`.
-- **Mode rejeu de l'agent (E11.3)** : `AGENT_MODE=rejeu` dans `.env` pour démontrer la vérification sans OpenRouter. Les réponses du modèle sont rejouées depuis une vérification enregistrée, le simulateur est appelé en direct, et l'écran affiche « Rejeu » (`docs/agent/contrat-agent.md`). `reel` (par défaut) rétablit le modèle.
-- Pannes que le simulateur ne produit pas : `SIMULATEUR_PANNE=delai` ou `erreur_serveur` dans `.env` (puis relancer l'application) ; l'adaptateur rend alors une erreur explicite et aucun prix. `aucune` rétablit le fonctionnement normal.
-
-## Modèle et agent
-
-- `LLM_PROVIDER=fake` (par défaut) : faux client sans réseau, suffisant pour l'application et les tests. `openrouter` appelle un vrai modèle.
-- Avec `openrouter`, chaque membre met **sa propre** clé dans `LLM_API_KEY` (`.env` seulement). Modèles gratuits uniquement : un identifiant sans `:free` est refusé. Modèle principal `recursive/flint-v1.0:free`, réserve `nvidia/nemotron-3-ultra-550b-a55b:free` (`minimax/minimax-m3.1-flash` n'est plus gratuit depuis le 22/10/2026).
-- `make essai-agent` vérifie que le modèle appelle bien l'outil avant toute campagne.
-- Campagne d'évaluation de l'agent (E11.2) : `evaluation/README.md` ; note d'usage : `evaluation/note-usage.md`.
-
-## Variables d'environnement
-
-`.env.example` liste toutes les variables, sans valeur sensible. Toute nouvelle variable y est ajoutée dans la même PR.
-
-Les clés (LLM, service_role de Supabase, simulateur) restent côté serveur : jamais de préfixe `NEXT_PUBLIC_`, qui les inlinerait dans le bundle du navigateur. Deux garde-fous en CI (E7.5) : gitleaks (job `secrets`) sur l'historique, et `lib/securite.test.ts`, qui vérifie qu'aucun fichier d'environnement autre que `.env.example` n'est versionné et qu'aucun composant client n'importe, même indirectement, un module lisant une variable serveur.
-
-## Planning
+## Planning et rituels
 
 - Tableau kanban : projet GitHub « OffTheMap » (https://github.com/users/CamillePaillou/projects/2), une carte par issue, liée à sa PR.
 - Branches : chaque issue sur sa branche ; PR vers `dev` avec 1 approbation ; puis PR de `dev` vers `main` avec 1 approbation et les contrôles `ci` et `secrets` au vert. Les deux branches sont protégées : pas de push direct.
 - `docs/planning/pert.md` : PERT du sprint depuis le J1 (dates au plus tôt et au plus tard, marges, chemin critique), tiré des issues.
 - `docs/rituels/` : Sprint Goal, Definition of Done, Sprint Planning, dailies et rétrospectives.
-- `docs/recette/bout-en-bout.md` : le cas de Sophie rejoué du formulaire au dépôt (E7.3), et les écarts trouvés ; rejeu automatique dans `make test-db` et la CI.
-- `docs/livrables/` : dossier de conception (E12.1), fiche de changement CR-01 (E12.2), dossier de livraison (E12.3), note d'échec (E9.7).
