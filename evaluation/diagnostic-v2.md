@@ -44,3 +44,12 @@ Format du dossier étudiant J4, section 4.
 | A03 | échec | non exécuté : fiche conforme (« 2 adultes ou 4 avec des amis ? »), brouillon bloqué par le quota | `traces/v3/A03-1.json` |
 
 Limite observée : certains points flous du modèle gratuit contiennent des fragments sans sens (« catégoriewanted », « desEventually? -> sans objet »). Le schéma ne le détecte pas ; le conseiller relit la fiche.
+
+## Retest v3b avec le nouveau modèle (23/10)
+
+`minimax/minimax-m3.1-flash` n'étant plus gratuit, A02 et A03 (non exécutés en v3, quota) ont été retestés avec `recursive/flint-v1.0:free`.
+
+| Cas | Constat | Preuve | Décision |
+| --- | --- | --- | --- |
+| A02 | Fiche refusée par le schéma aux deux essais (champs `envies`, `contraintes` absents), même après le renvoi des erreurs au modèle. Aucun brouillon. | `traces/v3b/A02-1.json`, `details.erreur`, `essais.fiche = 2` | Échec maintenu. Le code se comporte comme prévu (rien d'enregistré ; dans l'application, dossier en erreur avec « relancer ») ; le modèle ne tient pas notre format. Pas de correction du schéma : rendre ces champs facultatifs cacherait un oubli du modèle |
+| A03 | Le programme propose `echec` alors que la fiche signale « Nombre exact de participants » | `traces/v3b/A03-1.json`, critère 1 | Faux négatif de l'oracle (le mot « participant » manquait). Oracle corrigé dans `campagne.ts`, critère du jeu inchangé ; verdict corrigé en `reussite` par la vérificatrice, avec `verdict_propose_par_le_programme` conservé dans la trace |

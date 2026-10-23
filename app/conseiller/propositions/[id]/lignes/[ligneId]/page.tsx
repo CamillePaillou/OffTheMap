@@ -8,6 +8,8 @@ import { Fil } from '../../../../_composants/fil';
 import { dateDeVerification, jourCourt } from '../../../../_composants/libelles';
 import { Ecart } from '../../../../_composants/ecart';
 import { BoutonReverifier } from './bouton-reverifier';
+import { estRejeu, PREFIXE_REJEU } from '@/src/domain/verification/rejeu';
+import { modeAgent } from '@/src/infrastructure/llm';
 
 type Props = PageProps<'/conseiller/propositions/[id]/lignes/[ligneId]'>;
 
@@ -40,6 +42,9 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   const [verification, dossier] = await Promise.all([lecture.verificationDeLigne(ligneId), new DossiersSupabase().detail(proposition.dossier_id)]);
   const ecart = verification ? ecartPrix(ligne, verification) : null;
   const STATUT_VERIF = { ok: 'disponible', indisponible: 'indisponible', echec: 'échec de la vérification' } as const;
+  // E11.3 : le mode rejeu est toujours annoncé, avant de vérifier comme sur le résultat
+  const modeRejeu = (() => { try { return modeAgent(process.env) === 'rejeu'; } catch { return false; } })();
+  const rejouee = estRejeu(verification?.modele);
 
   return (
     <>
@@ -60,6 +65,14 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
         </div>
         <BoutonReverifier propositionId={id} ligneId={ligne.id} deja={verification !== null} />
       </div>
+
+      {modeRejeu && (
+        <p role="status" className="mt-6 rounded-[14px] border-l-4 border-encre bg-ciel-pale px-4 py-3 text-sm text-encre">
+          <span className="bo-puce mr-2 bg-encre text-craie">Rejeu</span>
+          Agent en mode rejeu (démonstration sans OpenRouter) : les réponses du modèle sont rejouées depuis une vérification enregistrée.
+          Le prestataire, lui, est interrogé en direct, et le programme contrôle tout comme d’habitude.
+        </p>
+      )}
 
       {!verification ? (
         <div className="bo-carte mt-8 p-6">
@@ -85,6 +98,13 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
 
           <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
             <div className="flex flex-col gap-6">
+              {rejouee && (
+                <p className="bo-carte border-l-4 border-encre p-4 text-sm">
+                  <span className="bo-puce mr-2 bg-encre text-craie">Rejeu</span>
+                  Vérification faite en rejeu : les réponses du modèle ({verification.modele.slice(PREFIXE_REJEU.length)}) viennent d’un
+                  enregistrement ; prix et places viennent du prestataire, interrogé en direct.
+                </p>
+              )}
               {verification.resume && (
                 <blockquote className="bo-carte p-5 leading-relaxed">
                   <p className="text-sm text-encre-doux">Conclusion de l’agent</p>
