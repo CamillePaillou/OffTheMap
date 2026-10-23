@@ -1,29 +1,30 @@
 import type { StatutDossier, StatutProposition } from '@/types/enums';
+import { FAMILLE_STATUT, type StyleStatut } from '../../../types/statuts-famille';
 import { STATUT_DOSSIER } from './libelles';
 
-/**
- * Les dossiers regroupés par ce que le conseiller doit en faire. Sert aux compteurs de la liste et à la couleur des
- * pastilles : la couleur suit le groupe, le libellé exact reste écrit (jamais la couleur seule).
- */
+/** Les dossiers regroupés par ce que le conseiller doit en faire. La couleur des pastilles suit, elle, FAMILLE_STATUT. */
 export const GROUPES = [
-  { id: 'a_trier', libelle: 'À trier', statuts: ['nouvelle', 'fiche_en_cours', 'fiche_prete', 'erreur'], ton: 'bg-ciel text-encre' },
-  { id: 'attente_client', libelle: 'En attente du client', statuts: ['a_corriger', 'rdv_propose'], ton: 'bg-encre/[0.07] text-encre' },
-  { id: 'en_cours', libelle: 'En cours', statuts: ['validee', 'entretien_fait', 'en_proposition'], ton: 'bg-ciel text-encre' },
-  { id: 'clos', libelle: 'Clos', statuts: ['gagnee', 'refusee', 'abandonnee'], ton: 'bg-encre/[0.07] text-encre-doux' },
-] as const satisfies readonly { id: string; libelle: string; statuts: readonly StatutDossier[]; ton: string }[];
+  { id: 'a_trier', libelle: 'À trier', statuts: ['nouvelle', 'fiche_en_cours', 'fiche_prete', 'erreur'] },
+  { id: 'attente_client', libelle: 'En attente du client', statuts: ['a_corriger', 'rdv_propose'] },
+  { id: 'en_cours', libelle: 'En cours', statuts: ['validee', 'entretien_fait', 'en_proposition'] },
+  { id: 'clos', libelle: 'Clos', statuts: ['gagnee', 'refusee', 'abandonnee'] },
+] as const satisfies readonly { id: string; libelle: string; statuts: readonly StatutDossier[] }[];
 
 export const groupeDe = (s: StatutDossier) => GROUPES.find((g) => (g.statuts as readonly string[]).includes(s))!;
 
-export function PastilleStatut({ statut }: { statut: StatutDossier }) {
-  const g = groupeDe(statut);
+/** Pastille d'un statut (dossier, proposition, ligne) : couleur et icône de sa famille, libellé toujours écrit. */
+export function Pastille({ style: { famille, libelle, icone } }: { style: StyleStatut }) {
   return (
-    <span className={`bo-puce ${statut === 'erreur' ? 'bg-brique-pale text-brique-texte' : statut === 'gagnee' ? 'bg-encre text-craie' : g.ton}`}>
-      {STATUT_DOSSIER[statut]}
+    <span className={`bo-puce bo-puce--${famille}`}>
+      {icone && <span aria-hidden="true">{icone}</span>}
+      {libelle}
     </span>
   );
 }
 
-const ETAPES_DOSSIER = ['Demande', 'Tri', 'Entretien', 'Proposition', 'Gagné'] as const;
+export const PastilleStatut = ({ statut }: { statut: StatutDossier }) => <Pastille style={FAMILLE_STATUT[statut]} />;
+
+const ETAPES_DOSSIER = ['Demande', 'Tri', 'Entretien', 'Proposition', 'Conclue'] as const;
 const POSITION: Partial<Record<StatutDossier, number>> = {
   nouvelle: 1, fiche_en_cours: 1, fiche_prete: 1, erreur: 1, a_corriger: 1,
   validee: 2, rdv_propose: 2,

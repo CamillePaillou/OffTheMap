@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estProtege, suiteSure, urlConnexion } from './redirection';
+import { estProtege, estProtegeClient, suiteClientSure, suiteSure, urlConnexion, urlConnexionClient } from './redirection';
 
 describe('protection de /conseiller', () => {
   it('protège /conseiller et ses sous-pages, pas le reste', () => {
@@ -36,5 +36,28 @@ describe('retour après connexion', () => {
     ]) {
       expect(suiteSure(suite), String(suite)).toBe('/conseiller');
     }
+  });
+});
+
+describe('espace client (/compte)', () => {
+  it('protège le compte et ses demandes, pas l’inscription, la connexion ni les liens du mail', () => {
+    expect(estProtegeClient('/compte')).toBe(true);
+    expect(estProtegeClient('/compte/demandes/42')).toBe(true);
+    expect(estProtegeClient('/compte/nouveau-mot-de-passe')).toBe(true);
+    for (const ouverte of ['/compte/connexion', '/compte/inscription', '/compte/mot-de-passe-oublie', '/compte/confirmer'])
+      expect(estProtegeClient(ouverte)).toBe(false);
+    expect(estProtegeClient('/comptes')).toBe(false);
+    expect(estProtegeClient('/suivi')).toBe(false);
+  });
+
+  it('après connexion ou lien du mail : seulement une page du compte', () => {
+    expect(suiteClientSure('/compte/demandes/42')).toBe('/compte/demandes/42');
+    expect(suiteClientSure('/compte/nouveau-mot-de-passe')).toBe('/compte/nouveau-mot-de-passe');
+    expect(suiteClientSure('https://ailleurs.example')).toBe('/compte');
+    expect(suiteClientSure('//ailleurs.example/compte')).toBe('/compte');
+    expect(suiteClientSure('/conseiller')).toBe('/compte');
+    expect(suiteClientSure('/compte/connexion')).toBe('/compte');
+    expect(suiteClientSure(undefined)).toBe('/compte');
+    expect(urlConnexionClient('/compte/demandes/42')).toBe('/compte/connexion?suite=%2Fcompte%2Fdemandes%2F42');
   });
 });

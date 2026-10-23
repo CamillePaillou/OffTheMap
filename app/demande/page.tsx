@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { Saut } from '../_composants/saut';
 import { nommerPrestations } from '@/src/infrastructure/db/catalogueSupabase';
+import { clientConnecte } from '@/lib/auth/client';
 import { FormulaireDemande } from './formulaire';
 
 export const metadata: Metadata = { title: 'Composer mon week-end' };
@@ -28,7 +29,7 @@ export default function DemandePage({ searchParams }: PageProps<'/demande'>) {
 
 // Préremplissage depuis une carte de l'accueil (« Un week-end à Lyon ») ou depuis le chatbot (E1.3) : destination,
 // date de départ, nombre d'adultes, et les prestations ajoutées dans le chatbot (E1.4, « prestations=id1,id2 »),
-// contrôlées ici et nommées depuis le catalogue ; le client relit, retire ou complète. Rien d'autre n'est prérempli.
+// contrôlées ici et nommées depuis le catalogue ; le client relit, retire ou complète. Client connecté : son adresse.
 async function AvecDestination({ searchParams }: Pick<PageProps<'/demande'>, 'searchParams'>) {
   const p = await searchParams;
   const texte = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
@@ -45,5 +46,8 @@ async function AvecDestination({ searchParams }: Pick<PageProps<'/demande'>, 'se
   // sans destination donnée, celle des prestations choisies si elles sont toutes dans la même ville
   const villes = [...new Set(prestations.map((x) => x.destination))];
   if (!initiales.destination && villes.length === 1) initiales.destination = villes[0]!;
+  // espace client : l'adresse confirmée du compte, celle qui relie la demande à l'espace (le client peut la changer)
+  const client = await clientConnecte();
+  if (client?.confirme) initiales.email = client.email;
   return <FormulaireDemande initiales={Object.keys(initiales).length ? initiales : undefined} prestationsChoisies={prestations} />;
 }

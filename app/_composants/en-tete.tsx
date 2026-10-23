@@ -32,6 +32,12 @@ export function EnTeteSelon({ chemin, saute = false }: { chemin: string; saute?:
           <ul className="flex items-center gap-1 sm:gap-2">
             <li className="hidden md:block"><Link href="/#destinations" className={lien}>Destinations</Link></li>
             <li className="hidden md:block"><Link href="/#comment" className={lien}>Comment on travaille</Link></li>
+            <li className="hidden lg:block">
+              <Link href="/suivi" aria-current={chemin.startsWith('/suivi') ? 'page' : undefined} className={lien}>Suivre ma demande</Link>
+            </li>
+            <li className="hidden sm:block">
+              <Link href="/compte" aria-current={chemin.startsWith('/compte') ? 'page' : undefined} className={lien}>Mon espace</Link>
+            </li>
             <li>
               <Link href="/demande" aria-current={chemin.startsWith('/demande') ? 'page' : undefined} className="btn-principal px-4! py-2.5!">
                 Composer mon week-end

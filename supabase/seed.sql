@@ -255,3 +255,36 @@ insert into corrections (dossier_id, demande_id, boucle, champs, motif, commenta
 insert into historique_dossier (dossier_id, type, auteur, auteur_id, detail, cree_le)
   values ('d0551e00-0000-4000-8000-000004000000', 'mail', 'conseiller', '11111111-1111-4111-8111-111111111111',
           '{"type": "correction_demandee", "boucle": 1, "champs": ["budget", "dates", "nb_nuits"]}'::jsonb, now());
+
+-- Espace client (suivi de la demande) : numéros de dossier fixes, pour les retrouver d'un reset à l'autre,
+-- et un compte client de démonstration, Jade, dont la proposition est envoyée (réponse en ligne possible).
+-- E-mail : jade@example.org · mot de passe : offthemap-demo (base locale uniquement).
+update dossiers d set reference = r.reference
+from (values
+  ('d0551e00-0000-4000-8000-000001000000'::uuid, 'DT-SEED-A2A2'), ('d0551e00-0000-4000-8000-000002000000'::uuid, 'DT-SEED-B2B2'),
+  ('d0551e00-0000-4000-8000-000003000000'::uuid, 'DT-SEED-C2C2'), ('d0551e00-0000-4000-8000-000004000000'::uuid, 'DT-SEED-D2D2'),
+  ('d0551e00-0000-4000-8000-000005000000'::uuid, 'DT-SEED-E2E2'), ('d0551e00-0000-4000-8000-000006000000'::uuid, 'DT-SEED-F2F2'),
+  ('d0551e00-0000-4000-8000-000007000000'::uuid, 'DT-SEED-G2G2'), ('d0551e00-0000-4000-8000-000008000000'::uuid, 'DT-SEED-H2H2'),
+  ('d0551e00-0000-4000-8000-000009000000'::uuid, 'DT-SEED-J2J2'), ('d0551e00-0000-4000-8000-000010000000'::uuid, 'DT-SEED-K2K2'),
+  ('d0551e00-0000-4000-8000-000011000000'::uuid, 'DT-JADE-NANT'), ('d0551e00-0000-4000-8000-000012000000'::uuid, 'DT-SEED-N2N2'),
+  ('d0551e00-0000-4000-8000-000013000000'::uuid, 'DT-SEED-P2P2')
+) as r (id, reference)
+where d.id = r.id and d.reference is distinct from r.reference;
+
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new
+) values (
+  '00000000-0000-0000-0000-000000000000', '22222222-2222-4222-8222-222222222222', 'authenticated', 'authenticated',
+  'jade@example.org', extensions.crypt('offthemap-demo', extensions.gen_salt('bf')), now(),
+  '{"provider":"email","providers":["email"]}', '{}', now(), now(),
+  '', '', '', ''
+) on conflict (id) do nothing;
+
+insert into auth.identities (id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at)
+values (
+  gen_random_uuid(), '22222222-2222-4222-8222-222222222222', '22222222-2222-4222-8222-222222222222', 'email',
+  '{"sub":"22222222-2222-4222-8222-222222222222","email":"jade@example.org","email_verified":true}',
+  now(), now(), now()
+) on conflict (provider_id, provider) do nothing;

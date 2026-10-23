@@ -186,18 +186,49 @@ export type Database = {
         Row: {
           cree_le: string;
           id: string;
+          reference: string;
           statut: Database["public"]["Enums"]["statut_dossier"];
         };
         ComputedFields: never;
         Insert: {
           cree_le?: string;
           id?: string;
+          reference?: string;
           statut?: Database["public"]["Enums"]["statut_dossier"];
         };
         Update: {
           cree_le?: string;
           id?: string;
+          reference?: string;
           statut?: Database["public"]["Enums"]["statut_dossier"];
+        };
+        Relationships: [];
+      };
+      reponses_client: {
+        Row: {
+          auteur: string | null;
+          cree_le: string;
+          id: string;
+          message: string | null;
+          proposition_id: string;
+          type: "acceptee" | "changement";
+        };
+        ComputedFields: never;
+        Insert: {
+          auteur?: string | null;
+          cree_le?: string;
+          id?: string;
+          message?: string | null;
+          proposition_id: string;
+          type: "acceptee" | "changement";
+        };
+        Update: {
+          auteur?: string | null;
+          cree_le?: string;
+          id?: string;
+          message?: string | null;
+          proposition_id?: string;
+          type?: "acceptee" | "changement";
         };
         Relationships: [];
       };
@@ -716,6 +747,11 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      suivi_public: { Args: { p_reference: string }; Returns: Json };
+      normaliser_reference: { Args: { p_saisie: string }; Returns: string };
+      mes_demandes: { Args: Record<PropertyKey, never>; Returns: Json };
+      ma_demande: { Args: { p_dossier: string }; Returns: Json };
+      repondre_proposition: { Args: { p_proposition: string; p_type: string; p_message: string | null }; Returns: undefined };
       enregistrer_reponse_client: {
         Args: { p_proposition: string; p_nouveau: Database["public"]["Enums"]["statut_proposition"]; p_conseiller: string };
         Returns: number;

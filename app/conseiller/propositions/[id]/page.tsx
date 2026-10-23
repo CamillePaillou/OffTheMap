@@ -9,8 +9,9 @@ import { TarifsSupabase } from '@/src/infrastructure/db/tarifsSupabase';
 import { Ecart } from '../../_composants/ecart';
 import { AllerA, AValider } from '../../_composants/a-valider';
 import { Fil } from '../../_composants/fil';
-import { PastilleActeur, prochaineEtape } from '../../_composants/statut';
-import { dateDeVerification, jourCourt, STATUT_PROPOSITION } from '../../_composants/libelles';
+import { Pastille, PastilleActeur, prochaineEtape } from '../../_composants/statut';
+import { dateDeVerification, jourCourt } from '../../_composants/libelles';
+import { FAMILLE_STATUT_LIGNE, FAMILLE_STATUT_PROPOSITION } from '@/types/statuts-famille';
 import { resumerProposition } from '@/src/domain/proposition/resumeProposition';
 import { comparerVersions } from '@/src/domain/proposition/ecartsVersions';
 import { REGLES_CHIFFRAGE } from '@/types/chiffrage';
@@ -19,6 +20,8 @@ import { PanneauAbandon } from './panneau-abandon';
 import { AjouterLigne, ModifierBudget, ModifierLigne, NuitsPlusMoins, ParticipantsPlusMoins, SejourPlusMoins } from './ajuster-lignes';
 import { PanneauChangement } from './panneau-changement';
 import { PanneauReponse } from './panneau-reponse';
+import { CarteReponseEnLigne } from './reponse-en-ligne';
+import { lireReponseEnLigne } from '@/src/infrastructure/db/reponseClientSupabase';
 import { CarteMail } from '../../_composants/carte-mail';
 import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
 import { lienMailto, mailConfirmation, mailProposition, MailImpossibleErreur } from '@/src/domain/mails';
@@ -31,7 +34,6 @@ import { PanneauResumeEcarts } from './panneau-resume-ecarts';
 import { empreinteEcarts } from '@/src/application/resumeEcarts';
 import { versEntreeEcarts } from '@/src/domain/proposition/entreeEcarts';
 
-const STATUT_LIGNE = { a_verifier: 'à vérifier', confirme: 'confirmé', indisponible: 'indisponible', remplacee: 'remplacée', reservee: 'réservée', retiree: 'retirée' } as const;
 const HORS_TOTAL: readonly string[] = REGLES_CHIFFRAGE.statutsHorsTotal; // lignes indisponibles, remplacées ou retirées : hors total
 const SOURCE = { agent: 'agent', telephone: 'téléphone', mail: 'mail', lien: 'lien' } as const;
 
@@ -74,6 +76,8 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   const aAbandonner = proposition.statut === 'sans_reponse' && !abandonne ? await new AbandonSupabase().lire(proposition.id) : null;
   const proposeAbandon = aAbandonner !== null && aAbandonner.dossier_statut === 'en_proposition' && abandonPropose(aAbandonner, new Date());
   const attendReponse = !abandonne && (proposition.statut === 'envoyee' || proposition.statut === 'sans_reponse');
+  // espace client : réponse donnée en ligne par le client, à enregistrer par le conseiller
+  const reponseEnLigne = attendReponse ? await lireReponseEnLigne(proposition.id) : null;
   // E6.2 : ce qui a changé depuis la version précédente, recalculé à chaque lecture
   const precedente = proposition.version > 1 ? await lecture.versionDuDossier(proposition.dossier_id, proposition.version - 1) : null;
   const ecartsVersions = precedente ? comparerVersions(precedente, proposition) : null;
@@ -138,9 +142,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
       />
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <h1 className="text-3xl sm:text-4xl">Proposition, version {proposition.version}</h1>
-        <span className="rounded-full bg-ciel-pale px-2.5 py-0.5 text-sm font-semibold text-encre ring-1 ring-inset ring-transparent">
-          {STATUT_PROPOSITION[proposition.statut]}
-        </span>
+        <Pastille style={FAMILLE_STATUT_PROPOSITION[proposition.statut]} />
       </div>
       {/* E6.6 : le séjour de référence (dates fixes de la fiche, sinon de la demande), ajustable tant que la proposition l'est */}
       {modifiable && chiffrage && (
@@ -276,7 +278,9 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
         {aCote && (
           <div className="flex flex-col gap-4">
             {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} aValider={aValider('prete')} />}
+            {reponseEnLigne && <CarteReponseEnLigne reponse={reponseEnLigne} />}
             {!abandonne && <PanneauReponse propositionId={proposition.id} statut={proposition.statut} aValider={aValider('acceptee', 'depot_recu')} />}
+
             {attendReponse && <PanneauChangement propositionId={proposition.id} version={proposition.version} />}
             {proposeAbandon && <PanneauAbandon propositionId={proposition.id} />}
           </div>
@@ -359,19 +363,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                     {verification ? <Ecart ecart={ecart} /> : <span className="text-encre-doux">pas encore vérifié</span>}
                   </td>
                   <td className="px-3 py-3">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${
-                        ligne.statut === 'confirme'
-                          ? 'bg-ciel-pale text-encre ring-transparent'
-                          : ligne.statut === 'a_verifier'
-                            ? 'bg-ciel-pale text-encre ring-transparent'
-                            : ligne.statut === 'indisponible'
-                              ? 'bg-brique-pale text-brique-texte ring-transparent'
-                              : 'bg-craie text-encre-doux ring-trait'
-                      }`}
-                    >
-                      {STATUT_LIGNE[ligne.statut]}
-                    </span>
+                    <Pastille style={FAMILLE_STATUT_LIGNE[ligne.statut]} />
                     {ligne.prix_confirme && (
                       <span className="block text-xs text-encre-doux">
                         {euros(ligne.prix_confirme.montant_cents)}, vérifié {dateDeVerification(ligne.prix_confirme.le)} ({SOURCE[ligne.prix_confirme.source]}) ·
