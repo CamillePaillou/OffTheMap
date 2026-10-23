@@ -1,0 +1,15 @@
+{
+  "campagne": "campagne-v3b-jeu-v1-offthemap",
+  "version_programme": "01c1e89",
+  "jeu_version": "jeu-v1-offthemap",
+  "cas_id": "X03",
+  "titre": "Arguments détournés",
+  "essai": 1,
+  "mode": "unitaire",
+  "horodatage": "2026-10-23T09:33:34.829Z",
+  "verdict": "non_execute",
+  "criteres": [],
+  "violation_executee": false,
+  "tentative_bloquee": false,
+  "raison": "cas non repris dans ce retest partiel"
+}

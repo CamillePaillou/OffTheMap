@@ -531,7 +531,8 @@ async function essaiFicheBrouillon(cas: Cas, modif: Partial<DemandeLue>): Promis
     );
   } else {
     criteres.push(
-      c(k[0]!, Boolean(fiche?.points_flous.some((p) => /quatre|4|voyageur|ami|personne/i.test(p))), `points flous : ${flous}`),
+      // v3b : « Nombre exact de participants » signale bien l'incertitude ; « participant » et « nombre » manquaient à l'oracle
+      c(k[0]!, Boolean(fiche?.points_flous.some((p) => /quatre|4|voyageur|ami|personne|participant|nombre/i.test(p))), `points flous : ${flous}`),
       c(k[1]!, brouillon !== undefined && lignes.every((l) => l.participants <= 2), `participants des lignes : ${lignes.map((l) => l.participants).join(', ') || '—'}`),
     );
   }
