@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ecartPrix, euros } from './ecartPrix';
 
-const ligne = { prix_unitaire_catalogue_cents: 3500, participants: 2 };
+const ligne = { prix_unitaire_catalogue_cents: 3500, participants: 2, nb_nuits: 1 };
 
 describe('écart entre le prix proposé et le prix revérifié', () => {
   it('hausse : atelier proposé à 35 €, revérifié à 40 €', () => {
@@ -19,7 +19,7 @@ describe('écart entre le prix proposé et le prix revérifié', () => {
     expect(ecartPrix(ligne, { prix_unitaire_cents: null })).toBeNull();
   });
   it('pas de pourcentage sur un prix proposé gratuit', () => {
-    expect(ecartPrix({ prix_unitaire_catalogue_cents: 0, participants: 3 }, { prix_unitaire_cents: 500 })).toMatchObject({
+    expect(ecartPrix({ prix_unitaire_catalogue_cents: 0, participants: 3, nb_nuits: 1 }, { prix_unitaire_cents: 500 })).toMatchObject({
       total_cents: 1500, pourcentage: null, sens: 'hausse',
     });
   });

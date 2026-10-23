@@ -13,7 +13,7 @@
  *   pour refléter le changement demandé par le client (E6.6).
  */
 import { z } from 'zod';
-import { ALERTES_BLOQUANTES, LIMITES, type SourcePrix, type StatutLigne, type StatutProposition } from '../../types';
+import { ALERTES_BLOQUANTES, LIMITES, REGLES_CHIFFRAGE, type SourcePrix, type StatutLigne, type StatutProposition } from '../../types';
 import { TRANSITIONS_LIGNE, trouverTransition } from '../../types/transitions';
 import { chiffrer, formaterMontant, type EntreeChiffrage } from '../domain/chiffrage/chiffrer';
 import { StatutModifieErreur } from '../ports/statuts';
@@ -24,6 +24,7 @@ import {
   EnvoiRefuseErreur,
   LigneModifieeErreur,
   MemePrestationErreur,
+  NuitsRefuseesErreur,
   PrestationRefuseeErreur,
   PropositionFigeeErreur,
   SejourImpossibleErreur,
@@ -53,7 +54,8 @@ export const schemaTarif = z.object({
 export type RefusLigne =
   | 'introuvable' | 'transition_interdite' | 'ligne_modifiee' | 'proposition_figee' | 'pas_de_prix_verifie'
   | 'prestation_refusee' | 'meme_prestation' | /** E6.6 : déjà prévue à cette date, ou rien ne change. */ 'deja_prevue'
-  | /** E7.4, après le dépôt : */ 'accord_client_requis' | 'derniere_ligne' | 'demarche_en_cours';
+  | /** E7.4, après le dépôt : */ 'accord_client_requis' | 'derniere_ligne' | 'demarche_en_cours'
+  | /** plusieurs nuits pour une prestation qui n'est pas un hébergement */ 'nuits_refusees';
 export type ResultatLigne =
   | { ok: true; statutProposition: StatutProposition; /** E5.2 : la ligne créée par le remplacement. */ nouvelleLigneId?: string }
   | { ok: false; erreurs: ErreursChamps }
@@ -200,17 +202,25 @@ const date = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, 'Choisissez une date
 const participants = z.coerce.number('Nombre de participants invalide').int('Nombre de participants invalide')
   .min(1, 'Au moins un participant').max(LIMITES.participantsMax, `${LIMITES.participantsMax} participants au plus`);
 
+const nuits = z.coerce.number('Nombre de nuits invalide').int('Nombre de nuits invalide')
+  .min(1, 'Au moins une nuit').max(REGLES_CHIFFRAGE.nuitsMaxParLigne, `${REGLES_CHIFFRAGE.nuitsMaxParLigne} nuits au plus`);
+
 export const schemaAjout = z.object({
   prestationId: z.string().regex(/^[a-z0-9-]+$/, 'Choisissez une prestation du catalogue'),
   date,
   participants,
+  /** Hébergement : nuits depuis la date ; vide = 1. */
+  nbNuits: z.union([z.literal(''), nuits]).optional().transform((n) => (n === '' || n === undefined ? 1 : n)),
 });
 
-/** Vide : inchangé. Au moins l'un des deux doit changer. */
+/** Vide : inchangé. Au moins un champ doit changer. */
 export const schemaModification = z.object({
   date: z.union([z.literal(''), date]).transform((d) => d || undefined),
   participants: z.union([z.literal(''), participants]).transform((n) => (n === '' ? undefined : n)),
-}).refine((m) => m.date !== undefined || m.participants !== undefined, { message: 'Changez la date ou le nombre de participants', path: ['formulaire'] });
+  nbNuits: z.union([z.literal(''), nuits]).optional().transform((n) => (n === '' ? undefined : n)),
+}).refine((m) => m.date !== undefined || m.participants !== undefined || m.nbNuits !== undefined, {
+  message: 'Changez la date, le nombre de participants ou de nuits', path: ['formulaire'],
+});
 
 const erreursDe = (issues: readonly z.core.$ZodIssue[]): ErreursChamps => {
   const erreurs: ErreursChamps = {};
@@ -225,9 +235,9 @@ const erreursDe = (issues: readonly z.core.$ZodIssue[]): ErreursChamps => {
  */
 export async function ajouterLigne(
   repo: TarifsRepository,
-  entree: { propositionId: string; conseillerId: string; prestationId: unknown; date: unknown; participants: unknown },
+  entree: { propositionId: string; conseillerId: string; prestationId: unknown; date: unknown; participants: unknown; nbNuits?: unknown },
 ): Promise<ResultatLigne> {
-  const saisie = schemaAjout.safeParse({ prestationId: entree.prestationId, date: entree.date, participants: entree.participants });
+  const saisie = schemaAjout.safeParse({ prestationId: entree.prestationId, date: entree.date, participants: entree.participants, nbNuits: entree.nbNuits });
   if (!saisie.success) return { ok: false, erreurs: erreursDe(saisie.error.issues) };
   if (!entree.conseillerId.trim() || !trouverTransition(TRANSITIONS_LIGNE, null, 'a_verifier', 'conseiller')) {
     return { ok: false, raison: 'transition_interdite' };
@@ -239,6 +249,7 @@ export async function ajouterLigne(
     if (e instanceof PropositionFigeeErreur) return { ok: false, raison: 'proposition_figee' };
     if (e instanceof PrestationRefuseeErreur) return { ok: false, raison: 'prestation_refusee' };
     if (e instanceof MemePrestationErreur) return { ok: false, raison: 'deja_prevue' };
+    if (e instanceof NuitsRefuseesErreur) return { ok: false, raison: 'nuits_refusees' };
     throw e;
   }
   await recalculerAlertes(repo, entree.propositionId);
@@ -246,14 +257,14 @@ export async function ajouterLigne(
 }
 
 /**
- * Change la date et/ou les participants d'une ligne (E6.6) : elle repasse « à vérifier », sans prix confirmé, car le
- * tarif obtenu ne vaut plus pour une autre date ou un autre groupe. Les autres lignes restent intactes.
+ * Change la date, les participants et/ou les nuits d'une ligne (E6.6) : elle repasse « à vérifier », sans prix confirmé,
+ * car le tarif obtenu ne vaut plus pour une autre date, un autre groupe ou d'autres nuits. Les autres lignes restent intactes.
  */
 export async function modifierLigne(
   repo: TarifsRepository,
-  entree: { ligneId: string; conseillerId: string; date: unknown; participants: unknown },
+  entree: { ligneId: string; conseillerId: string; date: unknown; participants: unknown; nbNuits?: unknown },
 ): Promise<ResultatLigne> {
-  const saisie = schemaModification.safeParse({ date: entree.date ?? '', participants: entree.participants ?? '' });
+  const saisie = schemaModification.safeParse({ date: entree.date ?? '', participants: entree.participants ?? '', nbNuits: entree.nbNuits ?? '' });
   if (!saisie.success) return { ok: false, erreurs: erreursDe(saisie.error.issues) };
   const ligne = await repo.lireLigne(entree.ligneId);
   if (!ligne) return { ok: false, raison: 'introuvable' };
@@ -268,11 +279,13 @@ export async function modifierLigne(
       ligneId: entree.ligneId, conseillerId: entree.conseillerId,
       ...(saisie.data.date ? { date: saisie.data.date } : {}),
       ...(saisie.data.participants ? { participants: saisie.data.participants } : {}),
+      ...(saisie.data.nbNuits ? { nbNuits: saisie.data.nbNuits } : {}),
     });
   } catch (e) {
     if (e instanceof LigneModifieeErreur) return { ok: false, raison: 'ligne_modifiee' };
     if (e instanceof PropositionFigeeErreur) return { ok: false, raison: 'proposition_figee' };
     if (e instanceof MemePrestationErreur) return { ok: false, raison: 'deja_prevue' };
+    if (e instanceof NuitsRefuseesErreur) return { ok: false, raison: 'nuits_refusees' };
     throw e;
   }
   await recalculerAlertes(repo, ligne.propositionId);
@@ -335,9 +348,11 @@ export async function modifierBudget(
 }
 
 /** Chiffrage (E4.2) et ce qui bloque l'envoi, sans rien écrire : pour l'affichage. */
-export function etatEnvoi(entree: EntreeChiffrage) {
+export function etatEnvoi(entree: EntreeChiffrage & { destination: string | null }) {
   const chiffrage = chiffrer(entree);
-  return { chiffrage, bloquants: bloquants(entree.lignes.map((l) => l.statut), chiffrage) };
+  const raisons = bloquants(entree.lignes.map((l) => l.statut), chiffrage);
+  if (!entree.destination) raisons.unshift('aucune destination : fixez-la sur la fiche du dossier');
+  return { chiffrage, bloquants: raisons };
 }
 
 /** Alertes recalculées depuis l'état en base et enregistrées ; renvoie aussi ce qui bloque l'envoi. */

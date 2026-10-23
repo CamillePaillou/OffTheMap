@@ -104,8 +104,10 @@ export interface LigneMail {
   nom: string;
   date: string;
   participants: number;
+  /** Hébergement : nuits depuis `date` ; 1 sinon. */
+  nb_nuits: number;
   statut: StatutLigne;
-  /** Tarif confirmé par personne : obligatoire, aucun prix catalogue ni estimé n'est écrit. */
+  /** Tarif confirmé par personne (et par nuit pour un hébergement) : obligatoire, aucun prix catalogue ni estimé n'est écrit. */
   prix_confirme_cents: number | null;
   /** Quand ce tarif a été vérifié (ISO) : obligatoire aussi, un prix est toujours daté. */
   verifie_le: string | null;
@@ -121,10 +123,11 @@ function lignesVerifiees(lignes: readonly LigneMail[], statutsAttendus: readonly
     }
     if (!l.verifie_le) throw new MailImpossibleErreur(`${l.nom} : prix sans date de vérification`);
   }
-  const total = retenues.reduce((s, l) => s + l.prix_confirme_cents! * l.participants, 0);
+  const totalLigne = (l: LigneMail) => l.prix_confirme_cents! * l.participants * l.nb_nuits;
+  const total = retenues.reduce((s, l) => s + totalLigne(l), 0);
   const texteLignes = retenues.map(
     (l) =>
-      `- ${date(l.date)} · ${l.nom} · ${l.participants} pers. × ${euros(l.prix_confirme_cents!)} = ${euros(l.prix_confirme_cents! * l.participants)}` +
+      `- ${date(l.date)} · ${l.nom} · ${l.participants} pers.${l.nb_nuits > 1 ? ` × ${l.nb_nuits} nuits` : ''} × ${euros(l.prix_confirme_cents!)} = ${euros(totalLigne(l))}` +
       ` (prix vérifié ${verifieLe(l.verifie_le!)})`,
   );
   return { texteLignes, total };

@@ -57,14 +57,18 @@ export interface AjoutLigne {
   date: string;
   participants: number;
   conseillerId: string;
+  /** Hébergement seulement ; 1 par défaut. */
+  nbNuits?: number;
 }
 
-/** Nouvelle date et/ou nouveaux participants pour une ligne (E6.6). Absent : inchangé. */
+/** Nouvelle date, nouveaux participants et/ou nouvelles nuits pour une ligne (E6.6). Absent : inchangé. */
 export interface ModificationLigne {
   ligneId: string;
   conseillerId: string;
   date?: string;
   participants?: number;
+  /** Hébergement seulement. */
+  nbNuits?: number;
 }
 
 /** Séjour de référence de la proposition : dates fixes de la fiche (E2.1). */
@@ -93,6 +97,8 @@ export class EnvoiRefuseErreur extends Error {}
 export class PrestationRefuseeErreur extends Error {}
 /** Remplacement par la même prestation à la même date : rien ne changerait. */
 export class MemePrestationErreur extends Error {}
+/** Plusieurs nuits pour une prestation qui n'est pas un hébergement. */
+export class NuitsRefuseesErreur extends Error {}
 
 export interface TarifsRepository {
   lireLigne(ligneId: string): Promise<LigneLue | null>;
@@ -103,7 +109,7 @@ export interface TarifsRepository {
    */
   changerLigne(c: ChangementLigne): Promise<StatutProposition>;
   /** Ce qu'il faut pour chiffrer (E4.2) la proposition telle qu'elle est en base, et son statut. */
-  lireChiffrage(propositionId: string): Promise<(EntreeChiffrage & { statut: StatutProposition }) | null>;
+  lireChiffrage(propositionId: string): Promise<(EntreeChiffrage & { statut: StatutProposition; destination: string | null }) | null>;
   enregistrerAlertes(propositionId: string, alertes: Alerte[]): Promise<void>;
   /** prete → envoyee. Rejette EnvoiRefuseErreur ou StatutModifieErreur. */
   envoyer(propositionId: string, conseillerId: string): Promise<void>;

@@ -13,7 +13,7 @@ const utc = (instant: string) => new Date(instant).toISOString();
 const plusRecente = <V extends { cree_le: string }>(vs: V[]) => [...vs].sort((a, b) => Date.parse(b.cree_le) - Date.parse(a.cree_le))[0];
 
 export type LignePropositionBase = Ligne<'proposition_lignes',
-  | 'id' | 'date' | 'participants' | 'prix_unitaire_catalogue_cents' | 'prix_confirme_cents' | 'source' | 'confirme_le'
+  | 'id' | 'date' | 'participants' | 'nb_nuits' | 'prix_unitaire_catalogue_cents' | 'prix_confirme_cents' | 'source' | 'confirme_le'
   | 'statut' | 'total_ligne_cents' | 'cree_le'> & {
   prestations: Ligne<'prestations', 'id' | 'nom' | 'type' | 'capacite' | 'actif'> | null;
   profils: Ligne<'profils', 'nom_affiche'> | null; // auteur de la confirmation
@@ -52,6 +52,7 @@ export function versProposition(p: PropositionBase): Proposition {
         prestation: l.prestations,
         date: l.date,
         participants: l.participants,
+        nb_nuits: l.nb_nuits,
         prix_unitaire_catalogue_cents: l.prix_unitaire_catalogue_cents,
         prix_confirme: l.prix_confirme_cents === null
           ? null

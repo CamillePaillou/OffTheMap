@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
 import { LIMITES } from '@/types/enums';
 import { refusPrix } from '@/src/application/donnerAccord';
-import { MESSAGES_POSE_OPTION, MESSAGES_REFUS_ACCORD, evaluerAccord, prixReverifieCents } from '@/src/domain/accord';
+import { MESSAGES_POSE_OPTION, MESSAGES_REFUS_ACCORD, basePrixAccord, evaluerAccord, prixAccordCents } from '@/src/domain/accord';
 import { BoutonAccord } from './bouton-accord';
 import { BoutonOption } from './bouton-option';
 import { BoutonConfirmation } from './bouton-confirmation';
@@ -14,6 +14,9 @@ import { AccordsSupabase } from '@/src/infrastructure/db/accordsSupabase';
 import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
 import { Fil } from '../../../_composants/fil';
 import { dateDeVerification } from '../../../_composants/libelles';
+
+/** Source d'un tarif saisi à la main par le conseiller. */
+const SOURCE_SAISIE = { telephone: 'téléphone', mail: 'mail', lien: 'lien du prestataire', agent: 'agent' } as const;
 
 // Écran d'accord (E9.3) : prestations, prix revérifié et conditions, puis autorisation d'UNE écriture précise.
 // Données : la proposition et ses démarches (accord, option, réservation, annulation) lues en base (E7.4).
@@ -86,7 +89,10 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
 
       <ul className="flex flex-col gap-4">
         {lignes.map(({ ligne, accord, optionPosee, reservationConfirmee, reservationAnnulee, echecPose }) => {
-          const prix = prixReverifieCents(ligne);
+          const prix = prixAccordCents(ligne);
+          const base = basePrixAccord(ligne);
+          const saisi = base !== null && base.source !== 'agent';
+          const parUnite = `/ pers.${ligne.prestation.type === 'hebergement' ? ' / nuit' : ''}`;
           const verdict = evaluerAccord({
             statutProposition: proposition.statut,
             ligne,
@@ -100,15 +106,27 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
             <li key={ligne.id} className={`bo-carte p-5 ${optionPosee ? 'ring-2 ring-encre' : ''}`}>
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 className="text-xl">{ligne.prestation.nom}</h3>
-                <span className="text-sm text-encre-doux">{jour(ligne.date)} · {ligne.participants} participants</span>
+                <span className="text-sm text-encre-doux">
+                  {jour(ligne.date)} · {ligne.participants} participants{ligne.nb_nuits > 1 ? ` · ${ligne.nb_nuits} nuits (une option par nuit)` : ''}
+                </span>
               </div>
               <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
-                <div><dt className="text-encre-doux">Prix du catalogue</dt><dd>{euros(ligne.prix_unitaire_catalogue_cents)} / pers.</dd></div>
-                <div><dt className="text-encre-doux">Prix revérifié</dt><dd>{v && v.prix_unitaire_cents !== null ? `${euros(v.prix_unitaire_cents)} / pers.` : 'indisponible'}</dd></div>
-                <div><dt className="text-encre-doux">Places restantes</dt><dd>{v && v.places_restantes !== null ? v.places_restantes : 'inconnues'}</dd></div>
+                <div><dt className="text-encre-doux">Prix du catalogue</dt><dd>{euros(ligne.prix_unitaire_catalogue_cents)} {parUnite}</dd></div>
+                {saisi ? (
+                  <div><dt className="text-encre-doux">Tarif saisi</dt><dd>{euros(base.prix_unitaire_cents)} {parUnite}</dd></div>
+                ) : (
+                  <div><dt className="text-encre-doux">Prix revérifié</dt><dd>{v && v.prix_unitaire_cents !== null ? `${euros(v.prix_unitaire_cents)} ${parUnite}` : 'indisponible'}</dd></div>
+                )}
+                <div><dt className="text-encre-doux">Places restantes</dt><dd>{!saisi && v && v.places_restantes !== null ? v.places_restantes : 'inconnues'}</dd></div>
                 <div><dt className="text-encre-doux">Total de la ligne</dt><dd className="text-lg font-semibold text-encre">{prix !== null ? euros(prix) : '—'}</dd></div>
               </dl>
-              {v && <p className="mt-1 text-xs text-encre-doux">Prix vérifié par l’agent {dateDeVerification(v.le)}.</p>}
+              {saisi ? (
+                <p className="mt-1 text-xs text-encre-doux">
+                  Prix saisi à la main · {SOURCE_SAISIE[base.source]} · {dateDeVerification(base.le)}. Le prestataire fait foi : s’il annonce un autre prix, l’option ne sera pas retenue.
+                </p>
+              ) : (
+                v && <p className="mt-1 text-xs text-encre-doux">Prix vérifié par l’agent {dateDeVerification(v.le)}.</p>
+              )}
 
               {reservationAnnulee && !reservationConfirmee && (
                 <p className="mt-4 rounded-lg bg-ciel-pale px-3 py-2 text-sm text-encre" role="status">
@@ -125,7 +143,7 @@ async function Contenu({ params }: { params: Promise<{ id: string }> }) {
                   <ReservationConfirmee
                     ligneId={ligne.id}
                     reservation={reservationConfirmee.reservation_id_simulateur ?? 'sans identifiant'}
-                    prix={prix !== null ? `${euros(prix)}${v ? ` ${dateDeVerification(v.le)}` : ''}` : null}
+                    prix={prix !== null ? `${euros(prix)}${base ? ` ${dateDeVerification(base.le)}` : ''}` : null}
                     monogramme={ligne.id === derniereConfirmee}
                     par={prenom((reservationConfirmee.reponse_confirmation as { approuve_par?: unknown } | undefined)?.approuve_par)}
                   />

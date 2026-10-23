@@ -5,7 +5,7 @@ import { ALERTES_BLOQUANTES, CODES_ALERTE, REGLES_CHIFFRAGE, type CodeAlerte } f
 
 interface Ligne {
   prestation_id: string; type: 'transport' | 'hebergement' | 'activite'; capacite: number; actif: boolean;
-  date: string; participants: number; prix_unitaire_catalogue_cents: number; prix_confirme_cents: number | null;
+  date: string; participants: number; nb_nuits: number; prix_unitaire_catalogue_cents: number; prix_confirme_cents: number | null;
   statut: 'a_verifier' | 'confirme' | 'indisponible' | 'remplacee' | 'reservee';
 }
 interface Cas {
@@ -18,7 +18,8 @@ const exemples = JSON.parse(readFileSync(join(__dirname, '../docs/specs/chiffrag
 /** Lecture littérale des règles de docs/specs/chiffrage.md, pour vérifier que les exemples les respectent. */
 function regles(e: Cas['entree']) {
   const horsTotal: readonly string[] = REGLES_CHIFFRAGE.statutsHorsTotal;
-  const totaux = e.lignes.map((l) => (l.prix_confirme_cents ?? l.prix_unitaire_catalogue_cents) * l.participants);
+  const totaux = e.lignes.map((l) => (l.prix_confirme_cents ?? l.prix_unitaire_catalogue_cents) * l.participants * l.nb_nuits);
+  const jour = (d: string, n: number) => new Date(Date.parse(d) + n * 86_400_000).toISOString().slice(0, 10);
   const total = totaux.reduce((a, b, i) => (horsTotal.includes(e.lignes[i]!.statut) ? a : a + b), 0) + REGLES_CHIFFRAGE.margeCents;
   const alertes = new Set<CodeAlerte>();
   const veilleDepart = new Date(Date.parse(e.date_fin) - 86_400_000).toISOString().slice(0, 10);
@@ -28,9 +29,9 @@ function regles(e: Cas['entree']) {
     if (l.participants > e.voyageurs) alertes.add('participants_superieurs_voyageurs');
     if (!l.actif) alertes.add('prestation_inactive');
     const fin = l.type === 'hebergement' ? veilleDepart : e.date_fin;
-    if (l.date < e.date_debut || l.date > fin) alertes.add('date_hors_sejour');
+    if (l.date < e.date_debut || jour(l.date, l.nb_nuits - 1) > fin) alertes.add('date_hors_sejour');
   }
-  const nuits = new Set(controlees.filter((l) => l.type === 'hebergement').map((l) => l.date)).size;
+  const nuits = new Set(controlees.filter((l) => l.type === 'hebergement').flatMap((l) => Array.from({ length: l.nb_nuits }, (_, i) => jour(l.date, i)))).size;
   if (nuits !== e.nb_nuits) alertes.add('nuits_incoherentes');
   if (e.budget_reference_cents !== null) {
     if (total > e.budget_reference_cents) alertes.add('budget_depasse');

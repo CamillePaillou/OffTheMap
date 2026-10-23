@@ -191,7 +191,7 @@ select doit_valoir($$select count(*) from fiches f join dossiers d on d.id = '00
 select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'modele-1',
   '{"envies": ["atelier"], "contraintes": ["sans voiture"], "points_flous": ["une nuit ?"], "regimes": [], "mobilite": null, "niveau_physique": "faible"}');
 select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1' and envies = '{atelier}' and erreur_generation is null$$, 1, 'génération écrite');
-select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 38000, '2026-11-07', '2026-11-08', 1, 'Rappeler mardi');
+select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 38000, '2026-11-07', '2026-11-08', 'Rappeler mardi');
 select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'
   and budget_reel_cents = 38000 and date_debut_fixe = '2026-11-07' and nb_nuits_fixe = 1 and notes_conseiller = 'Rappeler mardi' and envies = '{atelier}'$$, 1, 'correction écrite, contenu de l''IA intact');
 select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'modele-2',
@@ -202,9 +202,9 @@ select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'mod
 select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'
   and erreur_generation = 'délai dépassé' and envies = '{musée}' and budget_reel_cents = 38000$$, 1, 'un échec de génération garde la fiche et la correction');
 select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'$$, 1, 'toujours une seule fiche par version');
-select doit_echouer($$select corriger_fiche('00000000-0000-0000-0000-0000000000f9', 38000, null, null, null, null)$$, 'correction d''une fiche inexistante');
-select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 0, null, null, null, null)$$, 'budget réel nul');
-select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), null, '2026-11-08', '2026-11-07', null, null)$$, 'dates fixes inversées');
+select doit_echouer($$select corriger_fiche('00000000-0000-0000-0000-0000000000f9', 38000, null, null, null)$$, 'correction d''une fiche inexistante');
+select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 0, null, null, null)$$, 'budget réel nul');
+select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), null, '2026-11-08', '2026-11-07', null)$$, 'dates fixes inversées');
 
 -- tri (E3.1) : statut, journal avec la décision et fiches.decision écrits ensemble ; un seul tri gagne
 insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000000d8', 'fiche_prete'), ('00000000-0000-0000-0000-0000000000d9', 'fiche_prete');
@@ -228,8 +228,8 @@ select doit_echouer($$select trier_dossier('00000000-0000-0000-0000-0000000000d8
 
 -- tarifs et envoi (E5.1) : tarif daté et sourcé, total recalculé, envoi refusé tant qu'un prix n'est pas vérifié
 insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000000da', 'en_proposition');
-insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs)
-  values ('00000000-0000-0000-0000-0000000000ea', '00000000-0000-0000-0000-0000000000da', true, true, 'Léo', 'leo@example.org', '2026-11-07', '2026-11-08', 1, '{adulte,adulte}');
+insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, destination, date_debut, date_fin, nb_nuits, voyageurs)
+  values ('00000000-0000-0000-0000-0000000000ea', '00000000-0000-0000-0000-0000000000da', true, true, 'Léo', 'leo@example.org', 'Nantes', '2026-11-07', '2026-11-08', 1, '{adulte,adulte}');
 insert into propositions (id, dossier_id, statut, total_cents) values ('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-0000000000da', 'a_verifier', 14000);
 insert into proposition_lignes (id, proposition_id, prestation_id, date, participants, prix_unitaire_catalogue_cents) values
   ('00000000-0000-0000-0000-00000000a0a1', '00000000-0000-0000-0000-0000000000fa', 'activite-nantes-01', '2026-11-07', 2, 3500),
@@ -256,14 +256,27 @@ select doit_valoir($$select count(*) from propositions p join historique_dossier
   and p.envoyee_par = '00000000-0000-0000-0000-00000000000a' and h.nouveau_statut = 'envoyee' and h.auteur = 'conseiller'$$, 1, 'statut envoyee, au nom du conseiller, journalisé');
 select doit_echouer($$select changer_ligne('00000000-0000-0000-0000-00000000a0a1', 'confirme', 'a_verifier', null, null, '00000000-0000-0000-0000-00000000000a')$$, 'tarif modifié après l''envoi');
 select doit_echouer($$select envoyer_proposition('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-00000000000a')$$, 'second envoi');
+-- accord sur un tarif saisi à la main (23/10) : sans vérification de l'agent, la ligne confirmée suffit
+select doit_echouer($$select enregistrer_accord('00000000-0000-0000-0000-00000000a0a1', '00000000-0000-0000-0000-00000000000a', now(), now() + interval '10 minutes', 8000)$$, 'accord « agent » sans vérification (OT003)');
+select doit_valoir($$select (enregistrer_accord('00000000-0000-0000-0000-00000000a0a1', '00000000-0000-0000-0000-00000000000a', now(), now() + interval '10 minutes', 8000, 'telephone') is not null)::int$$, 1, 'accord sur tarif saisi par téléphone');
+select doit_valoir($$select count(*) from options where ligne_id = '00000000-0000-0000-0000-00000000a0a1' and statut = 'accord_donne' and verification_id is null and prix_accorde_cents = 8000$$, 1, 'accord sans vérification rattachée');
+select doit_valoir($$select count(*) from historique_dossier where type = 'accord' and detail ->> 'ligne_id' = '00000000-0000-0000-0000-00000000a0a1' and detail ->> 'source_prix' = 'telephone'$$, 1, 'source du prix journalisée');
 -- brouillon de proposition (E4.4) : démarrage (fiche validée, dossier en_proposition) puis fin, tout ou rien
-insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000000b5', 'entretien_fait'), ('00000000-0000-0000-0000-0000000000b6', 'entretien_fait');
-insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents) values
-  ('00000000-0000-0000-0000-0000000000c5', '00000000-0000-0000-0000-0000000000b5', true, true, 'Brouillon', 'b@example.org', '2026-11-07', '2026-11-08', 1, '{adulte,adulte}', 40000),
-  ('00000000-0000-0000-0000-0000000000c6', '00000000-0000-0000-0000-0000000000b6', true, true, 'Sans budget', 's@example.org', '2026-11-07', '2026-11-08', 1, '{adulte}', 40000);
+insert into dossiers (id, statut) values ('00000000-0000-0000-0000-0000000000b5', 'entretien_fait'), ('00000000-0000-0000-0000-0000000000b6', 'entretien_fait'),
+  ('00000000-0000-0000-0000-0000000000b7', 'entretien_fait');
+insert into demandes (id, dossier_id, consentement_rgpd, consentement_ia, nom, email, destination, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents) values
+  ('00000000-0000-0000-0000-0000000000c5', '00000000-0000-0000-0000-0000000000b5', true, true, 'Brouillon', 'b@example.org', 'Nantes', '2026-11-07', '2026-11-08', 1, '{adulte,adulte}', 40000),
+  ('00000000-0000-0000-0000-0000000000c6', '00000000-0000-0000-0000-0000000000b6', true, true, 'Sans budget', 's@example.org', 'Nantes', '2026-11-07', '2026-11-08', 1, '{adulte}', 40000),
+  ('00000000-0000-0000-0000-0000000000c7', '00000000-0000-0000-0000-0000000000b7', true, true, 'Sans destination', 'd@example.org', null, '2026-11-07', '2026-11-08', 1, '{adulte}', 40000);
 insert into fiches (demande_id, budget_reel_cents, date_debut_fixe, date_fin_fixe, nb_nuits_fixe) values
   ('00000000-0000-0000-0000-0000000000c5', 38000, '2026-11-07', '2026-11-08', 1),
-  ('00000000-0000-0000-0000-0000000000c6', null, null, null, null);
+  ('00000000-0000-0000-0000-0000000000c6', null, null, null, null),
+  ('00000000-0000-0000-0000-0000000000c7', 38000, '2026-11-07', '2026-11-08', 1);
+select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b7', '00000000-0000-0000-0000-00000000000a')$$, 'brouillon sans destination (OT015)');
+select doit_valoir($$select count(*) from dossiers where id = '00000000-0000-0000-0000-0000000000b7' and statut = 'entretien_fait'$$, 1, 'brouillon sans destination : dossier inchangé');
+select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000c7'), 38000, '2026-11-07', '2026-11-09', null, ' Lyon ');
+select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-0000000000c7' and destination_fixe = 'Lyon' and nb_nuits_fixe = 2$$, 1, 'destination fixée, nuits calculées depuis les dates fixes');
+select doit_valoir($$select (destination_dossier('00000000-0000-0000-0000-0000000000b7') = 'Lyon')::int$$, 1, 'la destination fixée remplace l''absence de destination');
 select doit_echouer($$select demarrer_brouillon('00000000-0000-0000-0000-0000000000b6', '00000000-0000-0000-0000-00000000000a')$$, 'brouillon sans budget réel ni dates fixes');
 select doit_valoir($$select count(*) from propositions where dossier_id = '00000000-0000-0000-0000-0000000000b6'$$, 0, 'refus du brouillon : aucune proposition créée');
 create temp table brouillon as select demarrer_brouillon('00000000-0000-0000-0000-0000000000b5', '00000000-0000-0000-0000-00000000000a') as id;
@@ -275,6 +288,7 @@ select terminer_brouillon((select id from brouillon), '{"programme": [{"date": "
   "total_cents": 7000, "alertes": [], "lignes": [{"id": "00000000-0000-0000-0000-0000000000a5", "prestation_id": "activite-nantes-01", "date": "2026-11-07", "participants": 2, "prix_unitaire_catalogue_cents": 3500}]}');
 select doit_valoir($$select count(*) from propositions p join brouillon b on b.id = p.id where p.statut = 'a_verifier' and p.total_cents = 7000 and jsonb_array_length(p.programme) = 1$$, 1, 'brouillon écrit : a_verifier, total et programme');
 select doit_valoir($$select count(*) from proposition_lignes l join brouillon b on b.id = l.proposition_id where l.statut = 'a_verifier' and l.prix_confirme_cents is null and l.total_ligne_cents = 7000$$, 1, 'lignes créées à a_verifier, prix catalogue figé');
+select doit_echouer($$select enregistrer_accord('00000000-0000-0000-0000-0000000000a5', '00000000-0000-0000-0000-00000000000a', now(), now() + interval '10 minutes', 7000, 'mail')$$, 'accord sur tarif saisi d''une ligne à vérifier (OT003)');
 select doit_valoir($$select count(*) from historique_dossier h join brouillon b on b.id = h.proposition_id where h.type = 'statut'$$, 3, 'journal : brouillon_en_cours, brouillon_pret, a_verifier');
 select doit_echouer($$select terminer_brouillon((select id from brouillon), '{"erreur": "trop tard"}')$$, 'fin d''un brouillon déjà terminé');
 update dossiers set statut = 'en_proposition' where id = '00000000-0000-0000-0000-0000000000b6';
@@ -437,6 +451,13 @@ select doit_valoir($$select (modifier_ligne('00000000-0000-0000-0000-0000000a066
 select doit_valoir($$select count(*) from proposition_lignes where id = '00000000-0000-0000-0000-0000000a0662' and participants = 3 and statut = 'a_verifier'
   and prix_confirme_cents is null and source is null and confirme_le is null and confirme_par is null and date = '2026-11-07'$$, 1, 'ligne modifiée : à vérifier, sans prix confirmé, date gardée');
 select doit_valoir($$select total_cents from propositions where id = '00000000-0000-0000-0000-00000000f066'$$, 48900, 'total recalculé (192 + 105 + 192 €)');
+-- nuits d'une ligne d'hébergement : total = prix × participants × nuits ; une activité n'a qu'une nuit
+select doit_echouer($$select modifier_ligne('00000000-0000-0000-0000-0000000a0662', '00000000-0000-0000-0000-00000000000a', null, null, 2)$$, 'plusieurs nuits pour une activité (OT012)');
+select doit_valoir($$select (modifier_ligne('00000000-0000-0000-0000-0000000a0661', '00000000-0000-0000-0000-00000000000a', null, null, 3) = 'a_verifier')::int$$, 1, 'hébergement passé à 3 nuits');
+select doit_valoir($$select total_ligne_cents from proposition_lignes where id = '00000000-0000-0000-0000-0000000a0661' and nb_nuits = 3 and statut = 'a_verifier'$$, 57600, 'ligne d''hébergement : 96 € × 2 pers. × 3 nuits');
+select doit_valoir($$select total_cents from propositions where id = '00000000-0000-0000-0000-00000000f066'$$, 87300, 'total recalculé (576 + 105 + 192 €)');
+select doit_echouer($$select ajouter_ligne('00000000-0000-0000-0000-00000000f066', 'activite-nantes-01', '2026-11-08', 2, '00000000-0000-0000-0000-00000000000a', 2)$$, 'ajout d''une activité sur plusieurs nuits');
+select doit_echouer($$select modifier_ligne('00000000-0000-0000-0000-0000000a0661', '00000000-0000-0000-0000-00000000000a', null, null, 15)$$, 'plus de 14 nuits sur une ligne');
 -- séjour : « + » recule le retour d'un jour et ajoute une nuit, dans les dates fixes de la fiche (partant de la demande)
 select doit_valoir($$select (ajuster_nuits_sejour('00000000-0000-0000-0000-00000000f066', 1, '00000000-0000-0000-0000-00000000000a') ->> 'nb_nuits')::int$$, 2, 'séjour : une nuit de plus');
 select doit_valoir($$select count(*) from fiches where demande_id = '00000000-0000-0000-0000-00000000e066' and date_debut_fixe = '2026-11-07'
@@ -479,7 +500,7 @@ select doit_valoir($$select count(*) from corrections$$, 0, 'un visiteur ne lit 
 select doit_echouer($$select lire_correction(repeat('0', 64))$$, 'lecture d’un lien en base par un visiteur');
 select doit_echouer($$select corriger_demande(repeat('0', 64), '{}')$$, 'correction directe en base par un visiteur');
 select doit_echouer($$select terminer_generation_fiche('00000000-0000-0000-0000-0000000000d7', 'm', '{}')$$, 'fin de génération appelée par un visiteur');
-select doit_echouer($$select corriger_fiche('00000000-0000-0000-0000-0000000000f9', 38000, null, null, null, null)$$, 'correction de fiche par un visiteur');
+select doit_echouer($$select corriger_fiche('00000000-0000-0000-0000-0000000000f9', 38000, null, null, null)$$, 'correction de fiche par un visiteur');
 reset role;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000ff', false);
@@ -499,7 +520,7 @@ select doit_echouer($$select changer_statut('dossier', '00000000-0000-0000-0000-
 select doit_echouer($$select enregistrer_rappel('00000000-0000-0000-0000-0000000064f1', 3)$$, 'rappel appelé par un conseiller');
 select doit_echouer($$select abandonner_dossier('00000000-0000-0000-0000-0000000065f1', '00000000-0000-0000-0000-00000000000a')$$, 'abandon appelé par un conseiller');
 select doit_echouer($$select terminer_brouillon('00000000-0000-0000-0000-0000000000f1', '{"erreur": "x"}')$$, 'brouillon écrit en base directe par un conseiller');
-select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 1, null, null, null, null)$$, 'correction en base directe par un conseiller (passe par le serveur)');
+select doit_echouer($$select corriger_fiche((select id from fiches where demande_id = '00000000-0000-0000-0000-0000000000e1'), 1, null, null, null)$$, 'correction en base directe par un conseiller (passe par le serveur)');
 select doit_echouer($$select enregistrer_generation_fiche('00000000-0000-0000-0000-0000000000e1', 'm', '{}')$$, 'génération écrite par un conseiller');
 -- tables de l'agent (E0.5) : seul le serveur écrit ; un conseiller connecté ne crée, ne modifie ni ne supprime rien
 select doit_echouer($$insert into verifications (ligne_id, demande_par, statut, modele, nb_tours, arret)

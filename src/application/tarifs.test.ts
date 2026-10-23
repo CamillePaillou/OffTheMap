@@ -11,7 +11,7 @@ const ALICE = 'alice';
 // Cas A de docs/specs/chiffrage.md : 2 adultes à Nantes, 1 nuit, budget 400 € ; train 48 €, hôtel 96 €, atelier 35 €.
 function ligne(id: string, prestation_id: string, type: LigneEnMemoire['type'], date: string, prix: number): LigneEnMemoire {
   return {
-    id, prestation_id, type, capacite: 8, actif: true, date, participants: 2, prix_unitaire_catalogue_cents: prix,
+    id, prestation_id, type, capacite: 8, actif: true, date, participants: 2, nb_nuits: 1, prix_unitaire_catalogue_cents: prix,
     prix_confirme_cents: null, statut: 'a_verifier', source: null, confirme_par: null, verification: null,
   };
 }
@@ -21,7 +21,7 @@ let p: PropositionEnMemoire;
 beforeEach(() => {
   repo = new TarifsEnMemoire();
   p = {
-    id: P, statut: 'a_verifier', voyageurs: 2, date_debut: '2026-11-07', date_fin: '2026-11-08', nb_nuits: 1,
+    id: P, statut: 'a_verifier', destination: 'Nantes', voyageurs: 2, date_debut: '2026-11-07', date_fin: '2026-11-08', nb_nuits: 1,
     budget_reference_cents: 40000, total_cents: 35800, alertes: [], envoyee_par: null,
     lignes: [
       ligne('train', 'train-nantes-01', 'transport', '2026-11-07', 4800),
@@ -122,6 +122,14 @@ describe('envoyer la proposition', () => {
     await confirmerTout();
     const r = await envoyerProposition(repo, { propositionId: P, conseillerId: ALICE });
     expect(r).toMatchObject({ ok: false, raison: 'bloque', bloquants: [expect.stringContaining('hors du séjour')] });
+    expect(p.statut).toBe('prete');
+  });
+
+  it('refuse l’envoi sans destination (ni demandée ni fixée), même si tout est vérifié', async () => {
+    p.destination = null;
+    await confirmerTout();
+    const r = await envoyerProposition(repo, { propositionId: P, conseillerId: ALICE });
+    expect(r).toEqual({ ok: false, raison: 'bloque', bloquants: ['aucune destination : fixez-la sur la fiche du dossier'] });
     expect(p.statut).toBe('prete');
   });
 

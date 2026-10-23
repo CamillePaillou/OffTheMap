@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "description": "Exemples de docs/specs/chiffrage.md (version 2). Montants en centimes. budget_reference_cents : budget global du groupe (réel, sinon annoncé, sinon null). nb_nuits : nuits de référence (fixées, sinon demandées). Les lignes remplacee et indisponible gardent leur total de ligne (comme la colonne calculée en base) mais n'entrent pas dans le total de la proposition. Les alertes sont triées par ordre alphabétique.",
+  "version": 3,
+  "description": "Exemples de docs/specs/chiffrage.md (version 3). Montants en centimes. budget_reference_cents : budget global du groupe (réel, sinon annoncé, sinon null). nb_nuits : nuits de référence (fixées, sinon demandées) ; dans une ligne, nuits de l'hébergement depuis sa date (1 pour les autres types), et total de ligne = prix × participants × nuits. Les lignes remplacee et indisponible gardent leur total de ligne (comme la colonne calculée en base) mais n'entrent pas dans le total de la proposition. Les alertes sont triées par ordre alphabétique.",
   "cas": [
     {
       "id": "A",
@@ -19,6 +19,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 4800,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -30,6 +31,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 9600,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -41,6 +43,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 3500,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -74,6 +77,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 4800,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -85,6 +89,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 9600,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -96,6 +101,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 3500,
             "prix_confirme_cents": 4000,
             "statut": "confirme"
@@ -131,6 +137,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 4800,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -142,6 +149,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 9600,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -153,6 +161,7 @@
             "actif": true,
             "date": "2026-11-08",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 9600,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -164,6 +173,7 @@
             "actif": true,
             "date": "2026-11-08",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 3500,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -200,6 +210,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 9,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 4800,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -233,6 +244,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 4800,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -244,6 +256,7 @@
             "actif": true,
             "date": "2026-11-08",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 9600,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -255,6 +268,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 3500,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -290,6 +304,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 4800,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -301,6 +316,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 9600,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -312,6 +328,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 3500,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -347,6 +364,7 @@
             "actif": true,
             "date": "2026-11-14",
             "participants": 4,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 6200,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -358,6 +376,7 @@
             "actif": true,
             "date": "2026-11-14",
             "participants": 4,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 2900,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -390,6 +409,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 4800,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -401,6 +421,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 9600,
             "prix_confirme_cents": null,
             "statut": "a_verifier"
@@ -412,6 +433,7 @@
             "actif": true,
             "date": "2026-11-07",
             "participants": 2,
+            "nb_nuits": 1,
             "prix_unitaire_catalogue_cents": 3500,
             "prix_confirme_cents": null,
             "statut": "indisponible"
@@ -426,6 +448,66 @@
         ],
         "total_cents": 28800,
         "alertes": []
+      }
+    },
+    {
+      "id": "I",
+      "titre": "Deux nuits sur une seule ligne d’hôtel",
+      "entree": {
+        "voyageurs": 2,
+        "date_debut": "2026-11-07",
+        "date_fin": "2026-11-09",
+        "nb_nuits": 2,
+        "budget_reference_cents": 50000,
+        "lignes": [
+          {
+            "prestation_id": "train-nantes-01",
+            "type": "transport",
+            "capacite": 8,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "nb_nuits": 1,
+            "prix_unitaire_catalogue_cents": 4800,
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
+          },
+          {
+            "prestation_id": "hotel-nantes-01",
+            "type": "hebergement",
+            "capacite": 6,
+            "actif": true,
+            "date": "2026-11-07",
+            "participants": 2,
+            "nb_nuits": 2,
+            "prix_unitaire_catalogue_cents": 9600,
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
+          },
+          {
+            "prestation_id": "activite-nantes-01",
+            "type": "activite",
+            "capacite": 10,
+            "actif": true,
+            "date": "2026-11-08",
+            "participants": 2,
+            "nb_nuits": 1,
+            "prix_unitaire_catalogue_cents": 3500,
+            "prix_confirme_cents": null,
+            "statut": "a_verifier"
+          }
+        ]
+      },
+      "attendu": {
+        "totaux_lignes_cents": [
+          9600,
+          38400,
+          7000
+        ],
+        "total_cents": 55000,
+        "alertes": [
+          "budget_depasse"
+        ]
       }
     }
   ]

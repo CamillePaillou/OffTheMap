@@ -6,14 +6,14 @@ export type SensEcart = 'hausse' | 'baisse' | 'identique';
 
 export interface EcartPrix {
   unitaire_cents: number; // revérifié - proposé, signé
-  total_cents: number; // sur la ligne : écart unitaire × participants
+  total_cents: number; // sur la ligne : écart unitaire × participants × nuits
   pourcentage: number | null; // arrondi à 0,1 ; null si le prix proposé vaut 0
   sens: SensEcart;
 }
 
 /** null quand il n'y a rien à comparer : vérification en échec, donc ni prix ni places. */
 export function ecartPrix(
-  ligne: { prix_unitaire_catalogue_cents: number; participants: number },
+  ligne: { prix_unitaire_catalogue_cents: number; participants: number; nb_nuits: number },
   verification: { prix_unitaire_cents: number | null },
 ): EcartPrix | null {
   if (verification.prix_unitaire_cents === null) return null;
@@ -21,7 +21,7 @@ export function ecartPrix(
   const unitaire = verification.prix_unitaire_cents - propose;
   return {
     unitaire_cents: unitaire,
-    total_cents: unitaire * ligne.participants,
+    total_cents: unitaire * ligne.participants * ligne.nb_nuits,
     pourcentage: propose === 0 ? null : Math.round((unitaire / propose) * 1000) / 10,
     sens: unitaire > 0 ? 'hausse' : unitaire < 0 ? 'baisse' : 'identique',
   };

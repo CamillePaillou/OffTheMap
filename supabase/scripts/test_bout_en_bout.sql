@@ -60,7 +60,7 @@ select etape('4. rendez-vous proposé', format('select statut::text from dossier
 select changer_statut('dossier', :'dossier', 'rdv_propose', 'entretien_fait', 'conseiller', :'conseillere',
   '{"type": "statut", "cible": "dossier", "ancien": "rdv_propose", "nouveau": "entretien_fait"}');
 select f.id as fiche from fiches f join demandes d on d.id = f.demande_id where d.dossier_id = :'dossier' \gset
-select corriger_fiche(:'fiche', 40000, '2026-11-07', '2026-11-08', 1, 'Préfère un hôtel proche de la gare.');
+select corriger_fiche(:'fiche', 40000, '2026-11-07', '2026-11-08', 'Préfère un hôtel proche de la gare.');
 select etape('5. entretien fait, fiche corrigée', format('select statut::text || '' '' || budget_reel_cents from dossiers d
   join demandes de on de.dossier_id = d.id join fiches f on f.demande_id = de.id where d.id = %L', :'dossier'), 'entretien_fait 40000');
 

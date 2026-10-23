@@ -11,10 +11,10 @@ const envoyee = (surcharge: Partial<VersionEnvoyee> = {}): VersionEnvoyee => ({
   statut: 'envoyee',
   programme: [{ date: '2026-11-07', titre: 'Arrivée', texte: 'Train, atelier, hôtel.' }],
   lignes: [
-    { prestation_id: 'train-nantes-01', date: '2026-11-07', participants: 2, statut: 'confirme', prestation: prestation('train-nantes-01', 'transport', 4800) },
+    { prestation_id: 'train-nantes-01', date: '2026-11-07', participants: 2, nb_nuits: 1, statut: 'confirme', prestation: prestation('train-nantes-01', 'transport', 4800) },
     // le catalogue a changé depuis l'envoi : 96 € → 99 €
-    { prestation_id: 'hotel-nantes-01', date: '2026-11-07', participants: 2, statut: 'confirme', prestation: prestation('hotel-nantes-01', 'hebergement', 9900) },
-    { prestation_id: 'activite-nantes-01', date: '2026-11-07', participants: 2, statut: 'indisponible', prestation: prestation('activite-nantes-01', 'activite', 3500) },
+    { prestation_id: 'hotel-nantes-01', date: '2026-11-07', participants: 2, nb_nuits: 1, statut: 'confirme', prestation: prestation('hotel-nantes-01', 'hebergement', 9900) },
+    { prestation_id: 'activite-nantes-01', date: '2026-11-07', participants: 2, nb_nuits: 1, statut: 'indisponible', prestation: prestation('activite-nantes-01', 'activite', 3500) },
   ],
   reference: { voyageurs: 2, date_debut: '2026-11-07', date_fin: '2026-11-08', nb_nuits: 1, budget_reference_cents: 40000 },
   ...surcharge,

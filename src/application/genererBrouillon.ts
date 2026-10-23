@@ -13,8 +13,8 @@
 import { randomUUID } from 'node:crypto';
 import { versDemandePourLLM } from '../../types/llm';
 import type { BrouillonIA, FicheIA } from '../../types/ia';
-import { prestationsAutorisees } from '../domain/brouillon/prestationsAutorisees';
-import { chiffrer, ErreurChiffrage, valeursDeReference } from '../domain/chiffrage/chiffrer';
+import { destinationDuDossier, prestationsAutorisees } from '../domain/brouillon/prestationsAutorisees';
+import { chiffrer, ErreurChiffrage, nuitsDesHebergements, valeursDeReference } from '../domain/chiffrage/chiffrer';
 import { DemarrageRefuse, type GenerationBrouillonRepository, type LigneBrouillon, type RefusDemarrage, type ResultatBrouillon } from '../ports/generationBrouillon';
 import { LlmError, type CodeErreurLlm, type LlmClient } from '../ports/llm-client';
 import { StatutModifieErreur, type StatutsRepository } from '../ports/statuts';
@@ -28,12 +28,13 @@ export interface DependancesBrouillon {
 }
 
 /** Libellés gardés en base : jamais le message brut, qui pourrait citer la réponse du modèle. */
-const LIBELLES: Record<CodeErreurLlm | 'catalogue' | 'chiffrage' | 'inattendue', string> = {
+const LIBELLES: Record<CodeErreurLlm | 'catalogue' | 'destination' | 'chiffrage' | 'inattendue', string> = {
   delai: 'le modèle n’a pas répondu à temps',
   erreur_fournisseur: 'le fournisseur du modèle est indisponible',
   reponse_invalide: 'la réponse du modèle n’était pas conforme',
   configuration: 'le modèle n’est pas configuré',
   catalogue: 'aucune prestation du catalogue ne correspond à la destination et au groupe',
+  destination: 'aucune destination : la fixer sur la fiche du dossier',
   chiffrage: 'le brouillon n’a pas pu être chiffré',
   inattendue: 'erreur inattendue pendant la génération',
 };
@@ -61,16 +62,20 @@ export async function genererBrouillon(d: DependancesBrouillon, propositionId: s
 
   const reference = valeursDeReference(demande, fiche); // la fiche corrigée l'emporte sur la demande
   const participants = demande.voyageurs.length;
-  const autorisees = prestationsAutorisees(catalogue, demande.destination, participants);
+  // destination fixée à l'entretien, sinon demandée ; sans elle, tout le catalogue se mélangerait (demarrer_brouillon refuse déjà)
+  const destination = destinationDuDossier(demande, fiche);
+  const autorisees = destination === null ? [] : prestationsAutorisees(catalogue, destination, participants);
 
   let essais = 0;
   let resultat: ResultatBrouillon;
-  if (autorisees.length === 0) {
+  if (destination === null) {
+    resultat = { erreur: LIBELLES.destination };
+  } else if (autorisees.length === 0) {
     resultat = { erreur: LIBELLES.catalogue };
   } else {
     const entree = {
       // seule porte vers le modèle : ni nom ni e-mail ; dates et budget de référence
-      demande: versDemandePourLLM({ ...demande, date_debut: reference.date_debut, date_fin: reference.date_fin, nb_nuits: reference.nb_nuits, budget_annonce_cents: reference.budget_reference_cents }),
+      demande: versDemandePourLLM({ ...demande, destination, date_debut: reference.date_debut, date_fin: reference.date_fin, nb_nuits: reference.nb_nuits, budget_annonce_cents: reference.budget_reference_cents }),
       fiche: versFicheIA(fiche),
       prestationsAutorisees: autorisees.map((p) => ({ id: p.id, nom: p.nom, type: p.type })),
       participants,
@@ -114,11 +119,14 @@ function chiffrerBrouillon(
   participants: number,
 ): ResultatBrouillon {
   const parId = new Map(autorisees.map((p) => [p.id, p]));
-  const lignes: LigneBrouillon[] = brouillon.lignes.map((l) => ({
+  // une ligne d'hôtel couvre ses nuits jusqu'au prochain hôtel ou au départ : le modèle n'en propose souvent qu'une
+  const nuits = nuitsDesHebergements(brouillon.lignes.map((l) => ({ type: parId.get(l.prestation_id)!.type, date: l.date })), reference.date_fin);
+  const lignes: LigneBrouillon[] = brouillon.lignes.map((l, i) => ({
     id: randomUUID(),
     prestation_id: l.prestation_id,
     date: l.date,
     participants: l.participants,
+    nb_nuits: nuits[i]!,
     prix_unitaire_catalogue_cents: parId.get(l.prestation_id)!.prix_unitaire_cents, // id garanti par schemaBrouillon
   }));
   try {

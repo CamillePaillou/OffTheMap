@@ -79,19 +79,22 @@ describe('donnerAccord', () => {
     expect(repo.accords).toHaveLength(0);
   });
 
-  it('refuse sans vérification « ok » : aucun prix fiable', async () => {
+  it('refuse sans prix fiable : « indisponible » constaté après le prix confirmé, ou ni vérification ni prix', async () => {
     const repo = new AccordsEnMemoire();
-    const echec: Proposition = {
+    const indisponible: Proposition = {
       ...PROPOSITION_DEPOT_RECU,
       lignes: PROPOSITION_DEPOT_RECU.lignes.map((l): LigneProposition => l.id === TRAIN
-        ? { ...l, derniere_verification: { statut: 'echec', prix_unitaire_cents: null, places_restantes: null, le: '2026-10-21T14:38:00Z' } }
+        ? { ...l, derniere_verification: { statut: 'indisponible', prix_unitaire_cents: 4800, places_restantes: 0, le: '2026-10-22T10:00:00Z' } }
         : l),
     };
-    expect(await donnerAccord(repo, demande({ proposition: echec }))).toEqual({ ok: false, raison: 'verification_non_ok' });
+    expect(await donnerAccord(repo, demande({ proposition: indisponible }))).toEqual({ ok: false, raison: 'verification_non_ok' });
 
+    // une vérification en échec ne donne aucun prix : sans prix confirmé non plus, rien à accorder
     const absente: Proposition = {
       ...PROPOSITION_DEPOT_RECU,
-      lignes: PROPOSITION_DEPOT_RECU.lignes.map((l): LigneProposition => (l.id === TRAIN ? { ...l, derniere_verification: null } : l)),
+      lignes: PROPOSITION_DEPOT_RECU.lignes.map((l): LigneProposition => (l.id === TRAIN
+        ? { ...l, prix_confirme: null, derniere_verification: { statut: 'echec', prix_unitaire_cents: null, places_restantes: null, le: '2026-10-21T14:38:00Z' } }
+        : l)),
     };
     expect(await donnerAccord(repo, demande({ proposition: absente }))).toEqual({ ok: false, raison: 'verification_absente' });
     expect(repo.accords).toHaveLength(0);

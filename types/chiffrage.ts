@@ -34,4 +34,5 @@ export const REGLES_CHIFFRAGE = {
   seuilBudgetProche: 0.9, // choix de l'équipe
   devise: 'EUR',
   locale: 'fr-FR',
+  nuitsMaxParLigne: 14, // contrainte de proposition_lignes.nb_nuits, comme le séjour
 } as const;

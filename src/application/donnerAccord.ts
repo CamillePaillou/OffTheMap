@@ -47,6 +47,7 @@ export async function donnerAccord(repo: AccordsRepository, d: DemandeDonnerAcco
       accord_le: verdict.accord_le,
       accord_expire_le: verdict.accord_expire_le,
       prix_accorde_cents: verdict.prix_accorde_cents,
+      source_prix: verdict.source_prix,
     });
     return { ok: true, option_id, prix_accorde_cents: verdict.prix_accorde_cents, accord_expire_le: verdict.accord_expire_le };
   } catch (e) {

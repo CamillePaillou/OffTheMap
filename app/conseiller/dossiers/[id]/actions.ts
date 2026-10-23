@@ -26,17 +26,17 @@ const entier = (f: FormData, nom: string) => {
   const v = texte(f, nom);
   return v === '' ? null : Number(v);
 };
-const CHAMPS = ['budget_reel_euros', 'date_debut_fixe', 'date_fin_fixe', 'nb_nuits_fixe', 'notes_conseiller'] as const;
+const CHAMPS = ['budget_reel_euros', 'destination_fixe', 'date_debut_fixe', 'date_fin_fixe', 'notes_conseiller'] as const;
 const valeursSaisies = (f: FormData) => Object.fromEntries(CHAMPS.map((c) => [c, f.get(c)?.toString() ?? '']));
 
-/** Correction après l'entretien : budget réel, dates fixes, notes (E2.1). */
+/** Correction après l'entretien : budget réel, destination, dates fixes, notes (E2.1). Les nuits suivent les dates. */
 export async function enregistrerCorrection(dossierId: string, _etat: EtatCorrection, f: FormData): Promise<EtatCorrection> {
   await exigerConseiller(`/conseiller/dossiers/${dossierId}`);
   const saisie = {
     budget_reel_euros: entier(f, 'budget_reel_euros'),
+    destination_fixe: texte(f, 'destination_fixe'),
     date_debut_fixe: ouNull(texte(f, 'date_debut_fixe')),
     date_fin_fixe: ouNull(texte(f, 'date_fin_fixe')),
-    nb_nuits_fixe: entier(f, 'nb_nuits_fixe'),
     notes_conseiller: texte(f, 'notes_conseiller'),
   };
   let resultat;
@@ -65,6 +65,7 @@ export async function relancer(dossierId: string): Promise<{ erreur?: string }> 
 const REFUS_BROUILLON: Record<RefusDemarrage, string> = {
   introuvable: 'Dossier introuvable.',
   fiche_incomplete: 'Renseignez le budget réel et les dates fixes avant de générer le brouillon.',
+  destination_manquante: 'Choisissez la destination dans « Après l’entretien » avant de générer le brouillon.',
   deja_une_proposition: 'Ce dossier a déjà une proposition.',
   statut_modifie: 'Le dossier a changé entre-temps : rechargez la page.',
 };

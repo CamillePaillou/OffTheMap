@@ -2,7 +2,7 @@
  * Forme de `historique_dossier.detail` selon le type d'événement.
  * Règle : aucune donnée personnelle, aucune clé, aucun texte libre du client dans le détail.
  */
-import type { DecisionTri, StatutDossier, StatutOption, StatutProposition, StatutVerification } from './enums';
+import type { DecisionTri, SourcePrix, StatutDossier, StatutOption, StatutProposition, StatutVerification } from './enums';
 
 export type DetailEvenement =
   | { type: 'statut'; cible: 'dossier'; ancien: StatutDossier | null; nouveau: StatutDossier; decision?: DecisionTri }
@@ -17,7 +17,8 @@ export type DetailEvenement =
       ancien_total_cents: number; nouveau_total_catalogue_cents: number; accord_client: true }
   | { type: 'retrait'; ligne_id: string; ancienne_prestation: string; ancien_total_cents: number; accord_client: true }
   | { type: 'verification'; verification_id: string; ligne_id: string; statut: StatutVerification }
-  | { type: 'accord'; option_id: string; ligne_id: string; prix_accorde_cents: number }
+  // source_prix : d'où vient le prix accordé (vérification de l'agent, ou tarif saisi par le conseiller) ; absent avant le 23/10
+  | { type: 'accord'; option_id: string; ligne_id: string; prix_accorde_cents: number; source_prix?: SourcePrix }
   | { type: 'option'; option_id: string; statut: StatutOption; option_id_simulateur?: string; code_erreur?: string }
   | { type: 'reservation'; option_id: string; reservation_id_simulateur?: string; code_erreur?: string };
 

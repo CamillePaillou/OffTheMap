@@ -19,6 +19,7 @@
       },
       "date": "2026-11-07",
       "participants": 2,
+      "nb_nuits": 1,
       "prix_unitaire_catalogue_cents": 4800,
       "prix_confirme": {
         "montant_cents": 4800,
@@ -46,6 +47,7 @@
       },
       "date": "2026-11-07",
       "participants": 2,
+      "nb_nuits": 1,
       "prix_unitaire_catalogue_cents": 9600,
       "prix_confirme": null,
       "statut": "indisponible",
@@ -68,6 +70,7 @@
       },
       "date": "2026-11-07",
       "participants": 2,
+      "nb_nuits": 1,
       "prix_unitaire_catalogue_cents": 3500,
       "prix_confirme": {
         "montant_cents": 4000,

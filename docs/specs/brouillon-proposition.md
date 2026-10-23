@@ -29,7 +29,9 @@ sequenceDiagram
 | la fiche (`FicheIA` : envies, contraintes, points flous, régimes, mobilité, niveau physique) | prix des prestations |
 | `{ id, nom, type }` des prestations autorisées par le code | prestations inactives, d'une autre destination ou trop petites pour le groupe |
 
-Dates, nuits et budget de référence : la fiche corrigée l'emporte sur la demande (`valeursDeReference`, E4.2).
+Destination, dates, nuits et budget de référence : la fiche corrigée l'emporte sur la demande (`destinationDuDossier`, `valeursDeReference`, E4.2). Sans destination, le catalogue mélangerait toutes les villes : pas de brouillon.
+
+Nuits d'hôtel : le modèle propose souvent une seule ligne d'hôtel. Le code lui donne ses nuits (`nuitsDesHebergements`) : chaque hôtel court jusqu'au prochain hôtel, ou jusqu'à la veille du départ. Une demande de 5 nuits donne donc une ligne d'hôtel de 5 nuits, au prix × participants × 5.
 
 ## Ce que le code garantit
 
@@ -46,6 +48,7 @@ Dates, nuits et budget de référence : la fiche corrigée l'emporte sur la dema
 | --- | --- |
 | `entretien_fait`, fiche avec budget réel et dates fixes | fiche validée (`validee_par`, `validee_le` si absents), dossier `en_proposition` au nom du conseiller, proposition v1 `brouillon_en_cours` |
 | `entretien_fait`, fiche incomplète | refus `OT005` (« renseignez le budget réel et les dates fixes ») |
+| aucune destination (ni fixée sur la fiche, ni demandée) | refus `OT015` (« choisissez la destination dans « Après l'entretien » ») |
 | `en_proposition`, sans proposition | proposition `brouillon_en_cours` |
 | déjà une proposition | refus `OT004` |
 | autre statut | refus `OT002` |

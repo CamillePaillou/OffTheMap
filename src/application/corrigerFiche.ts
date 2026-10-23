@@ -1,5 +1,5 @@
 /**
- * Corriger la fiche après l'entretien (E2.1) : budget réel, dates fixes, notes. Si la saisie est invalide,
+ * Corriger la fiche après l'entretien (E2.1) : budget réel, destination, dates fixes, notes. Si la saisie est invalide,
  * rien n'est écrit et chaque erreur est rattachée à son champ. Les champs de l'IA ne sont jamais modifiés ici,
  * et une régénération ne modifie jamais ceux-ci (fonctions SQL corriger_fiche et enregistrer_generation_fiche).
  */

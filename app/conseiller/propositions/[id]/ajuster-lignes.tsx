@@ -1,7 +1,7 @@
 'use client';
 
 import { startTransition, useActionState } from 'react';
-import { ajouter, ajusterNuits, changerBudget, changerParticipants, modifier, type EtatAction } from './tarifs';
+import { ajouter, ajusterNuits, changerBudget, changerNuits, changerParticipants, modifier, type EtatAction } from './tarifs';
 
 const champ = 'rounded-lg border border-trait bg-carte px-2 py-1';
 const euros = (cents: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(cents / 100);
@@ -83,20 +83,53 @@ export function ParticipantsPlusMoins({ propositionId, ligneId, participants, co
   participants: number;
   confirmee: boolean;
 }) {
-  const [etat, action, enCours] = useActionState<EtatAction, number>((_e, n) => changerParticipants(propositionId, ligneId, n), {});
+  return (
+    <PlusMoins
+      valeur={participants} min={1} max={20} confirmee={confirmee} moins="Un participant de moins" plus="Un participant de plus"
+      changer={(n) => changerParticipants(propositionId, ligneId, n)}
+    />
+  );
+}
+
+/** Nuits d'une ligne d'hébergement : le total de la ligne suit (prix × participants × nuits). */
+export function NuitsPlusMoins({ propositionId, ligneId, nuits, confirmee }: {
+  propositionId: string;
+  ligneId: string;
+  nuits: number;
+  confirmee: boolean;
+}) {
+  return (
+    <PlusMoins
+      valeur={nuits} min={1} max={14} confirmee={confirmee} moins="Une nuit de moins" plus="Une nuit de plus"
+      changer={(n) => changerNuits(propositionId, ligneId, n)}
+    />
+  );
+}
+
+/** Boutons « − » / « + » d'une ligne ; elle repasse à vérifier. */
+function PlusMoins({ valeur, min, max, confirmee, moins, plus, changer }: {
+  valeur: number;
+  min: number;
+  max: number;
+  confirmee: boolean;
+  moins: string;
+  plus: string;
+  changer: (n: number) => Promise<EtatAction>;
+}) {
+  const [etat, action, enCours] = useActionState<EtatAction, number>((_e, n) => changer(n), {});
   // une ligne confirmée perd son tarif : on le demande avant
-  const changer = (n: number) => {
+  const lancer = (n: number) => {
     if (confirmee && !window.confirm('Le tarif confirmé de cette ligne ne vaudra plus : elle repassera à vérifier. Continuer ?')) return;
     startTransition(() => action(n)); // hors d'un formulaire, l'action se lance dans une transition
   };
   return (
     <span className="inline-flex flex-col items-end gap-1">
       <span className="inline-flex items-center gap-1.5">
-        <button type="button" disabled={enCours || participants <= 1} onClick={() => changer(participants - 1)} className={pastille} aria-label="Un participant de moins">
+        <button type="button" disabled={enCours || valeur <= min} onClick={() => lancer(valeur - 1)} className={pastille} aria-label={moins}>
           −
         </button>
-        <span className="min-w-[1.5ch] text-center">{participants}</span>
-        <button type="button" disabled={enCours || participants >= 20} onClick={() => changer(participants + 1)} className={pastille} aria-label="Un participant de plus">
+        <span className="min-w-[1.5ch] text-center">{valeur}</span>
+        <button type="button" disabled={enCours || valeur >= max} onClick={() => lancer(valeur + 1)} className={pastille} aria-label={plus}>
           +
         </button>
       </span>
@@ -141,7 +174,7 @@ export function ModifierLigne({ propositionId, ligneId, date, participants, conf
   );
 }
 
-/** Ajouter une prestation du catalogue (E6.6), par exemple une nuit d'hôtel de plus : nouvelle ligne à vérifier. */
+/** Ajouter une prestation du catalogue (E6.6), par exemple un hôtel pour plusieurs nuits : nouvelle ligne à vérifier. */
 export function AjouterLigne({ propositionId, prestations, date, participants }: {
   propositionId: string;
   prestations: { id: string; nom: string; prix_unitaire_cents: number; capacite: number }[];
@@ -182,6 +215,11 @@ export function AjouterLigne({ propositionId, prestations, date, participants }:
             Participants
             <input type="number" name="participants" min={1} max={20} defaultValue={v.participants ?? participants} className={`${champ} w-20 text-right`} aria-invalid={!!e.participants} />
             {e.participants && <span role="alert" className="text-xs text-brique-texte">{e.participants}</span>}
+          </label>
+          <label className="flex flex-col gap-1">
+            Nuits (hôtel)
+            <input type="number" name="nbNuits" min={1} max={14} defaultValue={v.nbNuits || '1'} className={`${champ} w-20 text-right`} aria-invalid={!!e.nbNuits} />
+            {e.nbNuits && <span role="alert" className="text-xs text-brique-texte">{e.nbNuits}</span>}
           </label>
           <button type="submit" disabled={enCours} className="bo-btn-2 text-sm">
             {enCours ? 'Ajout…' : 'Ajouter (ligne à vérifier, prix catalogue)'}

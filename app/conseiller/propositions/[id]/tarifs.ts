@@ -40,6 +40,7 @@ const REFUS: Record<RefusLigne, string> = {
   accord_client_requis: 'Le client a déjà accepté la proposition : cochez la case pour confirmer qu’il accepte ce changement.',
   derniere_ligne: 'C’est la dernière prestation de la proposition : remplacez-la plutôt que de la retirer.',
   demarche_en_cours: 'Un accord ou une option est encore valable sur cette prestation : confirmez-la ou laissez-la expirer d’abord.',
+  nuits_refusees: 'Seul un hébergement compte plusieurs nuits.',
 };
 
 function versEtat(r: ResultatLigne, valeurs?: Record<string, string>): EtatAction {
@@ -93,17 +94,20 @@ export async function retirer(propositionId: string, ligneId: string, _e: EtatAc
 /** Ajoute une prestation du catalogue à la proposition (E6.6) : nouvelle ligne à vérifier. */
 export async function ajouter(propositionId: string, _e: EtatAction, f: FormData): Promise<EtatAction> {
   const { id } = await exigerConseiller(chemin(propositionId));
-  const valeurs = { prestation: f.get('prestation')?.toString() ?? '', date: f.get('date')?.toString() ?? '', participants: f.get('participants')?.toString() ?? '' };
+  const valeurs = {
+    prestation: f.get('prestation')?.toString() ?? '', date: f.get('date')?.toString() ?? '',
+    participants: f.get('participants')?.toString() ?? '', nbNuits: f.get('nbNuits')?.toString() ?? '',
+  };
   const r = await ajouterLigne(new TarifsSupabase(), {
-    propositionId, conseillerId: id, prestationId: valeurs.prestation, date: valeurs.date, participants: valeurs.participants,
+    propositionId, conseillerId: id, prestationId: valeurs.prestation, date: valeurs.date, participants: valeurs.participants, nbNuits: valeurs.nbNuits,
   });
   return versEtat(r, valeurs);
 }
 
-/** Change la date et/ou les participants d'une ligne (E6.6) : elle repasse à vérifier, sans prix confirmé. */
+/** Change la date, les participants et/ou les nuits d'une ligne (E6.6) : elle repasse à vérifier, sans prix confirmé. */
 export async function modifier(propositionId: string, ligneId: string, _e: EtatAction, f: FormData): Promise<EtatAction> {
   const { id } = await exigerConseiller(chemin(propositionId));
-  const valeurs = { date: f.get('date')?.toString() ?? '', participants: f.get('participants')?.toString() ?? '' };
+  const valeurs = { date: f.get('date')?.toString() ?? '', participants: f.get('participants')?.toString() ?? '', nbNuits: f.get('nbNuits')?.toString() ?? '' };
   return versEtat(await modifierLigne(new TarifsSupabase(), { ligneId, conseillerId: id, ...valeurs }), valeurs);
 }
 
@@ -111,6 +115,12 @@ export async function modifier(propositionId: string, ligneId: string, _e: EtatA
 export async function changerParticipants(propositionId: string, ligneId: string, participants: number): Promise<EtatAction> {
   const { id } = await exigerConseiller(chemin(propositionId));
   return versEtat(await modifierLigne(new TarifsSupabase(), { ligneId, conseillerId: id, date: '', participants: String(participants) }));
+}
+
+/** Boutons « − » / « + » des nuits d'une ligne d'hébergement. */
+export async function changerNuits(propositionId: string, ligneId: string, nbNuits: number): Promise<EtatAction> {
+  const { id } = await exigerConseiller(chemin(propositionId));
+  return versEtat(await modifierLigne(new TarifsSupabase(), { ligneId, conseillerId: id, date: '', participants: '', nbNuits: String(nbNuits) }));
 }
 
 const REFUS_SEJOUR = {

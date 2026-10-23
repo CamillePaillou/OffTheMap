@@ -12,7 +12,7 @@ const demandeListe = {
 
 const ficheDetail: NonNullable<LigneDossierDetail['demandes'][number]['fiches']> = {
   envies: ['atelier créatif'], contraintes: ['sans voiture'], points_flous: [], regimes: ['vegetarien'], mobilite: null, niveau_physique: 'faible',
-  budget_reel_cents: 38000, date_debut_fixe: '2026-11-07', date_fin_fixe: null, nb_nuits_fixe: null, notes_conseiller: 'Rappeler mardi',
+  budget_reel_cents: 38000, destination_fixe: null, date_debut_fixe: '2026-11-07', date_fin_fixe: null, nb_nuits_fixe: null, notes_conseiller: 'Rappeler mardi',
   decision: null, validee_le: null, erreur_generation: null,
 };
 

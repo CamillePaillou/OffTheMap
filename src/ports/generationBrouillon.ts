@@ -9,6 +9,7 @@ import type { PrestationDuCatalogue } from '../domain/brouillon/prestationsAutor
 
 export interface FicheValidee extends FicheIA {
   budget_reel_cents: number | null;
+  destination_fixe: string | null;
   date_debut_fixe: string | null;
   date_fin_fixe: string | null;
   nb_nuits_fixe: number | null;
@@ -25,6 +26,8 @@ export interface LigneBrouillon {
   prestation_id: string;
   date: string;
   participants: number;
+  /** Hébergement : nuits depuis `date`, calculées par le code ; 1 pour les autres types. */
+  nb_nuits: number;
   /** Copie figée du catalogue : le prix ne vient jamais du modèle. */
   prix_unitaire_catalogue_cents: number;
 }
@@ -34,7 +37,7 @@ export type ResultatBrouillon =
   | { erreur: string };
 
 /** Refus du démarrage, traduits des codes de demarrer_brouillon. */
-export type RefusDemarrage = 'introuvable' | 'fiche_incomplete' | 'deja_une_proposition' | 'statut_modifie';
+export type RefusDemarrage = 'introuvable' | 'fiche_incomplete' | 'destination_manquante' | 'deja_une_proposition' | 'statut_modifie';
 
 export class DemarrageRefuse extends Error {
   constructor(public readonly raison: RefusDemarrage) {

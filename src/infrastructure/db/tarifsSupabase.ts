@@ -2,6 +2,7 @@ import 'server-only';
 import type { Alerte, StatutProposition } from '../../../types';
 import type { Json } from '../../../types/database';
 import { clientService } from '../../../lib/supabase/service';
+import { destinationDuDossier } from '../../domain/brouillon/prestationsAutorisees';
 import { valeursDeReference } from '../../domain/chiffrage/chiffrer';
 import { StatutModifieErreur } from '../../ports/statuts';
 import {
@@ -11,6 +12,7 @@ import {
   EnvoiRefuseErreur,
   LigneModifieeErreur,
   MemePrestationErreur,
+  NuitsRefuseesErreur,
   PrestationRefuseeErreur,
   PropositionFigeeErreur,
   SejourImpossibleErreur,
@@ -62,10 +64,10 @@ export class TarifsSupabase implements TarifsRepository {
     const { data, error } = await clientService()
       .from('propositions')
       .select(`statut,
-        proposition_lignes (id, prestation_id, date, participants, prix_unitaire_catalogue_cents, prix_confirme_cents, statut,
+        proposition_lignes (id, prestation_id, date, participants, nb_nuits, prix_unitaire_catalogue_cents, prix_confirme_cents, statut,
           prestations (type, capacite, actif)),
-        dossiers (demandes (version, remplacee_le, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents,
-          fiches (date_debut_fixe, date_fin_fixe, nb_nuits_fixe, budget_reel_cents)))`)
+        dossiers (demandes (version, remplacee_le, destination, date_debut, date_fin, nb_nuits, voyageurs, budget_annonce_cents,
+          fiches (destination_fixe, date_debut_fixe, date_fin_fixe, nb_nuits_fixe, budget_reel_cents)))`)
       .eq('id', propositionId)
       .maybeSingle();
     if (error) throw new Error(`chiffrage : ${error.message}`);
@@ -74,6 +76,7 @@ export class TarifsSupabase implements TarifsRepository {
     if (!demande) throw new Error('chiffrage : aucune demande courante');
     return {
       statut: data.statut,
+      destination: destinationDuDossier(demande, demande.fiches ?? null),
       voyageurs: demande.voyageurs.length,
       ...valeursDeReference(demande, demande.fiches ?? null),
       lignes: data.proposition_lignes.map((l) => ({
@@ -84,6 +87,7 @@ export class TarifsSupabase implements TarifsRepository {
         actif: l.prestations!.actif,
         date: l.date,
         participants: l.participants,
+        nb_nuits: l.nb_nuits,
         prix_unitaire_catalogue_cents: l.prix_unitaire_catalogue_cents,
         prix_confirme_cents: l.prix_confirme_cents,
         statut: l.statut,
@@ -158,7 +162,9 @@ export class TarifsSupabase implements TarifsRepository {
       p_date: a.date,
       p_participants: a.participants,
       p_conseiller: a.conseillerId,
+      ...(a.nbNuits ? { p_nb_nuits: a.nbNuits } : {}),
     });
+    if (error?.code === 'OT012') throw new NuitsRefuseesErreur(error.message);
     if (error?.code === 'OT008') throw new PropositionFigeeErreur(error.message);
     if (error?.code === 'OT010') throw new PrestationRefuseeErreur(error.message);
     if (error?.code === 'OT011') throw new MemePrestationErreur(error.message);
@@ -174,7 +180,9 @@ export class TarifsSupabase implements TarifsRepository {
       p_conseiller: m.conseillerId,
       ...(m.date ? { p_date: m.date } : {}),
       ...(m.participants ? { p_participants: m.participants } : {}),
+      ...(m.nbNuits ? { p_nb_nuits: m.nbNuits } : {}),
     });
+    if (error?.code === 'OT012') throw new NuitsRefuseesErreur(error.message);
     if (error?.code === 'OT002') throw new LigneModifieeErreur(error.message);
     if (error?.code === 'OT008') throw new PropositionFigeeErreur(error.message);
     if (error?.code === 'OT011') throw new MemePrestationErreur(error.message);

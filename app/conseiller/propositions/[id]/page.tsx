@@ -7,16 +7,17 @@ import { etatEnvoi } from '@/src/application/tarifs';
 import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
 import { TarifsSupabase } from '@/src/infrastructure/db/tarifsSupabase';
 import { Ecart } from '../../_composants/ecart';
+import { AllerA, AValider } from '../../_composants/a-valider';
 import { Fil } from '../../_composants/fil';
+import { Pastille, PastilleActeur, prochaineEtape } from '../../_composants/statut';
 import { dateDeVerification, jourCourt } from '../../_composants/libelles';
-import { Pastille } from '../../_composants/statut';
 import { FAMILLE_STATUT_LIGNE, FAMILLE_STATUT_PROPOSITION } from '@/types/statuts-famille';
 import { resumerProposition } from '@/src/domain/proposition/resumeProposition';
 import { comparerVersions } from '@/src/domain/proposition/ecartsVersions';
 import { REGLES_CHIFFRAGE } from '@/types/chiffrage';
 import { ActionsLigne, PanneauEnvoi } from './actions-tarifs';
 import { PanneauAbandon } from './panneau-abandon';
-import { AjouterLigne, ModifierBudget, ModifierLigne, ParticipantsPlusMoins, SejourPlusMoins } from './ajuster-lignes';
+import { AjouterLigne, ModifierBudget, ModifierLigne, NuitsPlusMoins, ParticipantsPlusMoins, SejourPlusMoins } from './ajuster-lignes';
 import { PanneauChangement } from './panneau-changement';
 import { PanneauReponse } from './panneau-reponse';
 import { CarteReponseEnLigne } from './reponse-en-ligne';
@@ -114,6 +115,22 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
   const verifieDepuis = retenues.map((l) => l.prix_confirme?.le).filter((d): d is string => !!d).sort()[0] ?? null;
   const tonJauge = resume.budget?.depasse ? 'bg-brique' : 'bg-encre';
 
+  // étape qui attend le conseiller : un bandeau en tête, qui renvoie à la zone entourée et marquée « À valider »
+  const aVerifier = retenues.filter((l) => l.statut === 'a_verifier').length;
+  const etape = abandonne ? null : prochaineEtape('en_proposition', { statut: proposition.statut, lignes_a_verifier: aVerifier });
+  const AGIR: Partial<Record<typeof proposition.statut, { ancre?: string; lien?: string; libelle: string }>> = {
+    brouillon_pret: { ancre: 'prestations', libelle: 'Voir les prix à vérifier' },
+    a_verifier: { ancre: 'prestations', libelle: 'Voir les prix à vérifier' },
+    prete: { ancre: 'envoi', libelle: 'Aller à l’envoi' },
+    sans_reponse: { ancre: 'mail-proposition', libelle: 'Voir le mail de relance' },
+    acceptee: { ancre: 'reponse', libelle: 'Enregistrer le dépôt' },
+    depot_recu: { lien: `/conseiller/propositions/${proposition.id}/accord`, libelle: 'Poser les options' },
+    reservee: { ancre: 'mail-confirmation', libelle: 'Voir le mail de confirmation' },
+    remplacee: { lien: `/conseiller/dossiers/${proposition.dossier_id}`, libelle: 'Ouvrir le dossier' },
+  };
+  const agir = etape?.acteur === 'conseiller' ? AGIR[proposition.statut] : undefined;
+  const aValider = (...statuts: (typeof proposition.statut)[]) => etape?.acteur === 'conseiller' && statuts.includes(proposition.statut);
+
   return (
     <>
       <Fil
@@ -130,6 +147,26 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
       {/* E6.6 : le séjour de référence (dates fixes de la fiche, sinon de la demande), ajustable tant que la proposition l'est */}
       {modifiable && chiffrage && (
         <SejourPlusMoins propositionId={proposition.id} debut={chiffrage.date_debut} fin={chiffrage.date_fin} nuits={chiffrage.nb_nuits} />
+      )}
+
+      {etape?.acteur === 'conseiller' && (
+        <section aria-labelledby="titre-maintenant" className="mt-6 flex flex-wrap items-center gap-2.5 rounded-[18px] bg-ciel px-5 py-4">
+          <PastilleActeur acteur="conseiller" />
+          <h2 id="titre-maintenant" className="text-base">
+            {etape.texte}
+          </h2>
+          {agir && (
+            <span className="ml-auto">
+              {agir.ancre ? (
+                <AllerA cible={agir.ancre} libelle={agir.libelle} />
+              ) : (
+                <Link href={agir.lien!} className="bo-btn text-sm">
+                  {agir.libelle} <span aria-hidden>→</span>
+                </Link>
+              )}
+            </span>
+          )}
+        </section>
       )}
 
       {proposition.statut === 'remplacee' && (
@@ -240,16 +277,20 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
 
         {aCote && (
           <div className="flex flex-col gap-4">
-            {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} />}
+            {modifiable && envoi && <PanneauEnvoi propositionId={proposition.id} bloquants={envoi.bloquants} aValider={aValider('prete')} />}
             {reponseEnLigne && <CarteReponseEnLigne reponse={reponseEnLigne} />}
-            {!abandonne && <PanneauReponse propositionId={proposition.id} statut={proposition.statut} />}
+            {!abandonne && <PanneauReponse propositionId={proposition.id} statut={proposition.statut} aValider={aValider('acceptee', 'depot_recu')} />}
+
             {attendReponse && <PanneauChangement propositionId={proposition.id} version={proposition.version} />}
             {proposeAbandon && <PanneauAbandon propositionId={proposition.id} />}
           </div>
         )}
       </div>
 
-      <h2 className="mt-10 text-2xl">Prestations</h2>
+      <div id="prestations" className="mt-10 flex scroll-mt-6 flex-wrap items-center gap-3">
+        <h2 className="text-2xl">Prestations</h2>
+        {aValider('a_verifier', 'brouillon_pret') && aVerifier > 0 && <AValider texte={`${aVerifier} prix à vérifier`} />}
+      </div>
       <div className="mt-3">
       <div className="bo-carte overflow-x-auto">
           <table className="w-full min-w-[60rem] text-left text-sm">
@@ -259,6 +300,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                 <th className="px-3 py-3 font-semibold">Prestation</th>
                 <th className="px-3 py-3 font-semibold">Date</th>
                 <th className="px-3 py-3 text-right font-semibold">Pers.</th>
+                <th className="px-3 py-3 text-right font-semibold">Nuits</th>
                 <th className="px-3 py-3 text-right font-semibold">Prix proposé</th>
                 <th className="px-3 py-3 text-right font-semibold">Total ligne</th>
                 <th className="px-3 py-3 text-right font-semibold">Prix revérifié</th>
@@ -269,7 +311,10 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
             </thead>
             <tbody className="divide-y divide-trait">
               {lignes.map(({ ligne, verification, remplacantes, ecart }) => (
-                <tr key={ligne.id} className={`align-top ${ligne.statut === 'remplacee' || ligne.statut === 'retiree' ? 'text-encre-doux line-through' : ''}`}>
+                <tr
+                  key={ligne.id}
+                  className={`align-top ${ligne.statut === 'remplacee' || ligne.statut === 'retiree' ? 'text-encre-doux line-through' : ''} ${modifiable && ligne.statut === 'a_verifier' ? 'bg-ciel-pale/60 shadow-[inset_4px_0_0_var(--detour-encre)]' : ''}`}
+                >
                   <td className="px-3 py-3 font-semibold">
                     {ligne.prestation.nom}
                     {resume.parLigne.get(ligne.id)?.map((a, i) => (
@@ -289,6 +334,15 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
                       />
                     ) : (
                       ligne.participants
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    {ligne.prestation.type !== 'hebergement' ? (
+                      <span className="text-encre-doux">—</span>
+                    ) : modifiable && ['a_verifier', 'confirme', 'indisponible'].includes(ligne.statut) ? (
+                      <NuitsPlusMoins propositionId={proposition.id} ligneId={ligne.id} nuits={ligne.nb_nuits} confirmee={ligne.statut === 'confirme'} />
+                    ) : (
+                      ligne.nb_nuits
                     )}
                   </td>
                   <td className="px-3 py-3 text-right">{euros(ligne.prix_unitaire_catalogue_cents)}</td>
@@ -410,6 +464,7 @@ async function Contenu({ params }: Pick<PageProps<'/conseiller/propositions/[id]
               mailto={mail.mailto}
               imprimer={`/conseiller/propositions/${proposition.id}/imprimer`}
               ouvert={attendReponse || reservee}
+              aValider={aValider('sans_reponse', 'reservee')}
             />
           </section>
         )}

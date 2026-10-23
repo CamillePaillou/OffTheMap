@@ -47,3 +47,17 @@ export interface PrestationNommeeCatalogue {
   type: 'transport' | 'hebergement' | 'activite';
   destination: string;
 }
+
+/**
+ * Villes du catalogue actif, triées : proposées et signalées dans « Après l'entretien ». Une destination hors de cette
+ * liste reste permise, mais ne donnerait aucune prestation au brouillon. Liste vide si la base est injoignable.
+ */
+export async function destinationsCatalogue(): Promise<string[]> {
+  try {
+    const { data, error } = await clientService().from('prestations').select('destination').eq('actif', true);
+    if (error || !data) return [];
+    return [...new Set(data.map((p) => p.destination.trim()))].sort((a, b) => a.localeCompare(b, 'fr'));
+  } catch {
+    return [];
+  }
+}

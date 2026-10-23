@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { exigerConseiller } from '@/lib/auth/conseiller';
 import { CorrectionsSupabase } from '@/src/infrastructure/db/correctionsSupabase';
+import { destinationsCatalogue } from '@/src/infrastructure/db/catalogueSupabase';
 import { DossiersSupabase } from '@/src/infrastructure/db/dossiersSupabase';
 import type { DetailDossier } from '@/types/dashboard';
 import { DECISION, ETAT_FICHE, STATUT_DOSSIER, STATUT_PROPOSITION, euros, instantParis, jour } from '../../_composants/libelles';
@@ -13,7 +14,8 @@ import { BoutonBrouillon, BoutonEntretienFait, BoutonRelancer, FormulaireCorrect
 import { PanneauTri } from './panneauTri';
 import { CarteMail } from '../../_composants/carte-mail';
 import { lignesPourMail, sejourDe } from '../../_composants/donnees-mail';
-import { lienMailto, mailConfirmation, mailRendezVous, MailImpossibleErreur } from '@/src/domain/mails';
+import { LIBELLES_MODELES, lienMailto, mailConfirmation, mailRendezVous, MailImpossibleErreur } from '@/src/domain/mails';
+import { AllerA, AValider, ZONE_A_VALIDER } from '../../_composants/a-valider';
 import { PropositionsSupabase } from '@/src/infrastructure/db/propositionsSupabase';
 
 type Props = PageProps<'/conseiller/dossiers/[id]'>;
@@ -48,8 +50,11 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   const nbVoyageurs = demande.voyageurs.length;
   const enErreur = dossier.statut === 'erreur' || fiche?.etat === 'erreur';
   // tri (E3.1) : sur une fiche prête, ou sur un dossier à corriger (valider, refuser, nouveau lien)
-  // brouillon (E4.4) : après l'entretien, fiche corrigée (budget réel et dates fixes), aucune proposition encore
-  const ficheComplete = fiche !== null && fiche.budget_reel_cents !== null && fiche.dates_fixes.debut !== null && fiche.dates_fixes.fin !== null;
+  // destination fixée à l'entretien, sinon demandée : sans elle, ni brouillon ni envoi
+  const destination = fiche?.destination_fixe ?? demande.destination;
+  // brouillon (E4.4) : après l'entretien, fiche corrigée (budget réel et dates fixes), une destination, aucune proposition encore
+  const ficheComplete = fiche !== null && fiche.budget_reel_cents !== null && fiche.dates_fixes.debut !== null && fiche.dates_fixes.fin !== null
+    && destination !== null;
   const peutDemanderBrouillon = (dossier.statut === 'entretien_fait' || dossier.statut === 'en_proposition') && dossier.propositions.length === 0;
   const aTrier = (dossier.statut === 'fiche_prete' || dossier.statut === 'a_corriger') && fiche !== null && fiche.etat !== 'erreur';
   const boucles = aTrier ? await new CorrectionsSupabase().boucles(dossier.dossier_id) : null;
@@ -74,11 +79,24 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
   const etape = prochaineEtape(dossier.statut, derniere);
   const jours = joursAvantDepart(demande.dates.debut);
   const ouvert = groupeDe(dossier.statut).id !== 'clos';
-  const photo = photoDestination(demande.destination);
+  const photo = photoDestination(destination);
   const budget = fiche?.budget_reel_cents ?? demande.budget_annonce?.montant_cents ?? null;
   const total = derniere?.total_cents ?? null;
   const part = total !== null && budget ? Math.round((total / budget) * 100) : null;
   const nuits = demande.dates.nb_nuits;
+
+  // étape à valider plus bas dans la page : le bandeau y renvoie, la zone est entourée et porte « À valider »
+  const mailEnvoye = (modele: 'rendez_vous' | 'confirmation') =>
+    dossier.historique.some((e) => e.resume === `Mail « ${LIBELLES_MODELES[modele]} » envoyé`);
+  const mailAValider = (modele: 'rendez_vous' | 'confirmation') =>
+    !mailEnvoye(modele) && (modele === 'rendez_vous' ? dossier.statut === 'validee' : propositionReservee !== null);
+  const manquants = fiche
+    ? [fiche.budget_reel_cents === null && 'budget réel', destination === null && 'destination', (fiche.dates_fixes.debut === null || fiche.dates_fixes.fin === null) && 'dates fixes']
+        .filter((m): m is string => !!m)
+    : [];
+  const ficheAValider = peutDemanderBrouillon && fiche !== null && !ficheComplete;
+  const mailAttendu = mails.find((m) => mailAValider(m.modele));
+  const cible = ficheAValider ? 'apres-entretien' : mailAttendu ? `mail-${mailAttendu.modele}` : null;
 
   // le bloc « Maintenant » : ce qu'il faut faire, avec l'action sur place ; sa couleur dit qui doit agir
   const ton = enErreur ? 'bg-brique-pale' : etape.acteur === 'conseiller' ? 'bg-ciel' : etape.acteur === 'client' ? 'bg-ciel-pale' : 'bg-carte';
@@ -109,7 +127,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
             <PastilleStatut statut={dossier.statut} />
           </div>
           <h1 id="titre-sejour" className="mt-1.5 text-[32px] leading-tight tracking-[-0.025em] sm:text-[40px]">
-            {demande.destination ? `Paris → ${demande.destination}` : 'Destination à proposer'}
+            {destination ? `Paris → ${destination}` : 'Destination à proposer'}
           </h1>
           <p className="mt-1.5 text-encre-doux">
             {jour(demande.dates.debut)} → {jour(demande.dates.fin)} · {nuits} nuit{nuits > 1 ? 's' : ''}
@@ -126,6 +144,11 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
           <h2 id="titre-maintenant" className="text-base">
             {titreMaintenant}
           </h2>
+          {cible && (
+            <span className="ml-auto">
+              <AllerA cible={cible} libelle={cible === 'apres-entretien' ? 'Compléter la fiche' : 'Voir le mail à envoyer'} />
+            </span>
+          )}
         </div>
         {enErreur ? (
           <>
@@ -149,7 +172,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
               <BoutonBrouillon dossierId={dossier.dossier_id} valideFiche={dossier.statut === 'entretien_fait'} />
             </div>
           ) : (
-            <p className="mt-1 text-sm text-encre">Renseignez le budget réel et les dates fixes dans « Après l’entretien », plus bas, pour générer le brouillon.</p>
+            <p className="mt-1 text-sm text-encre">Renseignez le budget réel, la destination et les dates fixes dans « Après l’entretien », plus bas, pour générer le brouillon.</p>
           )
         ) : (
           <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
@@ -280,18 +303,26 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
                   </dd>
                 </dl>
 
-                <div className="mt-6 border-t border-trait pt-5">
-                  <h3 className="text-base">Après l’entretien</h3>
+                <div id="apres-entretien" className={`mt-6 border-t border-trait pt-5 ${ficheAValider ? `-mx-2 rounded-[14px] px-2 pb-2 ${ZONE_A_VALIDER}` : ''}`}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base">Après l’entretien</h3>
+                    {ficheAValider && <AValider />}
+                  </div>
                   <p className="mt-1 text-sm text-encre-doux">Ces champs sont gardés si la fiche est régénérée.</p>
+                  {ficheAValider && manquants.length > 0 && (
+                    <p className="mt-1 text-sm font-semibold text-encre">Pour générer le brouillon, il manque : {manquants.join(', ')}.</p>
+                  )}
                   <FormulaireCorrection
                     dossierId={dossier.dossier_id}
                     valeurs={{
                       budget_reel_euros: fiche.budget_reel_cents === null ? '' : String(fiche.budget_reel_cents / 100),
+                      destination_fixe: fiche.destination_fixe ?? '',
                       date_debut_fixe: fiche.dates_fixes.debut ?? '',
                       date_fin_fixe: fiche.dates_fixes.fin ?? '',
-                      nb_nuits_fixe: fiche.dates_fixes.nb_nuits === null ? '' : String(fiche.dates_fixes.nb_nuits),
                       notes_conseiller: fiche.notes_conseiller ?? '',
                     }}
+                    destinations={await destinationsCatalogue()}
+                    destinationDemande={demande.destination}
                   />
                 </div>
               </>
@@ -329,6 +360,7 @@ async function Contenu({ params }: Pick<Props, 'params'>) {
               sujet={m.mail.sujet}
               corps={m.mail.corps}
               mailto={lienMailto(demande.client.email, m.mail)}
+              aValider={mailAValider(m.modele)}
             />
           ))}
 

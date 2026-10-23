@@ -25,8 +25,8 @@ export class FichesSupabase implements FichesRepository {
       p_budget_reel_cents: c.budget_reel_cents,
       p_date_debut_fixe: c.date_debut_fixe,
       p_date_fin_fixe: c.date_fin_fixe,
-      p_nb_nuits_fixe: c.nb_nuits_fixe,
       p_notes_conseiller: c.notes_conseiller,
+      p_destination_fixe: c.destination_fixe,
     });
     if (error) throw new Error(`corriger_fiche : ${error.message}`);
     return 'ok';

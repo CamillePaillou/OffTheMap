@@ -4,6 +4,8 @@
  * `accord` de l'historique dans la même transaction. L'index unique `options_une_en_cours_par_ligne`
  * garantit une seule démarche en cours par ligne.
  */
+import type { SourcePrix } from '../../types/enums';
+
 export interface NouvelAccord {
   dossier_id: string;
   proposition_id: string;
@@ -12,6 +14,8 @@ export interface NouvelAccord {
   accord_le: string;
   accord_expire_le: string;
   prix_accorde_cents: number; // prix TOTAL autorisé pour la ligne
+  /** D'où vient ce prix : vérification de l'agent, ou tarif saisi par le conseiller (téléphone, mail, lien). */
+  source_prix?: SourcePrix;
 }
 
 /** Levée quand une autre démarche en cours existe déjà sur la ligne (concurrence). */
@@ -51,17 +55,43 @@ export interface AccordsRepository {
   tracerTentativeAnnulation(evenement: TentativeConfirmation): Promise<void>;
 }
 
+/**
+ * Une nuit d'un hébergement chez le simulateur, qui ne pose et ne confirme qu'une date à la fois : une option, puis une
+ * réservation. Une ligne d'une nuit, ou qui n'est pas un hébergement, en a une seule.
+ */
+export interface NuitSimulateur { date: string; option_id: string; prix_total_cents: number; reservation_id?: string }
+
+/** Ligne telle qu'elle était à la pose de l'option. */
+export interface LigneSnapshot { prestation_id: string; date: string; participants: number; nb_nuits?: number }
+
 export interface AccordOption extends NouvelAccord { option_id: string; accord_utilise: boolean; statut: 'accord_donne' | 'posee' | 'echec' | 'confirmee' | 'annulee'; }
-export interface AccordOptionEtOption extends AccordOption { option_id_simulateur?: string; expire_option_le?: string; reservation_id_simulateur?: string; confirme_le?: string; reponse_confirmation?: unknown; ligne_snapshot: { prestation_id: string; date: string; participants: number }; }
+export interface AccordOptionEtOption extends AccordOption {
+  option_id_simulateur?: string; expire_option_le?: string; reservation_id_simulateur?: string; confirme_le?: string; reponse_confirmation?: unknown;
+  ligne_snapshot: LigneSnapshot;
+  /** Détail par nuit ; vide pour une démarche antérieure : la première nuit vaut alors pour toute la ligne (voir `nuitsDeLaDemarche`). */
+  nuits?: NuitSimulateur[];
+}
 export type ResultatPoseOption =
-  | { ok: true; option_id_simulateur: string; expire_le: string; reponse_serveur: unknown; ligne_snapshot?: { prestation_id: string; date: string; participants: number } }
+  | { ok: true; option_id_simulateur: string; expire_le: string; reponse_serveur: unknown; ligne_snapshot?: LigneSnapshot; nuits?: NuitSimulateur[] }
   | { ok: false; raison: string; reponse_serveur?: unknown };
+
+/** Nuits d'une démarche : celles enregistrées, sinon une seule, celle de l'option (démarche d'une nuit, ou antérieure). */
+export function nuitsDeLaDemarche(o: AccordOptionEtOption): NuitSimulateur[] {
+  if (o.nuits && o.nuits.length > 0) return o.nuits;
+  if (!o.option_id_simulateur) return [];
+  return [{
+    date: o.ligne_snapshot.date, option_id: o.option_id_simulateur, prix_total_cents: o.prix_accorde_cents,
+    ...(o.reservation_id_simulateur ? { reservation_id: o.reservation_id_simulateur } : {}),
+  }];
+}
 export interface TentativeOption {
   dossier_id: string; proposition_id: string; ligne_id: string; auteur_id: string;
   raison: string; date: string;
 }
 
-export type ResultatConfirmation = { ok: true; reservation_id_simulateur: string; reponse_serveur: unknown; confirme_par: string } | { ok: false; raison: string; reponse_serveur?: unknown };
+export type ResultatConfirmation =
+  | { ok: true; reservation_id_simulateur: string; reponse_serveur: unknown; confirme_par: string; nuits?: NuitSimulateur[] }
+  | { ok: false; raison: string; reponse_serveur?: unknown };
 export interface TentativeConfirmation { ligne_id: string; auteur_id: string; raison: string; date: string; detail?: unknown }
 
 export type ResultatAnnulation = { ok: true; reservation_id_simulateur: string; reponse_serveur: unknown } | { ok: false; raison: string; reponse_serveur?: unknown };
