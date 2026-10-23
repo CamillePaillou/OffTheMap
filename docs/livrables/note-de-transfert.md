@@ -2,21 +2,16 @@
 
 **Pour qui :** l'équipe qui reprend le service DÉTOUR (agence ou autre équipe de développement). **Rédigée le 23/10/2026** par Callista Loré (PO), avec l'équipe.
 
-Une page pour comprendre ce qui est livré, le lancer, savoir ce qui est fragile et par où continuer. Le détail est dans les documents cités.
-
-> ✍️ = à compléter par l'équipe avant de transmettre.
-
 ---
 
 ## 1. Ce que vous recevez
 
 | | |
 | --- | --- |
-| **Version** | Branche `dev` du dépôt `CamillePaillou/OffTheMap`, étiquette `v1.0` ✍️ (commit à indiquer) |
-| **Ce que fait le service** | Un conseiller prépare une proposition de voyage sur mesure : demande du voyageur, fiche résumée par l'IA, tri, brouillon chiffré par le code, prix revérifiés par un agent, envoi, acceptation et dépôt, puis réservation (accord du conseiller, option, confirmation avec la clé d'approbation) |
-| **Côté voyageur** | Formulaire de demande avec un chatbot, correction par lien, numéro de dossier et suivi sans compte, compte facultatif pour lire la proposition et y répondre en ligne |
-| **Verdict de recette** | Accepté avec réserves (`docs/livrables/E12.3-dossier-livraison.md`, section 2) ; démonstration validée par le client le 22/10 (`docs/rituels/review.md`) |
-| **Ce qui n'existe pas** | Paiement réel du dépôt, prise de rendez-vous en ligne, envoi automatique des mails (ils partent de la messagerie du conseiller), vrais prestataires (le simulateur du formateur les remplace) |
+| **Version** | Branche `dev` du dépôt `CamillePaillou/OffTheMap`, étiquette `v1.0`|
+| **Ce que fait le service** | Un conseiller prépare une proposition de voyage sur mesure, de la demande à la réservation. Côté voyageur : formulaire avec chatbot, suivi sans compte par numéro de dossier, compte facultatif pour répondre en ligne. Parcours et périmètre : E12.3, section 1 |
+| **Verdict de recette** | Accepté avec réserves (E12.3, section 2) ; démonstration validée par le client le 22/10 (`docs/rituels/review.md`) |
+| **Ce qui n'existe pas** | Paiement réel, rendez-vous en ligne, envoi automatique des mails (ils partent de la messagerie du conseiller), vrais prestataires (remplacés par le simulateur du formateur) |
 
 ## 2. Lancer et vérifier en 10 minutes
 
@@ -35,6 +30,7 @@ Ce qu'on doit voir :
 - l'espace conseiller s'ouvre avec `conseiller@offthemap.test` / `offthemap-demo` ;
 - le suivi sans compte répond pour le numéro `DT-JADE-NANT` sur `/suivi` ;
 - l'espace client s'ouvre avec `jade@example.org` / `offthemap-demo` ;
+- une option posée se confirme avec la clé d'approbation `demo-approval` (section 4) ;
 - les mails de test arrivent sur `http://localhost:54324`.
 
 Pièges connus : lancer `make up` **avant** `make reset` ; si Supabase reste *unhealthy*, augmenter la mémoire de Docker.
@@ -60,7 +56,7 @@ Aucune clé n'est dans le dépôt. gitleaks et `lib/securite.test.ts` le vérifi
 
 | Secret | Où il vit | Comment l'obtenir |
 | --- | --- | --- |
-| Clé OpenRouter (`LLM_API_KEY`) | `.env` de chaque poste | Clé personnelle à créer sur OpenRouter. Les clés de l'équipe sont personnelles : **elles ne se transmettent pas**, la nouvelle équipe crée les siennes |
+| Clé OpenRouter (`LLM_API_KEY`) | `.env` de chaque poste | À créer sur OpenRouter. Les clés de l'équipe sont personnelles et **ne se transmettent pas** |
 | Clé d'équipe du simulateur (`SIMULATEUR_TEAM_KEY`) | `.env` | `demo-key` en local ; fournie par le formateur pour son serveur |
 | Clé d'approbation | Saisie par le conseiller au moment de confirmer, jamais stockée | `demo-approval` en local ; fournie par le formateur pour son serveur |
 | Clés Supabase (`service_role`, `anon`) | `.env.supabase`, écrit par `make up` | Générées localement, rien à copier |
@@ -69,19 +65,21 @@ Aucune clé n'est dans le dépôt. gitleaks et `lib/securite.test.ts` le vérifi
 
 | Point fragile | Ce qui se passe | Que faire |
 | --- | --- | --- |
-| **Modèle gratuit d'OpenRouter** (quota quotidien, retrait sans préavis : MiniMax retiré le 22/10) | L'agent conclut « non vérifié », sans prix ; la fiche passe en erreur avec « relancer » | Le conseiller vérifie le prix lui-même par téléphone et le saisit : l'accord l'accepte, et le prestataire revérifie au moment de réserver (E9.7). Pour une démonstration : `AGENT_MODE=rejeu`. Jamais de modèle payant : l'application le refuse |
-| **Choix du modèle** | ✍️ **À trancher avant de transmettre.** `.env.example` met `recursive/flint-v1.0:free` en principal, Nemotron en réserve et un délai de 30 s. La note E9.7 dit l'inverse (Nemotron en principal, délai porté à 60 s) | Aligner `.env.example`, le contrat de l'agent et la note E9.7. Flint rend mal la fiche (cas A02 en échec, retest v3b) |
+| **Modèle gratuit d'OpenRouter** (quota quotidien, retrait sans préavis : MiniMax retiré le 22/10) | L'agent conclut « non vérifié », sans prix ; la fiche passe en erreur avec « relancer » | Le conseiller vérifie le prix lui-même et le saisit (voir E9.7). Pour une démonstration : `AGENT_MODE=rejeu` |
+| **Choix du modèle** | `recursive/flint-v1.0:free` en principal, Nemotron (`nvidia/nemotron-3-ultra-550b-a55b:free`) en réserve, délai de 60 s (`.env.example`) | Flint rend mal la fiche (E12.3, section 7) : si la campagne v4 le confirme, passer Nemotron en principal |
 | **Option de 72 h contre 30 min dans le simulateur** | En démonstration, l'option expire vite | Confirmer juste après la pose |
 | **Option posée à un autre prix** | La réservation est refusée, mais l'option reste chez le prestataire jusqu'à son expiration | À annuler côté prestataire si le simulateur le permet |
 | **Supabase en local** | Une dizaine de conteneurs, gourmands en mémoire | Voir les pièges de la section 2 |
+
+Conséquences et suites : E12.3, section 5.
 
 ## 6. Ce qui reste ouvert
 
 | Priorité | Sujet | Pourquoi |
 | --- | --- | --- |
-| 1 | Mesurer le temps de préparation d'une proposition (objectif 2 h, contre 6 h avant) | C'est le besoin principal du client, et il n'est pas mesuré |
+| 1 | Mesurer le temps de préparation d'une proposition (objectif 2 h, contre 6 h avant) | Besoin principal du client, non mesuré |
 | 2 | Relancer toute la campagne d'évaluation avec le modèle retenu (`make campagne V=v4 …`) | Seuls A02 et A03 ont été retestés après le changement de modèle |
-| 3 | Mettre le numéro de dossier dans les mails du conseiller | Aujourd'hui, le voyageur le lit seulement sur la page « Merci » |
+| 3 | Mettre le numéro de dossier dans les mails du conseiller | Le voyageur ne le voit que sur la page « Merci » |
 | 4 | Prévenir le conseiller quand un voyageur répond en ligne | La réponse n'apparaît qu'à l'ouverture de la proposition |
 | 5 | Hébergement, SMTP et modèles de mails sur un projet Supabase hébergé | Tout est configuré pour le local (`docs/specs/espace-client.md`) |
 | Phase 2 | Relances automatiques, transcription de l'entretien, vrais prestataires, documents de voyage | Hors MVP (plan de réalisation, section 1) |
@@ -90,21 +88,9 @@ Aucune clé n'est dans le dépôt. gitleaks et `lib/securite.test.ts` le vérifi
 
 - **Aucun prix ne vient de l'IA.** Le code chiffre ; le modèle ne produit aucun montant.
 - **L'agent ne fait que lire.** Un seul outil, `verifier_disponibilite`. Poser, confirmer et annuler restent des gestes du conseiller.
-- **L'accord est lié au prix et ne sert qu'une fois** (10 minutes). À la pose, le prix renvoyé par le prestataire est comparé au prix accordé.
+- **L'accord est lié au prix et ne sert qu'une fois** (règles : E12.1, section 1.5).
 - **La confirmation exige la clé d'approbation**, jamais stockée ni vue par le modèle.
-- **Le voyageur ne change aucun statut.** Sa réponse en ligne est enregistrée, et le conseiller la reporte.
-- **Pas de modèle payant**, même en secours.
+- **Le voyageur ne change aucun statut.** Le conseiller reporte sa réponse en ligne.
+- **Pas de modèle payant**, même en secours : l'application le refuse (voir E9.7).
 
-Chacune a sa raison et sa preuve dans le dossier de conception (section 3) et dans le contrat de l'agent.
-
-## 8. Qui connaît quoi
-
-D'après l'historique Git. ✍️ Chaque membre confirme sa ligne et indique comment le joindre.
-
-| Domaine | Personne |
-| --- | --- |
-| Pilotage, règles métier, contrat de l'agent, évaluation (E11), charte, chatbot, espace client | Callista Loré (PO) |
-| Dépôt, CI, Docker, migrations, agent de vérification, accords en base, sécurité | Camille Paillou |
-| Back-office : fiche, brouillon, proposition, écarts entre versions, ajustements | Océane Gohier-Tallon |
-| Port LLM, simulateur, écran d'accord, option, seconde validation, annulation | Ainouche Mustapha Islam |
-| ✍️ | Tabitha |
+Raisons et preuves : E12.1, section 3, et `docs/agent/contrat-agent.md`.

@@ -3,8 +3,6 @@
 - **Date :** vendredi 23/10/2026, avant le rendu de 17 h
 - **Participants :** Callista Loré (PO, Scrum Master du jour), Camille Paillou, Océane Gohier-Tallon. Absents : Tabitha, Ainouche Mustapha Islam.
 
-> Rédigée à partir des dailies, des rétrospectives de fin de journée, du PERT et de l'historique Git. ✍️ = à valider ensemble avant de fusionner.
-
 ## Chiffres
 
 - **Sprint Goal atteint :** oui. Le cas de Nantes va de la demande à la réservation confirmée :
@@ -36,12 +34,8 @@
   - l'accueil du conseiller (#197) ;
   - l'écran d'accord (#204) ;
   - une branche entière abandonnée, `fix/accord-base`, remplacée par #224.
-- **Dépendre d'un seul modèle gratuit sans solution de rechange testée.** Le quota épuisé, puis le retrait de MiniMax, nous ont surpris le jour de la campagne.
+- **Dépendre d'un seul modèle gratuit sans solution de rechange testée.** Le quota épuisé, puis le retrait de MiniMax, nous ont surpris.
 - **Écrire les livrables le dernier jour.** Les dossiers ont dû être rattrapés le vendredi, et des documents se contredisaient (modèle principal, délai d'appel).
-- **Ne pas relever les heures.** Sans elles, le facteur IA reste une estimation.
-- **Laisser des preuves implicites.** Exemples : les cases de recette non cochées, un jour sans daily (mercredi 21/10).
-
-✍️ Votez ou ajustez ces points en équipe.
 
 ## Un échec observé et ce qu'on a changé
 
@@ -53,5 +47,3 @@
 ## Une action pour la suite
 
 - **Action :** mesurer le temps réel de préparation d'une proposition avec un conseiller, sur trois dossiers, et le comparer aux 6 h d'avant. En même temps, relever les heures de chacun, pour recalibrer les estimations et le facteur IA du prochain sprint.
-- **Responsable :** Callista Loré (PO)
-- **Échéance :** ✍️ premier jour du prochain sprint, ou à la reprise par l'agence.
